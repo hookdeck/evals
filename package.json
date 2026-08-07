@@ -33,7 +33,8 @@
     "@hookdeck-evals/sandbox": "workspace:*",
     "@types/common-tags": "^1.8.4",
     "@types/node": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "@hookdeck-evals/hookdeck": "workspace:*"
   },
   "engines": {
     "node": ">=22",

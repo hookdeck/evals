@@ -18,5 +18,10 @@ export type {
 } from './project-source.js';
 export { readSeed, applySeed } from './seed.js';
 export type { Seed, SeedResource, SeedEvent, AppliedSeed } from './seed.js';
-export { hookdeckRuntime, hookdeckMcpServer } from './runtime.js';
+export {
+  hookdeckRuntime,
+  hookdeckMcpServer,
+  docsOnlyRuntime,
+} from './runtime.js';
 export type { HookdeckRuntimeOptions } from './runtime.js';
+export { CAPABILITY_SHEET } from './capabilities.js';

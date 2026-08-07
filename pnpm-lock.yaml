@@ -75,6 +75,9 @@ importers:
       '@hookdeck-evals/core':
         specifier: workspace:*
         version: link:packages/core
+      '@hookdeck-evals/hookdeck':
+        specifier: workspace:*
+        version: link:packages/hookdeck
       '@hookdeck-evals/sandbox':
         specifier: workspace:*
         version: link:packages/sandbox

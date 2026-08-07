@@ -1,25 +1,18 @@
 import { z } from 'zod';
 
-export const evalStageSchema = z.enum([
-  'build',
-  'deploy',
-  'investigate',
-  'resolve',
-]);
+// `deploy` is deliberately absent: Event Gateway is SaaS with no deploy step.
+// It becomes real if we cover config promotion between environments or
+// self-hosting Outpost.
+export const evalStageSchema = z.enum(['build', 'investigate', 'resolve']);
 export const EVAL_STAGES = evalStageSchema.options;
 export type EvalStage = z.infer<typeof evalStageSchema>;
 
-// Maps to the "Products" hierarchy on https://app.notion.com/p/supabase/Supa-bench-condensed-3675004b775f8066824ce11e9fd06304?source=copy_link#3675004b775f8061ad05e804ec30d425.
+// `inspect` is listed ahead of any scenario using it, so the first Inspect
+// scenario is a new folder rather than a schema change.
 export const evalProductSchema = z.enum([
-  'database',
-  'auth',
-  'storage',
-  'edge-functions',
-  'realtime',
-  'cron',
-  'queues',
-  'vectors',
-  'data-api',
+  'event-gateway',
+  'outpost',
+  'inspect',
 ]);
 export const EVAL_PRODUCTS = evalProductSchema.options;
 export type EvalProduct = z.infer<typeof evalProductSchema>;
@@ -27,15 +20,16 @@ export type EvalProduct = z.infer<typeof evalProductSchema>;
 // Cross-cutting areas agents need to use products effectively. A closed set,
 // not freeform: each value is a tracked benchmark dimension.
 export const evalTopicSchema = z.enum([
-  'rls',
-  'security',
-  'migrations',
-  'sql',
+  'signature-verification',
+  'filtering',
+  'transformations',
+  'retries',
+  'rate-limits',
+  'deduplication',
+  'local-dev',
   'sdk',
-  'observability',
-  'self-hosting',
-  'tests',
-  'declarative-schema',
+  'alerting',
+  'capabilities',
 ]);
 export const EVAL_TOPICS = evalTopicSchema.options;
 export type EvalTopic = z.infer<typeof evalTopicSchema>;
@@ -107,7 +101,7 @@ export type EvalMetadata = {
   topic: EvalTopic[];
   suite: EvalSuite;
   interface?: EvalInterface;
-  /** Supabase CLI version this scenario requires (sandbox evals only). */
+  /** Hookdeck CLI version this scenario requires (sandbox evals only). */
   cliVersion?: string;
   /**
    * Local-stack services this scenario needs (sandbox evals only); everything
