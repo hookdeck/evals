@@ -7,12 +7,18 @@ export const evalStageSchema = z.enum(['build', 'investigate', 'resolve']);
 export const EVAL_STAGES = evalStageSchema.options;
 export type EvalStage = z.infer<typeof evalStageSchema>;
 
-// `inspect` is listed ahead of any scenario using it, so the first Inspect
+// `console` is listed ahead of any scenario using it, so the first Console
 // scenario is a new folder rather than a schema change.
+//
+// Console is the no-account webhook inspector as it is named today. It is
+// expected to be relaunched under a new name (Inspect has been the working
+// title), at which point this value gets renamed and any scenarios using it
+// move with it. Naming it for what ships today rather than for a rename that
+// has not happened keeps the published dimension honest.
 export const evalProductSchema = z.enum([
   'event-gateway',
   'outpost',
-  'inspect',
+  'console',
 ]);
 export const EVAL_PRODUCTS = evalProductSchema.options;
 export type EvalProduct = z.infer<typeof evalProductSchema>;
