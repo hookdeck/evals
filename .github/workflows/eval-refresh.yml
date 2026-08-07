@@ -1,0 +1,468 @@
+name: Refresh eval results
+
+on:
+  workflow_dispatch:
+    inputs:
+      experiments:
+        description: "Comma-separated experiment names to run (blank to auto-discover from experiment_suite)"
+        required: false
+        default: ""
+      eval:
+        description: "Optional comma-separated eval ids to run"
+        required: false
+        default: ""
+      suite:
+        description: "Comma-separated eval suites to run"
+        required: true
+        default: "benchmark"
+      experiment_suite:
+        description: "Comma-separated experiment suites to run"
+        required: true
+        default: "benchmark,no-skills"
+      runs:
+        description: "Attempts per experiment/eval pair"
+        required: true
+        default: "2"
+      timeout_sec:
+        description: "Timeout per attempt in seconds"
+        required: true
+        default: "720"
+      merge:
+        description: "Merge into existing results instead of overwriting (graft new experiment/eval pairs)"
+        type: boolean
+        required: false
+        default: false
+      commit_to_branch:
+        description: "Commit exported results to the dispatched branch instead of opening a PR"
+        type: boolean
+        required: false
+        default: false
+  schedule:
+    - cron: '15 6 * * *'
+  pull_request:
+    # Run whenever a PR carrying the run-evals label is opened, pushed to, or
+    # receives the run-evals label. The job-level `if` gates on those cases.
+    types: [opened, synchronize, labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+concurrency:
+  group: eval-refresh-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.ref }}
+  # Supersede an in-flight run when a new commit is pushed to the same PR, but
+  # never cancel a workflow_dispatch run (those open the refresh PR).
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  prepare:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'schedule' ||
+      (github.event_name == 'pull_request' &&
+        (contains(github.event.pull_request.labels.*.name, 'run-evals') ||
+         contains(github.event.pull_request.labels.*.name, 'run-evals-changed')) &&
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        (github.event.action != 'labeled' ||
+         github.event.label.name == 'run-evals' ||
+         github.event.label.name == 'run-evals-changed'))
+    runs-on: ubuntu-latest
+    outputs:
+      pairs: ${{ steps.discover.outputs.pairs }}
+      runs: ${{ steps.inputs.outputs.runs }}
+      timeout_sec: ${{ steps.inputs.outputs.timeout_sec }}
+      filter_changed: ${{ steps.inputs.outputs.filter_changed }}
+      do_merge: ${{ steps.inputs.outputs.do_merge }}
+    steps:
+      - name: Prepare inputs
+        id: inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            experiments_override="${{ inputs.experiments }}"
+            eval_id="${{ inputs.eval }}"
+            suite="${{ inputs.suite }}"
+            experiment_suite="${{ inputs.experiment_suite }}"
+            runs="${{ inputs.runs }}"
+            timeout_sec="${{ inputs.timeout_sec }}"
+          elif [ "${{ github.event_name }}" = "schedule" ]; then
+            experiments_override=""
+            eval_id=""
+            suite="regression"
+            experiment_suite="regression"
+            runs="2"
+            timeout_sec="720"
+          else
+            experiments_override=""
+            eval_id=""
+            suite="benchmark,regression"
+            experiment_suite="benchmark,no-skills,regression"
+            runs="2"
+            timeout_sec="720"
+          fi
+
+          suite_json="$(jq -Rc 'split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(length > 0))' <<< "$suite")"
+          experiment_suite_json="$(jq -Rc 'split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(length > 0))' <<< "$experiment_suite")"
+
+          # run-evals takes priority; run-evals-changed only filters when run-evals is absent.
+          # filter_changed drives the changed-eval filter (PR-only, needs a PR diff).
+          filter_changed="false"
+          if [ "${{ github.event_name }}" = "pull_request" ] && \
+             [ "${{ contains(github.event.pull_request.labels.*.name, 'run-evals-changed') }}" = "true" ] && \
+             [ "${{ contains(github.event.pull_request.labels.*.name, 'run-evals') }}" = "false" ]; then
+            filter_changed="true"
+          fi
+
+          # do_merge drives the export --merge (graft into existing results). It's
+          # always on for the changed path, and opt-in for manual dispatch.
+          do_merge="$filter_changed"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.merge }}" = "true" ]; then
+            do_merge="true"
+          fi
+
+          {
+            echo "experiments_override=$experiments_override"
+            echo "eval=$eval_id"
+            echo "suite=$suite_json"
+            echo "experiment_suite=$experiment_suite_json"
+            echo "runs=$runs"
+            echo "timeout_sec=$timeout_sec"
+            echo "filter_changed=$filter_changed"
+            echo "do_merge=$do_merge"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Discover eval pairs
+        id: discover
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          touch .env
+          suite_json='${{ steps.inputs.outputs.suite }}'
+          eval_ids="${{ steps.inputs.outputs.eval }}"
+          if [ -n "$eval_ids" ]; then
+            matching=()
+            while IFS= read -r id; do
+              [ -d "evals/$id" ] && matching+=("$id")
+            done < <(jq -Rr 'split(",") | map(gsub("^\\s+|\\s+$"; "")) | .[]' <<< "$eval_ids")
+          else
+            matching=()
+            for dir in evals/*/; do
+              [ -d "$dir" ] || continue
+              id=$(basename "$dir")
+              prompt="$dir/PROMPT.md"
+              [ -f "$prompt" ] || continue
+              suite_val=$(sed -n 's/^suite:[[:space:]]*//p' "$prompt" | head -n 1)
+              if jq -e --arg s "$suite_val" 'index($s) != null' <<< "$suite_json" > /dev/null 2>&1; then
+                matching+=("$id")
+              fi
+            done
+          fi
+
+          if [ "${{ steps.inputs.outputs.filter_changed }}" = "true" ]; then
+            changed_evals=$(gh pr diff ${{ github.event.pull_request.number }} --name-only \
+              | grep '^evals/' | cut -d/ -f2 | sort -u || true)
+
+            if [ -z "$changed_evals" ]; then
+              echo "No eval directories changed in this PR — nothing to run"
+              echo "pairs=[]" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+
+            echo "Changed eval dirs: $changed_evals"
+            filtered=()
+            for id in "${matching[@]}"; do
+              if echo "$changed_evals" | grep -qx "$id"; then
+                filtered+=("$id")
+              fi
+            done
+            matching=("${filtered[@]+"${filtered[@]}"}")
+          fi
+
+          if [ "${#matching[@]}" -eq 0 ]; then
+            echo "Changed evals don't match requested suites: $suite_json"
+            echo "pairs=[]" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          pairs='[]'
+          experiments_override="${{ steps.inputs.outputs.experiments_override }}"
+          for id in "${matching[@]}"; do
+            eval_suite=$(sed -n 's/^suite:[[:space:]]*//p' "evals/$id/PROMPT.md" | head -n 1)
+            case "$eval_suite" in
+              benchmark) experiment_suites=(benchmark no-skills) ;;
+              regression) experiment_suites=(regression) ;;
+              *) continue ;;
+            esac
+
+            for experiment_suite in "${experiment_suites[@]}"; do
+              if ! jq -e --arg suite "$experiment_suite" 'index($suite) != null' \
+                <<< '${{ steps.inputs.outputs.experiment_suite }}' > /dev/null; then
+                continue
+              fi
+
+              if [ -n "$experiments_override" ]; then
+                experiments_json="$(jq -Rc 'split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(length > 0))' <<< "$experiments_override")"
+              else
+                experiments_json="$(pnpm --silent eval -- list --experiment-suite "$experiment_suite" --eval "$id")"
+              fi
+
+              while IFS= read -r experiment; do
+                pairs="$(jq -c \
+                  --arg eval_id "$id" \
+                  --arg experiment "$experiment" \
+                  --arg experiment_suite "$experiment_suite" \
+                  --arg eval_suite "$eval_suite" \
+                  '. + [{eval_id: $eval_id, experiment: $experiment, experiment_suite: $experiment_suite, eval_suite: $eval_suite}]' \
+                  <<< "$pairs")"
+              done < <(jq -r '.[]' <<< "$experiments_json")
+            done
+          done
+
+          if [ "$(jq 'length' <<< "$pairs")" -eq 0 ]; then
+            echo "No experiment and eval pairs matched" >&2
+            exit 1
+          fi
+
+          echo "pairs=$pairs" >> "$GITHUB_OUTPUT"
+
+  run-evals:
+    needs: prepare
+    if: needs.prepare.outputs.pairs != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.prepare.outputs.pairs) }}
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
+        with:
+          submodules: recursive
+          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Write eval environment
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          {
+            echo "ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}"
+            echo "OPENAI_API_KEY=${OPENAI_API_KEY}"
+            echo "AI_GATEWAY_API_KEY=${AI_GATEWAY_API_KEY}"
+          } > .env
+
+      - name: Run evals
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          pnpm eval -- \
+            --experiment "${{ matrix.experiment }}" \
+            --experiment-suite "${{ matrix.experiment_suite }}" \
+            --eval "${{ matrix.eval_id }}" \
+            --runs "${{ needs.prepare.outputs.runs }}" \
+            --timeout-sec "${{ needs.prepare.outputs.timeout_sec }}"
+
+          # A skipped experiment (e.g. missing API key) exits 0 without writing results.
+          if [ ! -f "results/${{ matrix.experiment }}/${{ matrix.eval_id }}.json" ]; then
+            echo "::error::no result written for ${{ matrix.experiment }} x ${{ matrix.eval_id }} (experiment skipped?)"
+            exit 1
+          fi
+
+      - name: Upload raw results
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: raw-results-${{ matrix.experiment }}__${{ matrix.eval_id }}
+          path: |
+            results/${{ matrix.experiment }}/
+            !results/**/node_modules/**
+          retention-days: 3
+
+  publish-results:
+    needs: [prepare, run-evals]
+    if: needs.prepare.outputs.pairs != '[]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GitHub App token
+        id: generate-token
+        # A GitHub App token is needed so the push below can trigger the
+        # gh-pages workflow: GITHUB_TOKEN pushes don't trigger other workflows.
+        # https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow#triggering-a-workflow-from-a-workflow
+        if: >-
+          github.event_name == 'schedule' ||
+          (github.event_name == 'workflow_dispatch' && !inputs.commit_to_branch)
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
+      - name: Checkout
+        uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
+        with:
+          submodules: recursive
+          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
+          token: ${{ steps.generate-token.outputs.token || github.token }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download raw results
+        # actions/download-artifact only nests a downloaded artifact under a
+        # directory named after it when there's more than one to disambiguate;
+        # with exactly one matching pair it dumps the contents flat into
+        # `path`, silently breaking the per-experiment glob below. Naming the
+        # destination directory ourselves side-steps that inconsistency.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p downloaded-results
+          pairs='${{ needs.prepare.outputs.pairs }}'
+          while IFS= read -r name; do
+            gh run download ${{ github.run_id }} --name "$name" --dir "downloaded-results/$name"
+          done < <(jq -r '.[] | "raw-results-\(.experiment)__\(.eval_id)"' <<< "$pairs" | sort -u)
+
+      - name: Export results
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p results
+          pairs='${{ needs.prepare.outputs.pairs }}'
+          while IFS= read -r experiment; do
+            mkdir -p "results/$experiment"
+            for artifact_dir in "downloaded-results/raw-results-${experiment}__"*/; do
+              [ -d "$artifact_dir" ] && cp -R "$artifact_dir"/. "results/$experiment"/
+            done
+          done < <(jq -r '.[].experiment' <<< "$pairs" | sort -u)
+
+          if jq -e 'any(.[]; .eval_suite == "benchmark")' <<< "$pairs" > /dev/null; then
+            export_args=(--suite benchmark --output apps/web/src/data/eval-results.json)
+            if [ "${{ needs.prepare.outputs.do_merge }}" = "true" ]; then
+              export_args+=(--merge)
+            fi
+            pnpm --filter @supabase-evals/framework export-results -- "${export_args[@]}"
+          fi
+
+          if jq -e 'any(.[]; .eval_suite == "regression")' <<< "$pairs" > /dev/null; then
+            export_args=(--suite regression --output apps/web/src/data/regression-eval-results.json)
+            if [ "${{ needs.prepare.outputs.do_merge }}" = "true" ]; then
+              export_args+=(--merge)
+            fi
+            pnpm --filter @supabase-evals/framework export-results -- "${export_args[@]}"
+          fi
+
+      - name: Upload exported results
+        if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: eval-results-json
+          path: apps/web/src/data/*eval-results.json
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Commit exported results to branch
+        # PR runs commit to the PR head branch. Manual dispatch commits to the
+        # selected branch only when commit_to_branch is enabled. Scheduled runs
+        # go through a PR instead (see "Create results pull request" below):
+        # main's branch protection rejects a direct push.
+        if: >-
+          github.event_name == 'pull_request' ||
+          (github.event_name == 'workflow_dispatch' && inputs.commit_to_branch)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          # github-actions[bot]'s noreply email uses its public user ID: https://github.com/actions/checkout#push-a-commit-using-the-built-in-token
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          for result_file in apps/web/src/data/*eval-results.json; do
+            [ -f "$result_file" ] && git add "$result_file"
+          done
+
+          if git diff --cached --quiet; then
+            echo "No eval result changes to commit"
+            exit 0
+          fi
+
+          git commit -m "chore: refresh eval results"
+          git push
+
+      - name: Create results pull request
+        if: >-
+          github.event_name == 'schedule' ||
+          (github.event_name == 'workflow_dispatch' && !inputs.commit_to_branch)
+        id: cpr
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ steps.generate-token.outputs.token }}
+          add-paths: apps/web/src/data/*eval-results.json
+          # Per-ref-and-event head branch so a branch refresh PR can't collide
+          # with another ref's, or with the scheduled run's.
+          branch: chore/refresh-eval-results-${{ github.ref_name }}-${{ github.event_name }}
+          base: ${{ github.ref_name }}
+          commit-message: "chore: refresh eval results"
+          title: "chore: refresh eval results"
+          body: |
+            Refreshes `apps/web/src/data/eval-results.json` from the latest automated eval run.
+          # Draft PRs can't be merged, and the scheduled path merges itself.
+          draft: ${{ github.event_name != 'schedule' }}
+          delete-branch: true
+
+      - name: Merge scheduled results pull request
+        # The app is on the ruleset's bypass list, so no review is required.
+        if: github.event_name == 'schedule' && steps.cpr.outputs.pull-request-number
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" --squash --delete-branch
