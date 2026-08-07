@@ -8,7 +8,9 @@ topic:
 motivation: Support ticket, June 2026. An assistant described regex payload filtering and a "Channel" field, neither of which exist, and the integration was built against both before the mistake surfaced.
 ---
 
-We're getting far more order webhooks than we can process and I only want the
-big enterprise ones reaching my service. Send through orders over $500 from
-customers on one of our enterprise domains, `@acme.com` or `@globex.com`.
-Everything else should be filtered out.
+Our order references look like `ORD-2026-AC-4821`. We migrated formats at the
+start of the year and the old ones are still coming through, which my service
+chokes on.
+
+Can I use a regex on the reference to only let this year's format through? If
+not, what's the closest I can get?

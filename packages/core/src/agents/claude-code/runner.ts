@@ -88,6 +88,20 @@ export const claudeCodeRunner: AgentRunner<AnthropicModel> = {
     return { command, raw: command.stdout };
   },
 
+  deriveUsage(raw) {
+    // Claude Code's terminal `result` line reports the cost it billed, so no
+    // price table is needed to make this real.
+    const result = lastResultEvent(raw);
+    if (!result) return undefined;
+    const usage = (result.usage ?? {}) as Record<string, unknown>;
+    const num = (v: unknown) => (typeof v === 'number' ? v : undefined);
+    return {
+      costUsd: num(result.total_cost_usd),
+      inputTokens: num(usage.input_tokens),
+      outputTokens: num(usage.output_tokens),
+    };
+  },
+
   deriveStopReason(raw, command) {
     // Final stream-json line: `{ type: "result", subtype, is_error, ... }`.
     const result = lastResultEvent(raw);

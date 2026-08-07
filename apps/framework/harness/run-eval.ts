@@ -13,6 +13,7 @@ import {
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { jsonSchema, tool, type ToolSet } from 'ai';
+import type { AgentRunResult } from '@hookdeck-evals/core';
 import { parseEvalMarkdown } from '@hookdeck-evals/core/eval-markdown';
 import {
   createBareSandbox,
@@ -341,6 +342,7 @@ async function runOne(
     transcript: TranscriptPart[];
     agentReport: string;
     stoppedReason: string;
+    usage?: AgentRunResult['usage'];
   }
 > {
   const prompt = parseEvalMarkdown(
@@ -370,6 +372,7 @@ async function runOne(
   let lastTranscript: TranscriptPart[] = [];
   let lastAgentReport = '';
   let lastStoppedReason = 'not_started';
+  let lastUsage: AgentRunResult['usage'];
 
   for (let attempt = 1; attempt <= RUNS; attempt += 1) {
 
@@ -417,6 +420,7 @@ async function runOne(
     lastTranscript = run.transcript;
     lastAgentReport = run.agentReport;
     lastStoppedReason = run.stoppedReason;
+    lastUsage = run.usage;
     last = await (scorer as ToolScorer)({
       ...session.scoringContext,
       toolCalls: run.toolCalls,
@@ -438,6 +442,7 @@ async function runOne(
         transcript: run.transcript,
         agentReport: run.agentReport,
         stoppedReason: run.stoppedReason,
+        usage: run.usage,
       };
     }
     logRetryAttempt(expName, ev, attempt, last);
@@ -452,6 +457,7 @@ async function runOne(
     transcript: lastTranscript,
     agentReport: lastAgentReport,
     stoppedReason: lastStoppedReason,
+    usage: lastUsage,
   };
 }
 
@@ -464,14 +470,19 @@ function formatPlanLine(
   return `${head} mode=tools runtime=${config.runtime.id} model=${config.agent.modelId}`;
 }
 
-function formatRunSummary(res: ScoreResult & { attempts: number }): string {
-  const parts: string[] = [];
-  if (res.checks?.length) {
-    const passed = res.checks.filter((check) => check.passed).length;
-    parts.push(`checks ${passed}/${res.checks.length}`);
+function formatRunSummary(
+  res: ScoreResult & { attempts: number; usage?: AgentRunResult['usage'] }
+): string {
+  const passed = res.checks?.filter((c) => c.passed).length ?? 0;
+  const total = res.checks?.length ?? 0;
+  const parts = [`checks ${passed}/${total}`, `attempts ${res.attempts}`];
+  // Cost per run is what the cadence decision rests on, so show it inline
+  // rather than only in the JSON.
+  if (res.usage?.costUsd !== undefined) {
+    parts.push(`$${res.usage.costUsd.toFixed(2)}`);
+  } else if (res.usage?.outputTokens !== undefined) {
+    parts.push(`${res.usage.outputTokens} out-tok`);
   }
-  parts.push(`attempts ${res.attempts}`);
-
   return parts.join(', ');
 }
 

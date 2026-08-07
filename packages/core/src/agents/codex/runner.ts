@@ -100,6 +100,29 @@ export const codexRunner: AgentRunner<CodexModel> = {
     return { command, raw: command.stdout };
   },
 
+  deriveUsage(raw) {
+    // Codex reports token counts on `turn.completed`, not a cost. Cost has to
+    // be derived from a price table, which we do not keep yet, so only the
+    // tokens are recorded and the cost stays undefined rather than guessed.
+    if (!raw) return undefined;
+    let input: number | undefined;
+    let output: number | undefined;
+    for (const line of raw.split('\n')) {
+      if (!line.includes('turn.completed')) continue;
+      try {
+        const usage = (JSON.parse(line) as { usage?: Record<string, unknown> })
+          .usage;
+        if (typeof usage?.input_tokens === 'number') input = usage.input_tokens;
+        if (typeof usage?.output_tokens === 'number')
+          output = usage.output_tokens;
+      } catch {
+        // a non-JSON line is not a usage record
+      }
+    }
+    if (input === undefined && output === undefined) return undefined;
+    return { inputTokens: input, outputTokens: output };
+  },
+
   deriveStopReason(raw, command) {
     // `codex exec` exits 0 even when a turn fails, so the process result alone
     // can't tell a clean stop from an agent-level failure. Trust the terminal

@@ -107,7 +107,26 @@ export interface AgentRunner<M extends string = string> {
    * result. Falls back to a process-exit-based reason when omitted.
    */
   deriveStopReason?(raw: string | undefined, command: CommandResult): string;
+  /**
+   * Optional: what the run consumed. Agents report this differently — Claude
+   * Code gives a cost directly, Codex gives token counts — so both shapes are
+   * carried and cost is derived where the agent does not provide it.
+   *
+   * This is what makes the cost-per-run figure in the plan checkable against
+   * real runs rather than extrapolated.
+   */
+  deriveUsage?(
+    raw: string | undefined,
+    command: CommandResult
+  ): RunUsage | undefined;
 }
+
+export type RunUsage = {
+  inputTokens?: number;
+  outputTokens?: number;
+  /** Only when the agent reports it directly. */
+  costUsd?: number;
+};
 
 /**
  * Everything the harness needs to know about one CLI agent, bundled so each

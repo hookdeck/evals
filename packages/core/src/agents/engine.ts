@@ -131,6 +131,7 @@ export function createCliAgent<M extends string = string>(
         steps: adapted.steps,
         stoppedReason:
           runner.deriveStopReason?.(raw, command) ?? processStopReason(command),
+        usage: runner.deriveUsage?.(raw, command),
       };
     },
   };

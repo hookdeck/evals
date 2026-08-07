@@ -1,12 +1,21 @@
 {
   "resources": [
-    { "kind": "sources", "ref": "orders", "body": { "name": "orders" } },
     {
-      "kind": "destinations", "ref": "fulfilment",
+      "kind": "sources",
+      "ref": "orders",
+      "body": {
+        "name": "orders"
+      }
+    },
+    {
+      "kind": "destinations",
+      "ref": "fulfilment",
       "body": {
         "name": "fulfilment-api",
         "type": "HTTP",
-        "config": { "url": "https://mock.hookdeck.com" }
+        "config": {
+          "url": "https://mock.hookdeck.com"
+        }
       }
     },
     {
@@ -21,19 +30,31 @@
   "events": [
     {
       "source": "orders",
-      "body": { "order_id": "ord_1001", "total": 1250, "customer": { "email": "priya@acme.com", "name": "Priya S" } }
+      "body": {
+        "reference": "ORD-2026-AC-4821",
+        "total": 1250
+      }
     },
     {
       "source": "orders",
-      "body": { "order_id": "ord_1002", "total": 89, "customer": { "email": "sam@globex.com", "name": "Sam T" } }
+      "body": {
+        "reference": "ORD-2026-GX-1002",
+        "total": 89
+      }
     },
     {
       "source": "orders",
-      "body": { "order_id": "ord_1003", "total": 4300, "customer": { "email": "dev@hobbyist.dev", "name": "Dev K" } }
+      "body": {
+        "reference": "2025/ORD/55912",
+        "total": 4300
+      }
     },
     {
       "source": "orders",
-      "body": { "order_id": "ord_1004", "total": 640, "customer": { "email": "jo@globex.com", "name": "Jo M" } }
+      "body": {
+        "reference": "LEGACY-88213",
+        "total": 640
+      }
     }
   ]
 }

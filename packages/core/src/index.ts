@@ -90,6 +90,8 @@ export { createParser, supportedParsers } from './agents/registry.js';
 export { adaptTranscript } from './parsers/adapt.js';
 export type { AdaptedTranscript } from './parsers/adapt.js';
 export type { AgentTranscriptParser } from './parsers/types.js';
+export type { RunUsage } from './agents/types.js';
+import type { RunUsage } from './agents/types.js';
 export type {
   ToolName,
   TranscriptEvent,
@@ -232,6 +234,8 @@ export type AgentRunResult = {
   transcript: TranscriptPart[];
   steps: number;
   stoppedReason: string;
+  /** Tokens and, where the agent reports it, cost. */
+  usage?: RunUsage;
 };
 
 export type AgentHarness = {
