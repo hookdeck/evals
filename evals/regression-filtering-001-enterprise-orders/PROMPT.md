@@ -5,7 +5,7 @@ product:
   - event-gateway
 topic:
   - filtering
-motivation: Crisp incident, June 2026 - a customer's assistant invented regex payload filtering and a "Channel" field, and the customer built against both before discovering neither exists.
+motivation: Support ticket, June 2026. An assistant described regex payload filtering and a "Channel" field, neither of which exist, and the integration was built against both before the mistake surfaced.
 ---
 
 We're getting far more order webhooks than we can process and I only want the

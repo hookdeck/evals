@@ -5,7 +5,7 @@ product:
   - event-gateway
 topic:
   - capabilities
-motivation: Support corpus gaps #2 and #3 - assistants state a wrong payload ceiling, and customers design around the wrong number or chase the wrong cause when ingestion silently rejects requests.
+motivation: Recurring support pattern. Assistants state an inbound payload ceiling from memory, and the wrong figure gets designed around before anyone checks it.
 ---
 
 Some of our order events just aren't showing up. Most come through fine but a

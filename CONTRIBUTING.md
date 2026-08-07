@@ -20,9 +20,27 @@ If your scenario contains anything not self-explanatory, consider adding a `READ
 
 ## Eval criteria
 
-Every new scenario needs a `motivation:` defined in `PROMPT.md` frontmatter that cites some evidence for the scenario being a part of the Supabase user journey, ideally a pain point. Examples include support tickets, GitHub issues, Linear issues, or social media threads.
+Every new scenario needs a `motivation:` in its `PROMPT.md` frontmatter citing
+evidence that developers actually attempt this, ideally a pain point: a support
+ticket, a GitHub issue, or a community thread.
 
-For new **benchmark** scenarios, we need to see at least one agent, ideally more, failing the new scenario to ensure we're getting signal from results. If agents are already acing your scenario, consider hardening it with a more ambiguous or misleading prompt, unusual seed data, or subtle footgun. Run locally and review agent failures to ensure they're legitimate reasoning mistakes, not eval framework limitations. We also want to keep benchmarks representative of the user journey. Review the [Evals coverage table](https://app.hex.tech/supabase/app/Evals-033abDlwqlTbW5ktgwFffU/latest) and make sure you're not over-indexing on a niche use case.
+**Motivations are published.** Write them so they carry the evidence without
+disclosing anything: no internal tool names, no customer names or identifying
+detail, no internal ticket URLs. "Support ticket, June 2026. An assistant
+described a filtering capability that does not exist" is enough. If a scenario
+needs internal context to be understood, that belongs in a comment in `EVAL.ts`,
+not in the published frontmatter.
+
+For new **benchmark** scenarios, we need to see at least one agent, ideally more,
+failing the new scenario to ensure we're getting signal from results. If agents
+are already acing your scenario, consider hardening it with a more ambiguous or
+misleading prompt, unusual seed data, or a subtle footgun. Run locally and review
+agent failures to ensure they're legitimate reasoning mistakes, not eval
+framework limitations.
+
+Regression scenarios are different: they guard against a mistake we have already
+seen and fixed, so all agents passing is the expected and desired state. Their
+value is catching it coming back.
 
 ## Writing prompts
 

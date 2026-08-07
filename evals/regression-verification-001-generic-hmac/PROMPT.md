@@ -5,7 +5,7 @@ product:
   - event-gateway
 topic:
   - signature-verification
-motivation: Support corpus gap #5 - assistants misstate the HMAC options a source accepts, and a wrong encoding or header name fails silently because the symptom looks like the provider misbehaving.
+motivation: Recurring support pattern. Assistants misstate the HMAC options a source accepts; a wrong encoding or header name fails silently, and the symptom looks like the provider misbehaving.
 ---
 
 I'm receiving webhooks from an internal service that isn't one of the providers
