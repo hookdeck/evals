@@ -1,13 +1,33 @@
-# Supabase Evals
+# Hookdeck Evals
 
-This repo answers how well can agents use Supabase across various tasks.
+A public, continuously run benchmark of how well AI coding agents build with and
+operate [Hookdeck](https://hookdeck.com): Event Gateway and Outpost.
+
+Results are published at [hookdeck.com/evals](https://hookdeck.com/evals), failures
+included.
+
+## Derived from supabase/evals
+
+This project is a copy of [supabase/evals](https://github.com/supabase/evals)
+(Apache-2.0), imported verbatim at commit `3672889` and modified from there. Their
+[launch post](https://supabase.com/blog/introducing-supabase-evals) explains the
+design we build on.
+
+We kept their agent runners and transcript parsers, container sandbox, eval and
+experiment discovery, suite runner, results export, and results web app. We removed
+the Supabase-specific runtime (a mock Management API and a Dockerised local stack) and
+replaced it with a Hookdeck project provisioner, because Hookdeck is SaaS with a
+complete public API and scoring can query real project state.
+
+`CHANGES.md` states the modifications in full. `LICENSE` and `NOTICE` carry the
+upstream copyright.
 
 ## Quickstart
 
 Clone with submodules:
 
 ```bash
-git clone --recurse-submodules git@github.com:supabase/evals.git
+git clone --recurse-submodules git@github.com:hookdeck/evals.git
 ```
 
 If you already cloned without submodules:
@@ -23,7 +43,7 @@ pnpm install
 cp .env.example .env
 ```
 
-Agent-backed runs require the relevant provider key in `.env` (e.g. `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`)
+Agent-backed runs require the relevant provider key in `.env` (e.g. `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`), plus `HOOKDECK_API_KEY` for the project scoring runs against.
 
 ## Concepts
 
@@ -32,8 +52,7 @@ Agent-backed runs require the relevant provider key in `.env` (e.g. `OPENAI_API_
 - An **eval suite** is a named set of evals to run together.
 - An **experiment suite** is a named set of experiments with related configurations, for head to head comparisons.
 - An **agent** is the model driver that receives the eval prompt and calls the configured tools.
-- A **runtime** is the local Supabase-like environment and tool surface an experiment gives to the agent.
-- `platform-lite` exposes a Supabase Management API-compatible HTTP surface backed by [`@supabase/lite`](https://github.com/supabase/supabase-lite), so real tools like `@supabase/mcp-server-supabase` can run against a lightweight project.
+- A **runtime** is the environment and tool surface an experiment gives to the agent. Ours leases a throwaway Hookdeck project and exposes the API to scorers.
 
 ## Running evals
 
