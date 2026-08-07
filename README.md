@@ -47,7 +47,7 @@ Agent-backed runs require the relevant provider key in `.env` (e.g. `OPENAI_API_
 
 ## Concepts
 
-- An **eval** is one scenario under `evals/<id>/`. It contains the prompt, scorer, and optional starting state for the two environments: `remote/` (the hosted project) and `local/` (the agent's working files).
+- An **eval** is one scenario under `evals/<id>/`. It contains the prompt, the scorer, and optional starting state: `remote/` (the Hookdeck project the agent finds) and `local/` (files in the agent's workspace).
 - An **experiment** is one agent/runtime/model setup under `experiments/<name>.ts`.
 - An **eval suite** is a named set of evals to run together.
 - An **experiment suite** is a named set of experiments with related configurations, for head to head comparisons.
@@ -103,10 +103,13 @@ Every eval contains:
 
 1. `PROMPT.md` - frontmatter metadata plus the task description the agent sees.
 2. `EVAL.ts` - a default-exported scorer.
-3. Optional `remote/` - the hosted project's starting state, seeded into platform-lite: `project.sql` (database), `logs.jsonl` (observability logs), `functions/` (already-deployed edge functions).
-4. Optional `local/` - the agent's starting files, copied into the sandbox workspace the agent works in (absent means an empty workspace, or no sandbox at all for tools evals).
+3. Optional `remote/seed.json` - the Hookdeck project state the agent starts from: resources to create, and events to send at a seeded source. Events are seeded by sending them, because there is no create-event API.
+4. Optional `local/` - files copied into the agent's workspace before it starts.
 
-The two directories mirror Supabase's two environments: `remote/` describes what the customer's hosted project already looks like, `local/` describes what the developer's working directory already looks like.
+Put the context an agent needs in the seed, not the prompt. The prompt is what a real
+person would type; everything needed to work the task out should be discoverable from
+project state. A scenario with no seed gives a good agent nothing to discover, so it
+asks a clarifying question and scores zero for behaving correctly.
 
 `PROMPT.md` frontmatter drives eval discovery and site filters:
 
@@ -115,46 +118,39 @@ The two directories mirror Supabase's two environments: `remote/` describes what
 stage: build
 suite: benchmark
 product:
-  - database
-  - auth
+  - event-gateway
 topic:
-  - rls
-  - security
-motivation: AI-123
+  - filtering
+motivation: Support ticket, June 2026. Short, and safe to publish.
 ---
 ```
 
 Allowed metadata values are defined in `packages/core/src/eval-metadata.ts`.
 `suite` is required on every eval (`benchmark`, `regression`, or `other`). Run an eval suite with `--suite regression` / `--suite other`. Select experiment suites separately with `--experiment-suite benchmark` or `--experiment-suite no-skills`.
 
-## Eval Modes
+## How a run works
 
-There are two runtimes, chosen automatically per eval:
+Every run follows the same shape:
 
-- **Tools evals** run the agent against the experiment's MCP/tool surface (no `local/` directory, no `interface: cli`), then score the resulting project state or report.
-- **Local-stack evals** run the agent inside a Docker sandbox — a `bash` tool plus file tools with the real Supabase CLI installed — so it can run `supabase init/start/db/test` against a real local stack. An eval uses this runtime when it ships a `local/` workspace **or** declares `interface: cli` (the latter covers bootstrap scenarios that start from an empty workspace).
+1. The experiment's runtime **leases a Hookdeck project** and resets it to pristine.
+2. The scenario's `remote/seed.json` is applied, if it has one.
+3. A **Docker sandbox** is started with the agent's skills installed and
+   `HOOKDECK_API_KEY` in its environment, so the CLI and the REST API both work.
+4. The agent runs against whatever tool surface the experiment gives it.
+5. The scorer queries the project through `ctx.api` and returns checks.
+6. The project is released and reset.
 
-`interface` (`mcp` | `cli`) is otherwise a benchmark dimension (a cross-team KPI label), not the runtime switch — the `local/` directory and `interface: cli` are what decide whether a sandbox boots.
+Runs need a Docker daemon, and `HOOKDECK_API_KEY` for the project scoring runs
+against. See `.env.example`.
 
-### Local-stack evals
+**Reset is to pristine, not to empty.** A new Hookdeck project ships with four default
+issue triggers. Deleting them would leave the project unlike any real customer's. The
+first acquire snapshots what the project contains and every reset deletes only what a
+run added.
 
-The Supabase CLI is the agent's tool; the **local stack** (the Docker services `supabase start` runs on a developer machine) is the environment it acts on — distinct from the remote/hosted platform that platform-lite mocks. Experiments declare the environment like MCP servers and skills: add `localStack: localStackRuntime()` (from [`@hookdeck-evals/sandbox`](packages/sandbox/src/local-stack-runtime.ts)); experiments without it skip these evals. Skills compose with the CLI tools as usual, and tool surfaces merge, so an experiment can in principle expose MCP and CLI together.
-
-**Scoring uses host tooling against an exported workspace.** After the agent finishes, the harness copies its workspace out of the sandbox to the host (`docker cp`), so scorers can run the repo-root `vite`/`vitest` against the produced files without that toolchain having to exist in the sandbox — the same build/test scoring former "project" evals used. Scorers may also run commands and SQL **inside** the sandbox (against the live stack) via the scoring context.
-
-Local-stack evals require a running Docker daemon. Each attempt boots a fresh sandbox container that mounts the host Docker socket, so `supabase start` spawns the local stack as sibling containers; the sandbox runs with host networking, so their published ports land directly on the sandbox's `127.0.0.1` default ports. Supabase's default host ports (54321-54329) must be free — stop any local `supabase start` stacks before running.
-
-An eval's optional `local/` directory is copied into the sandbox workspace before the agent starts. A `services:` frontmatter list declares which local-stack services the scenario needs (e.g. `gotrue`, `kong`, `postgrest`); every other service is excluded from `supabase start` — including when the agent runs it itself — to keep stack boots fast. An empty list (`services: []`) starts only the database; omit the key entirely to start the full stack.
-
-Set `cliVersion: 2.109.1` in an eval's frontmatter when it requires a specific Supabase CLI release. This overrides an experiment's `localStackRuntime({ cliVersion })` setting; otherwise the runtime setting or repository-wide default applies.
-
-Scorers check what the agent produced, never what the harness provisioned: with `projectRunning: true` (the default) the running stack and the seeded `local/` workspace are setup, so score only the deltas the agent made on top; with `projectRunning: false` the agent creates that state itself, so depending on it is fair game.
-
-Test the sandbox plumbing without an agent run (Docker required, not part of `pnpm check`):
-
-```bash
-pnpm --filter @hookdeck-evals/sandbox test:docker
-```
+**Scope scorer queries to `ctx.acquiredAt`.** Events and requests cannot be deleted
+through the API, so a shared project accumulates history, and a scorer that just asks
+"did an event arrive?" will eventually say yes because of an earlier run.
 
 ## Skills
 
