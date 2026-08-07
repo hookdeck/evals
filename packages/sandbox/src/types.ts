@@ -1,4 +1,4 @@
-import type { CommandResult } from '@supabase-evals/core';
+import type { CommandResult } from '@hookdeck-evals/core';
 
 /**
  * Result of a sandbox command. Aliased to core's `CommandResult` (structurally

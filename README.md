@@ -138,7 +138,7 @@ There are two runtimes, chosen automatically per eval:
 
 ### Local-stack evals
 
-The Supabase CLI is the agent's tool; the **local stack** (the Docker services `supabase start` runs on a developer machine) is the environment it acts on — distinct from the remote/hosted platform that platform-lite mocks. Experiments declare the environment like MCP servers and skills: add `localStack: localStackRuntime()` (from [`@supabase-evals/sandbox`](packages/sandbox/src/local-stack-runtime.ts)); experiments without it skip these evals. Skills compose with the CLI tools as usual, and tool surfaces merge, so an experiment can in principle expose MCP and CLI together.
+The Supabase CLI is the agent's tool; the **local stack** (the Docker services `supabase start` runs on a developer machine) is the environment it acts on — distinct from the remote/hosted platform that platform-lite mocks. Experiments declare the environment like MCP servers and skills: add `localStack: localStackRuntime()` (from [`@hookdeck-evals/sandbox`](packages/sandbox/src/local-stack-runtime.ts)); experiments without it skip these evals. Skills compose with the CLI tools as usual, and tool surfaces merge, so an experiment can in principle expose MCP and CLI together.
 
 **Scoring uses host tooling against an exported workspace.** After the agent finishes, the harness copies its workspace out of the sandbox to the host (`docker cp`), so scorers can run the repo-root `vite`/`vitest` against the produced files without that toolchain having to exist in the sandbox — the same build/test scoring former "project" evals used. Scorers may also run commands and SQL **inside** the sandbox (against the live stack) via the scoring context.
 
@@ -153,7 +153,7 @@ Scorers check what the agent produced, never what the harness provisioned: with 
 Test the sandbox plumbing without an agent run (Docker required, not part of `pnpm check`):
 
 ```bash
-pnpm --filter @supabase-evals/sandbox test:docker
+pnpm --filter @hookdeck-evals/sandbox test:docker
 ```
 
 ## Skills

@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { parseEvalMarkdown } from '@supabase-evals/core/eval-markdown';
+import { parseEvalMarkdown } from '@hookdeck-evals/core/eval-markdown';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SANDBOX_DOCKERFILE_PATH } from '../src/image.js';
 import {

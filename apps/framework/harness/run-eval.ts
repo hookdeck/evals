@@ -13,12 +13,12 @@ import {
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { jsonSchema, tool, type ToolSet } from 'ai';
-import { parseEvalMarkdown } from '@supabase-evals/core/eval-markdown';
+import { parseEvalMarkdown } from '@hookdeck-evals/core/eval-markdown';
 import {
   createBareSandbox,
   frontmatterDescription,
   stripFrontmatter,
-} from '@supabase-evals/sandbox';
+} from '@hookdeck-evals/sandbox';
 import {
   normalizeExperimentName,
   readExperimentSuiteFilters,
@@ -30,7 +30,7 @@ import {
   buildSkillResult,
   rehydrateTruncatedDocsResults,
   getExperimentDisplayMetadata,
-} from '@supabase-evals/core';
+} from '@hookdeck-evals/core';
 import type {
   ExperimentConfig,
   EvalInterface,

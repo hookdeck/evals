@@ -4,18 +4,18 @@ import { existsSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { fileURLToPath } from 'node:url';
-import { parseEvalMarkdown } from '@supabase-evals/core/eval-markdown';
-import { rawEvalResultSchema } from '@supabase-evals/core/eval-metadata';
+import { parseEvalMarkdown } from '@hookdeck-evals/core/eval-markdown';
+import { rawEvalResultSchema } from '@hookdeck-evals/core/eval-metadata';
 import {
   getExperimentDisplayMetadata,
   type ExperimentConfig,
   type ExperimentDisplayMetadata,
-} from '@supabase-evals/core';
+} from '@hookdeck-evals/core';
 import type {
   EvalResult,
   EvalSuite,
   ExperimentSuite,
-} from '@supabase-evals/core/eval-metadata';
+} from '@hookdeck-evals/core/eval-metadata';
 import {
   normalizeExperimentName,
   readExperimentSuiteFilters,

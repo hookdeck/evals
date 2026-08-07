@@ -2,7 +2,7 @@ import { z } from "zod"
 import {
   evalResultSchema,
   type EvalResult,
-} from "@supabase-evals/core/eval-metadata"
+} from "@hookdeck-evals/core/eval-metadata"
 import rawResults from "@/data/eval-results.json"
 
 /**

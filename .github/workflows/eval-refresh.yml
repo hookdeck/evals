@@ -391,7 +391,7 @@ jobs:
             if [ "${{ needs.prepare.outputs.do_merge }}" = "true" ]; then
               export_args+=(--merge)
             fi
-            pnpm --filter @supabase-evals/framework export-results -- "${export_args[@]}"
+            pnpm --filter @hookdeck-evals/framework export-results -- "${export_args[@]}"
           fi
 
           if jq -e 'any(.[]; .eval_suite == "regression")' <<< "$pairs" > /dev/null; then
@@ -399,7 +399,7 @@ jobs:
             if [ "${{ needs.prepare.outputs.do_merge }}" = "true" ]; then
               export_args+=(--merge)
             fi
-            pnpm --filter @supabase-evals/framework export-results -- "${export_args[@]}"
+            pnpm --filter @hookdeck-evals/framework export-results -- "${export_args[@]}"
           fi
 
       - name: Upload exported results

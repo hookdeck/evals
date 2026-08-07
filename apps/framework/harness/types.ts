@@ -3,7 +3,7 @@ import type {
   EvalProduct,
   EvalStage,
   EvalSuite,
-} from '@supabase-evals/core/eval-metadata';
+} from '@hookdeck-evals/core/eval-metadata';
 
 export type {
   ScoreResult,
@@ -20,8 +20,8 @@ export type {
   ToolEvalContext,
   ToolScorer,
   ExperimentConfig,
-} from '@supabase-evals/core';
-export { judge, serializeTranscript } from '@supabase-evals/core';
+} from '@hookdeck-evals/core';
+export { judge, serializeTranscript } from '@hookdeck-evals/core';
 export type {
   EvalInterface,
   EvalMetadata,
@@ -29,7 +29,7 @@ export type {
   EvalStage,
   EvalSuite,
   ExperimentSuite,
-} from '@supabase-evals/core/eval-metadata';
+} from '@hookdeck-evals/core/eval-metadata';
 
 export type EvalMode = 'tools' | 'local-stack';
 

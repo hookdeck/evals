@@ -1,5 +1,5 @@
 {
-  "name": "@supabase-evals/framework",
+  "name": "@hookdeck-evals/framework",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -19,8 +19,8 @@
     "@ai-sdk/mcp": "catalog:",
     "@ai-sdk/openai": "catalog:",
     "@electric-sql/pglite": "catalog:",
-    "@supabase-evals/core": "workspace:*",
-    "@supabase-evals/sandbox": "workspace:*",
+    "@hookdeck-evals/core": "workspace:*",
+    "@hookdeck-evals/sandbox": "workspace:*",
     "@supabase/supabase-js": "catalog:",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

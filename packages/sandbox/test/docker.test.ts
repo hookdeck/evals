@@ -3,7 +3,7 @@
  * daemon, free Supabase default host ports (54321-54329), and network access
  * for image pulls on first run. Gated behind SANDBOX_DOCKER_TESTS=1; run with:
  *
- *   pnpm --filter @supabase-evals/sandbox test:docker
+ *   pnpm --filter @hookdeck-evals/sandbox test:docker
  */
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';

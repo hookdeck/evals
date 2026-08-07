@@ -8,7 +8,7 @@
  * is one mode, so the `localStack` option and its branch are gone.
  */
 
-import type { SkillSource } from '@supabase-evals/core';
+import type { SkillSource } from '@hookdeck-evals/core';
 import { DockerSandbox } from './docker-sandbox.js';
 import { ensureSandboxImage } from './image.js';
 import { installSkills, type SkillEntry } from './skills.js';

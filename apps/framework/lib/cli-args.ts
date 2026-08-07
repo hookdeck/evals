@@ -3,7 +3,7 @@ import {
   experimentSuiteSchema,
   type EvalSuite,
   type ExperimentSuite,
-} from '@supabase-evals/core/eval-metadata';
+} from '@hookdeck-evals/core/eval-metadata';
 
 export function splitList(value: string): string[] {
   return value

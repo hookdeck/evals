@@ -1,5 +1,5 @@
 import { posix } from 'node:path';
-import type { AgentSandbox } from '@supabase-evals/core';
+import type { AgentSandbox } from '@hookdeck-evals/core';
 import type { DockerSandbox } from './docker-sandbox.js';
 
 /**

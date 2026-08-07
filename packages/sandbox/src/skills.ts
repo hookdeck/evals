@@ -18,7 +18,7 @@
  * file tools can reach the SKILL.md and the files it references.
  */
 
-import type { SkillSource } from '@supabase-evals/core';
+import type { SkillSource } from '@hookdeck-evals/core';
 import type { DockerSandbox } from './docker-sandbox.js';
 
 /** Version of Vercel's `skills` CLI baked into the sandbox image (pinned). */

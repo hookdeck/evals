@@ -72,10 +72,10 @@ importers:
       '@biomejs/biome':
         specifier: 1.9.4
         version: 1.9.4
-      '@supabase-evals/core':
+      '@hookdeck-evals/core':
         specifier: workspace:*
         version: link:packages/core
-      '@supabase-evals/sandbox':
+      '@hookdeck-evals/sandbox':
         specifier: workspace:*
         version: link:packages/sandbox
       '@types/common-tags':
@@ -102,10 +102,10 @@ importers:
       '@electric-sql/pglite':
         specifier: 'catalog:'
         version: 0.4.5
-      '@supabase-evals/core':
+      '@hookdeck-evals/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@supabase-evals/sandbox':
+      '@hookdeck-evals/sandbox':
         specifier: workspace:*
         version: link:../../packages/sandbox
       '@supabase/lite':
@@ -163,7 +163,7 @@ importers:
       '@fontsource-variable/source-code-pro':
         specifier: 5.3.0
         version: 5.3.0
-      '@supabase-evals/core':
+      '@hookdeck-evals/core':
         specifier: workspace:*
         version: link:../../packages/core
       '@tailwindcss/vite':
@@ -297,7 +297,7 @@ importers:
 
   packages/sandbox:
     dependencies:
-      '@supabase-evals/core':
+      '@hookdeck-evals/core':
         specifier: workspace:*
         version: link:../core
       '@supabase/supabase-js':

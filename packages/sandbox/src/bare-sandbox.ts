@@ -1,4 +1,4 @@
-import type { AgentSandbox, SkillSource } from '@supabase-evals/core';
+import type { AgentSandbox, SkillSource } from '@hookdeck-evals/core';
 import { createAgentEnvironment } from './agent-environment.js';
 import { toAgentSandbox } from './agent-sandbox.js';
 import { buildSkillsPrompt } from './skills.js';
