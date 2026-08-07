@@ -7,3 +7,7 @@ results/*/
 .sync-tmp/
 
 .spike-pristine.json
+
+# Internal delivery planning. References the private core codebase, so it
+# must not ship in a public repo.
+.plans/
