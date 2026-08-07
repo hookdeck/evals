@@ -10,9 +10,10 @@ Phase 0 (framework spike) and Phase 1 (the project provisioner) are done. The
 regression suite exists and passes on both primary agents. No benchmark
 scenarios yet, and no CI.
 
-The delivery plan lives outside this repo: it references the private `core`
-codebase, so it is deliberately not committed. Ask Phil for it, or read the
-commit history, which is written to be followed on its own.
+The delivery plan is `docs/delivery-plan.md`: phases, decisions and their
+reasoning, cost and cadence, and the open questions. It is the source of truth,
+and it is written to be public. If you add to it, keep it that way: no internal
+repository paths, no customer or business figures, no unannounced product plans.
 
 ## The setup you need
 

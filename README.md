@@ -22,6 +22,11 @@ complete public API and scoring can query real project state.
 `CHANGES.md` states the modifications in full. `LICENSE` and `NOTICE` carry the
 upstream copyright.
 
+## Plan
+
+`docs/delivery-plan.md` covers the phases, the decisions and why they were made, cost
+and cadence, and what is still open. `AGENTS.md` is the shorter operational version.
+
 ## Quickstart
 
 Clone with submodules:
