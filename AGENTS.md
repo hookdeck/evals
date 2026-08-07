@@ -24,8 +24,8 @@ docker info              # a daemon must be running
 pnpm --filter @hookdeck-evals/framework exec tsx harness/run-eval.ts --dry --suite regression
 ```
 
-`HOOKDECK_API_KEY` is a project key for `evals-ci` in the Automated Testing
-organisation. `OPENAI_API_KEY` is needed by the default LLM judge, so any judged
+`HOOKDECK_API_KEY` is a project key for a dedicated `evals-ci` project, in an
+organisation with no production data. `OPENAI_API_KEY` is needed by the default LLM judge, so any judged
 scenario needs it whichever agent produced the run.
 
 Runs bill per token. A local Claude Code subscription does not cover them: the
@@ -61,8 +61,8 @@ regex filter operator", and pass in every other case, including an unfinished
 task. A check that reads "pass if it does the task *and* invents nothing" fails
 an agent that invented nothing, which makes the signal unreadable.
 
-**Motivations are published.** Cite the evidence without disclosing the internal
-support tool, a customer, or an internal ticket URL. Internal context belongs in
+**Motivations are published.** Cite the evidence without naming the support
+tool, a customer, or an internal ticket. Internal context belongs in
 a comment in `EVAL.ts`.
 
 ## Traps
@@ -72,9 +72,9 @@ already seen and fixed; all agents passing is the desired state. For benchmark
 scenarios the opposite holds: at least one agent must fail, or there is no
 signal.
 
-**One project means one run at a time.** Sources and destinations have a unique
-constraint on `(team_id, alias)`, so two concurrent runs that both name a source
-`stripe` collide in the database. Do not try to serialise via a GitHub Actions
+**One project means one run at a time.** Source and destination names must be
+unique within a project, so two concurrent runs that both name a source `stripe`
+collide. Do not try to serialise via a GitHub Actions
 concurrency group: a group holds one running and one pending job and cancels the
 rest. Shard instead.
 
