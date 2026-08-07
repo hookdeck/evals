@@ -65,13 +65,17 @@ function extractGraphqlQuery(
 }
 
 /**
- * True for the apex supabase.com host. Docs, changelog, and blog all live
- * there. Subdomains like `api.` and `mcp.` are service endpoints, so they
- * don't count.
+ * True for the apex hookdeck.com host, with or without `www`. Docs, guides and
+ * blog all live there. Subdomains are service endpoints, not documentation:
+ * `api.` is the REST API, `hkdk.events` is where events are delivered, and
+ * `mock.hookdeck.com` is a test destination. An agent hitting those is doing
+ * the task, not reading the docs, and counting them would inflate the
+ * docs-usage number that the docs-only baseline rests on.
  */
-function isSupabaseApexUrl(value: string): boolean {
+function isDocsUrl(value: string): boolean {
   try {
-    return new URL(value).hostname === 'supabase.com';
+    const { hostname } = new URL(value);
+    return hostname === 'hookdeck.com' || hostname === 'www.hookdeck.com';
   } catch {
     return false;
   }
@@ -112,7 +116,7 @@ function shellFetchUrls(command: string | undefined): string[] {
       // Trailing sentence punctuation glues onto a url in prose; a real one
       // never ends in a period or comma.
       const url = match.replace(/[.,]+$/, '');
-      if (isSupabaseApexUrl(url) && !urls.includes(url)) urls.push(url);
+      if (isDocsUrl(url) && !urls.includes(url)) urls.push(url);
     }
   }
   return urls;
@@ -211,12 +215,12 @@ function extractPages(result: unknown): DocsCallPage[] {
   const pages: DocsCallPage[] = [];
   const seen = new Set<string>();
   for (const [, title, url] of text.matchAll(TITLED_PAGE_PATTERN)) {
-    if (!isSupabaseApexUrl(url) || seen.has(url)) continue;
+    if (!isDocsUrl(url) || seen.has(url)) continue;
     seen.add(url);
     pages.push(title ? { url, title } : { url });
   }
   for (const [, url] of text.matchAll(HREF_PATTERN)) {
-    if (!isSupabaseApexUrl(url) || seen.has(url)) continue;
+    if (!isDocsUrl(url) || seen.has(url)) continue;
     seen.add(url);
     pages.push({ url });
   }
@@ -244,7 +248,7 @@ export function buildDocsResult(toolCalls: ToolCallRecord[]): DocsResult {
     }
 
     if (call.name === 'web_fetch') {
-      if (!call.url || !isSupabaseApexUrl(call.url)) continue;
+      if (!call.url || !isDocsUrl(call.url)) continue;
       // WebFetch runs the fetch through an LLM extraction step guided by
       // `prompt`, so that's the meaningful "ask" here (same role `query`
       // plays for search_docs), not the url. Url still recorded, in `pages`.
@@ -278,7 +282,7 @@ export function buildDocsResult(toolCalls: ToolCallRecord[]): DocsResult {
       const action = webSearchAction(body);
 
       if (action?.type === 'open_page' || action?.type === 'find_in_page') {
-        if (!action.url || !isSupabaseApexUrl(action.url)) continue;
+        if (!action.url || !isDocsUrl(action.url)) continue;
         calls.push({
           source: 'web_search',
           query,
@@ -290,7 +294,7 @@ export function buildDocsResult(toolCalls: ToolCallRecord[]): DocsResult {
       }
 
       if (action?.type === 'search') {
-        if (!/supabase/i.test(query)) continue;
+        if (!/hookdeck/i.test(query)) continue;
         // No page to attribute: the hits never reach the client. `hasContent`
         // stays unknown rather than false, because those hits carry snippet
         // text the model may well have read, and we can't see it either way.
@@ -308,7 +312,7 @@ export function buildDocsResult(toolCalls: ToolCallRecord[]): DocsResult {
       // No action reported (Claude Code, or an action type we don't know):
       // fall back to the query's shape, which is all there is to go on.
       if (URL_PATTERN.test(query)) {
-        if (!isSupabaseApexUrl(query)) continue;
+        if (!isDocsUrl(query)) continue;
         calls.push({
           source: 'web_search',
           query,
@@ -318,7 +322,7 @@ export function buildDocsResult(toolCalls: ToolCallRecord[]): DocsResult {
         continue;
       }
 
-      if (!/supabase/i.test(query)) continue;
+      if (!/hookdeck/i.test(query)) continue;
       const pages = extractPages(result);
       // Claude Code's WebSearch result never carries page text, only
       // title/url per hit, so any pages found here are hits, not reads.

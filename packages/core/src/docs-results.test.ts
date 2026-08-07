@@ -20,7 +20,7 @@ describe('buildDocsResult', () => {
   it("builds one call from a search_docs invocation, flagging no content when the query didn't select it", () => {
     const result = buildDocsResult([
       toolCall(
-        'mcp__supabase-mcp__search_docs',
+        'mcp__hookdeck__search_docs',
         {
           graphql_query:
             '{ searchDocs(query: "rls") { nodes { title href } } }',
@@ -31,7 +31,7 @@ describe('buildDocsResult', () => {
               nodes: [
                 {
                   title: 'Row Level Security',
-                  href: 'https://supabase.com/docs/guides/database/postgres/row-level-security',
+                  href: 'https://hookdeck.com/docs/filters',
                 },
               ],
             },
@@ -47,7 +47,7 @@ describe('buildDocsResult', () => {
         hasContent: false,
         pages: [
           {
-            url: 'https://supabase.com/docs/guides/database/postgres/row-level-security',
+            url: 'https://hookdeck.com/docs/filters',
             title: 'Row Level Security',
           },
         ],
@@ -107,7 +107,7 @@ describe('buildDocsResult', () => {
         {
           id: 'item_9',
           type: 'mcp_tool_call',
-          server: 'supabase-mcp',
+          server: 'hookdeck',
           tool: 'search_docs',
           arguments: {
             graphql_query:
@@ -120,7 +120,7 @@ describe('buildDocsResult', () => {
               nodes: [
                 {
                   title: 'Row Level Security',
-                  href: 'https://supabase.com/docs/guides/database/postgres/row-level-security',
+                  href: 'https://hookdeck.com/docs/filters',
                 },
               ],
             },
@@ -133,14 +133,14 @@ describe('buildDocsResult', () => {
       '{ searchDocs(query: "rls") { nodes { title href } } }'
     );
     expect(result.calls[0].pages.map((p) => p.url)).toEqual([
-      'https://supabase.com/docs/guides/database/postgres/row-level-security',
+      'https://hookdeck.com/docs/filters',
     ]);
   });
 
   it('unwraps a content-array result whose text field is a JSON-encoded string (real Claude Code shape)', () => {
     const result = buildDocsResult([
       toolCall(
-        'mcp__supabase-mcp__search_docs',
+        'mcp__hookdeck__search_docs',
         {
           graphql_query:
             '{ searchDocs(query: "rls") { nodes { title href } } }',
@@ -155,7 +155,7 @@ describe('buildDocsResult', () => {
                     nodes: [
                       {
                         title: 'Row Level Security',
-                        href: 'https://supabase.com/docs/guides/database/postgres/row-level-security',
+                        href: 'https://hookdeck.com/docs/filters',
                       },
                     ],
                   },
@@ -169,7 +169,7 @@ describe('buildDocsResult', () => {
 
     expect(result.calls[0].pages).toEqual([
       {
-        url: 'https://supabase.com/docs/guides/database/postgres/row-level-security',
+        url: 'https://hookdeck.com/docs/filters',
         title: 'Row Level Security',
       },
     ]);
@@ -203,10 +203,10 @@ describe('buildDocsResult', () => {
       toolCall(
         'WebFetch',
         {
-          url: 'https://supabase.com/changelog.md',
+          url: 'https://hookdeck.com/changelog.md',
           prompt: 'List breaking-change entries about self-hosting',
         },
-        { url: 'https://supabase.com/changelog.md', name: 'web_fetch' }
+        { url: 'https://hookdeck.com/changelog.md', name: 'web_fetch' }
       ),
     ]);
 
@@ -215,7 +215,7 @@ describe('buildDocsResult', () => {
         source: 'web_fetch',
         query: 'List breaking-change entries about self-hosting',
         hasContent: true,
-        pages: [{ url: 'https://supabase.com/changelog.md' }],
+        pages: [{ url: 'https://hookdeck.com/changelog.md' }],
       },
     ]);
   });
@@ -224,15 +224,15 @@ describe('buildDocsResult', () => {
     const result = buildDocsResult([
       toolCall(
         'WebFetch',
-        { url: 'https://supabase.com/docs/guides/auth' },
-        { url: 'https://supabase.com/docs/guides/auth', name: 'web_fetch' }
+        { url: 'https://hookdeck.com/docs/authentication' },
+        { url: 'https://hookdeck.com/docs/authentication', name: 'web_fetch' }
       ),
     ]);
 
-    expect(result.calls[0].query).toBe('https://supabase.com/docs/guides/auth');
+    expect(result.calls[0].query).toBe('https://hookdeck.com/docs/authentication');
   });
 
-  it('ignores a fetch call on a non-Supabase domain', () => {
+  it('ignores a fetch call on a non-Hookdeck domain', () => {
     const result = buildDocsResult([
       toolCall(
         'WebFetch',
@@ -246,14 +246,14 @@ describe('buildDocsResult', () => {
 
   it("parses title+url pairs out of Claude Code's WebSearch Links blob, flagged as hits not reads", () => {
     const resultText =
-      'Web search results for query: "Supabase RLS"\n\n' +
-      'Links: [{"title":"Row Level Security | Supabase Docs","url":"https://supabase.com/docs/guides/database/postgres/row-level-security"},' +
+      'Web search results for query: "Hookdeck filters"\n\n' +
+      'Links: [{"title":"Filters | Hookdeck Docs","url":"https://hookdeck.com/docs/filters"},' +
       '{"title":"Unrelated","url":"https://example.com/rls"}]\n\nSummary text.';
 
     const result = buildDocsResult([
       toolCall(
         'WebSearch',
-        { query: 'Supabase RLS documentation' },
+        { query: 'Hookdeck filters documentation' },
         { result: resultText, name: 'web_search' }
       ),
     ]);
@@ -261,12 +261,12 @@ describe('buildDocsResult', () => {
     expect(result.calls).toEqual([
       {
         source: 'web_search',
-        query: 'Supabase RLS documentation',
+        query: 'Hookdeck filters documentation',
         hasContent: false,
         pages: [
           {
-            url: 'https://supabase.com/docs/guides/database/postgres/row-level-security',
-            title: 'Row Level Security | Supabase Docs',
+            url: 'https://hookdeck.com/docs/filters',
+            title: 'Filters | Hookdeck Docs',
           },
         ],
         resultChars: expect.any(Number),
@@ -274,7 +274,7 @@ describe('buildDocsResult', () => {
     ]);
   });
 
-  it("drops a web search call that isn't Supabase-related", () => {
+  it("drops a web search call that isn't Hookdeck-related", () => {
     const result = buildDocsResult([
       toolCall(
         'WebSearch',
@@ -291,7 +291,7 @@ describe('buildDocsResult', () => {
       toolCall(
         'web_search',
         {
-          query: 'https://supabase.com/docs/guides/database/extensions/pg_net',
+          query: 'https://hookdeck.com/docs/guides/database/extensions/pg_net',
         },
         { name: 'web_search' }
       ),
@@ -300,10 +300,10 @@ describe('buildDocsResult', () => {
     expect(result.calls).toEqual([
       {
         source: 'web_search',
-        query: 'https://supabase.com/docs/guides/database/extensions/pg_net',
+        query: 'https://hookdeck.com/docs/guides/database/extensions/pg_net',
         pages: [
           {
-            url: 'https://supabase.com/docs/guides/database/extensions/pg_net',
+            url: 'https://hookdeck.com/docs/guides/database/extensions/pg_net',
           },
         ],
       },
@@ -315,7 +315,7 @@ describe('buildDocsResult', () => {
     const result = buildDocsResult([
       toolCall(
         'web_search',
-        { query: 'site:supabase.com/docs pg_cron schedule' },
+        { query: 'site:hookdeck.com/docs pg_cron schedule' },
         { name: 'web_search' }
       ),
     ]);
@@ -323,7 +323,7 @@ describe('buildDocsResult', () => {
     expect(result.calls).toEqual([
       {
         source: 'web_search',
-        query: 'site:supabase.com/docs pg_cron schedule',
+        query: 'site:hookdeck.com/docs pg_cron schedule',
         pages: [],
       },
     ]);
@@ -335,10 +335,10 @@ describe('buildDocsResult', () => {
       toolCall(
         'web_search',
         {
-          query: 'https://supabase.com/changelog.md',
+          query: 'https://hookdeck.com/changelog.md',
           action: {
             type: 'open_page',
-            url: 'https://supabase.com/changelog.md',
+            url: 'https://hookdeck.com/changelog.md',
           },
         },
         { name: 'web_search' }
@@ -348,15 +348,15 @@ describe('buildDocsResult', () => {
     expect(result.calls).toEqual([
       {
         source: 'web_search',
-        query: 'https://supabase.com/changelog.md',
+        query: 'https://hookdeck.com/changelog.md',
         hasContent: true,
-        pages: [{ url: 'https://supabase.com/changelog.md' }],
+        pages: [{ url: 'https://hookdeck.com/changelog.md' }],
       },
     ]);
   });
 
   it('records a find_in_page action, whose query rendering the URL-shape fallback never matches', () => {
-    const url = 'https://supabase.com/docs/guides/database/extensions/pgmq';
+    const url = 'https://hookdeck.com/docs/guides/database/extensions/pgmq';
     const result = buildDocsResult([
       toolCall(
         'web_search',
@@ -383,10 +383,10 @@ describe('buildDocsResult', () => {
       toolCall(
         'web_search',
         {
-          query: 'https://supabase.com/changelog.md',
+          query: 'https://hookdeck.com/changelog.md',
           action: {
             type: 'search',
-            query: 'https://supabase.com/changelog.md',
+            query: 'https://hookdeck.com/changelog.md',
           },
         },
         { name: 'web_search' }
@@ -398,14 +398,14 @@ describe('buildDocsResult', () => {
     expect(result.calls).toEqual([
       {
         source: 'web_search',
-        query: 'https://supabase.com/changelog.md',
+        query: 'https://hookdeck.com/changelog.md',
         pages: [],
       },
     ]);
     expect(result.calls[0].hasContent).toBeUndefined();
   });
 
-  it('drops an open_page action pointing somewhere other than supabase.com', () => {
+  it('drops an open_page action pointing somewhere other than hookdeck.com', () => {
     const result = buildDocsResult([
       toolCall(
         'web_search',
@@ -420,13 +420,13 @@ describe('buildDocsResult', () => {
     expect(result.calls).toEqual([]);
   });
 
-  it('drops an open_page action on a supabase service subdomain', () => {
+  it('drops an open_page action on a hookdeck service subdomain', () => {
     const result = buildDocsResult([
       toolCall(
         'web_search',
         {
-          query: 'https://mcp.supabase.com/mcp',
-          action: { type: 'open_page', url: 'https://mcp.supabase.com/mcp' },
+          query: 'https://mcp.hookdeck.com/mcp',
+          action: { type: 'open_page', url: 'https://mcp.hookdeck.com/mcp' },
         },
         { name: 'web_search' }
       ),
@@ -437,7 +437,7 @@ describe('buildDocsResult', () => {
 
   it('counts a docs url curled from the shell, sized by what the pipe actually returned', () => {
     const command =
-      '/bin/bash -lc "curl -fsSL https://supabase.com/changelog.md | sed -n \'1,160p\'"';
+      '/bin/bash -lc "curl -fsSL https://hookdeck.com/changelog.md | sed -n \'1,160p\'"';
     const result = buildDocsResult([
       toolCall(
         'command_execution',
@@ -455,7 +455,7 @@ describe('buildDocsResult', () => {
         source: 'shell_fetch',
         query: command,
         hasContent: true,
-        pages: [{ url: 'https://supabase.com/changelog.md' }],
+        pages: [{ url: 'https://hookdeck.com/changelog.md' }],
         resultChars: '# Changelog\n\n2026-06-12 breaking-change ...'.length,
       },
     ]);
@@ -463,7 +463,7 @@ describe('buildDocsResult', () => {
 
   it('keeps a fetch from a mixed shell call without attributing the combined output to it', () => {
     const command =
-      'curl -fsSL https://supabase.com/changelog.md | rg breaking || true; cat local-notes.md';
+      'curl -fsSL https://hookdeck.com/changelog.md | rg breaking || true; cat local-notes.md';
     const result = buildDocsResult([
       toolCall(
         'command_execution',
@@ -476,7 +476,7 @@ describe('buildDocsResult', () => {
       {
         source: 'shell_fetch',
         query: command,
-        pages: [{ url: 'https://supabase.com/changelog.md' }],
+        pages: [{ url: 'https://hookdeck.com/changelog.md' }],
         resultChars: 'unrelated local notes'.length,
       },
     ]);
@@ -485,7 +485,7 @@ describe('buildDocsResult', () => {
 
   it('finds a curl fetch on its own line in a multi-line script', () => {
     const command =
-      'echo starting\ncurl -fsSL https://supabase.com/changelog.md';
+      'echo starting\ncurl -fsSL https://hookdeck.com/changelog.md';
     const result = buildDocsResult([
       toolCall(
         'command_execution',
@@ -498,7 +498,7 @@ describe('buildDocsResult', () => {
       {
         source: 'shell_fetch',
         query: command,
-        pages: [{ url: 'https://supabase.com/changelog.md' }],
+        pages: [{ url: 'https://hookdeck.com/changelog.md' }],
         resultChars: '# Changelog'.length,
       },
     ]);
@@ -509,8 +509,8 @@ describe('buildDocsResult', () => {
   it('records each curl fetch in a multi-line script', () => {
     const command =
       'set -e\n' +
-      "curl -fsSL https://supabase.com/docs/guides/functions/auth.md | sed -n '1,280p'\n" +
-      "curl -fsSL https://supabase.com/docs/guides/functions/auth-headers.md | sed -n '1,260p'";
+      "curl -fsSL https://hookdeck.com/docs/transformations/auth.md | sed -n '1,280p'\n" +
+      "curl -fsSL https://hookdeck.com/docs/transformations/auth-headers.md | sed -n '1,260p'";
     const result = buildDocsResult([
       toolCall(
         'command_execution',
@@ -524,8 +524,8 @@ describe('buildDocsResult', () => {
         source: 'shell_fetch',
         query: command,
         pages: [
-          { url: 'https://supabase.com/docs/guides/functions/auth.md' },
-          { url: 'https://supabase.com/docs/guides/functions/auth-headers.md' },
+          { url: 'https://hookdeck.com/docs/transformations/auth.md' },
+          { url: 'https://hookdeck.com/docs/transformations/auth-headers.md' },
         ],
         resultChars: '# Auth\n\n# Auth headers'.length,
       },
@@ -536,7 +536,7 @@ describe('buildDocsResult', () => {
 
   it('still attributes a fetch pipeline whose only command-list operator is a trailing fallback', () => {
     const command =
-      'curl -fsSL https://supabase.com/changelog.md | rg breaking || true';
+      'curl -fsSL https://hookdeck.com/changelog.md | rg breaking || true';
     const result = buildDocsResult([
       toolCall(
         'command_execution',
@@ -549,9 +549,9 @@ describe('buildDocsResult', () => {
     expect(result.calls[0].resultChars).toBe('breaking change'.length);
   });
 
-  it('records every supabase url a single shell fetch pulled down', () => {
+  it('records every hookdeck url a single shell fetch pulled down', () => {
     const command =
-      'wget -qO- https://supabase.com/changelog.md https://supabase.com/docs/guides/auth.md';
+      'wget -qO- https://hookdeck.com/changelog.md https://hookdeck.com/docs/authentication.md';
     const result = buildDocsResult([
       toolCall(
         'command_execution',
@@ -561,13 +561,13 @@ describe('buildDocsResult', () => {
     ]);
 
     expect(result.calls[0].pages).toEqual([
-      { url: 'https://supabase.com/changelog.md' },
-      { url: 'https://supabase.com/docs/guides/auth.md' },
+      { url: 'https://hookdeck.com/changelog.md' },
+      { url: 'https://hookdeck.com/docs/authentication.md' },
     ]);
   });
 
   it('drops an ordinary wget whose page was saved to disk instead of shown to the model', () => {
-    const command = 'wget https://supabase.com/changelog.md';
+    const command = 'wget https://hookdeck.com/changelog.md';
     const result = buildDocsResult([
       toolCall(
         'command_execution',
@@ -581,7 +581,7 @@ describe('buildDocsResult', () => {
 
   it('counts wget with the long-form stdout destination', () => {
     const command =
-      'wget --quiet --output-document=- https://supabase.com/changelog.md';
+      'wget --quiet --output-document=- https://hookdeck.com/changelog.md';
     const result = buildDocsResult([
       toolCall(
         'command_execution',
@@ -595,7 +595,7 @@ describe('buildDocsResult', () => {
 
   it('drops curl output saved to a file instead of shown to the model', () => {
     const command =
-      'curl -fsSL -ochangelog.md https://supabase.com/changelog.md';
+      'curl -fsSL -ochangelog.md https://hookdeck.com/changelog.md';
     const result = buildDocsResult([
       toolCall(
         'command_execution',
@@ -609,7 +609,7 @@ describe('buildDocsResult', () => {
 
   it('counts a curl fetch with stderr redirected to /dev/null', () => {
     const command =
-      'curl -fsSL https://supabase.com/changelog.md 2>/dev/null | head -50';
+      'curl -fsSL https://hookdeck.com/changelog.md 2>/dev/null | head -50';
     const result = buildDocsResult([
       toolCall(
         'command_execution',
@@ -623,7 +623,7 @@ describe('buildDocsResult', () => {
 
   it('counts a curl fetch with stderr merged into stdout via 2>&1', () => {
     const command =
-      'curl -fsSL https://supabase.com/changelog.md 2>&1 | head -50';
+      'curl -fsSL https://hookdeck.com/changelog.md 2>&1 | head -50';
     const result = buildDocsResult([
       toolCall(
         'command_execution',
@@ -638,7 +638,7 @@ describe('buildDocsResult', () => {
   it.each(['>out.txt', '1>out.txt', '&>out.txt'])(
     'drops a curl fetch redirected with %s',
     (redirect) => {
-      const command = `curl -fsSL https://supabase.com/changelog.md ${redirect}`;
+      const command = `curl -fsSL https://hookdeck.com/changelog.md ${redirect}`;
       const result = buildDocsResult([
         toolCall(
           'command_execution',
@@ -653,7 +653,7 @@ describe('buildDocsResult', () => {
 
   it('drops a curl fetch whose stdout is redirected past a silenced stderr', () => {
     const command =
-      'curl -fsSL https://supabase.com/changelog.md 2>/dev/null >out.txt';
+      'curl -fsSL https://hookdeck.com/changelog.md 2>/dev/null >out.txt';
     const result = buildDocsResult([
       toolCall(
         'command_execution',
@@ -666,7 +666,7 @@ describe('buildDocsResult', () => {
   });
 
   it('drops a curl fetch with stdout swapped onto stderr via >&2', () => {
-    const command = 'curl -fsSL https://supabase.com/changelog.md >&2';
+    const command = 'curl -fsSL https://hookdeck.com/changelog.md >&2';
     const result = buildDocsResult([
       toolCall(
         'command_execution',
@@ -680,7 +680,7 @@ describe('buildDocsResult', () => {
 
   it('does not attribute an unrelated url elsewhere in a compound command to curl', () => {
     const command =
-      'echo https://supabase.com/changelog.md; curl -fsSL https://example.com';
+      'echo https://hookdeck.com/changelog.md; curl -fsSL https://example.com';
     const result = buildDocsResult([
       toolCall(
         'command_execution',
@@ -693,7 +693,7 @@ describe('buildDocsResult', () => {
   });
 
   it('drops a shell fetch that failed, since a non-zero exit leaves no output to read', () => {
-    const command = 'curl -fsSL https://supabase.com/changelog.md';
+    const command = 'curl -fsSL https://hookdeck.com/changelog.md';
     const result = buildDocsResult([
       toolCall(
         'command_execution',
@@ -711,7 +711,7 @@ describe('buildDocsResult', () => {
 
   it("marks a bare curl's content as unknown on a real body", () => {
     // No -f/--fail, so a 0 exit doesn't prove the body is a real page.
-    const command = 'curl https://supabase.com/changelog.md';
+    const command = 'curl https://hookdeck.com/changelog.md';
     const result = buildDocsResult([
       toolCall(
         'command_execution',
@@ -724,7 +724,7 @@ describe('buildDocsResult', () => {
       {
         source: 'shell_fetch',
         query: command,
-        pages: [{ url: 'https://supabase.com/changelog.md' }],
+        pages: [{ url: 'https://hookdeck.com/changelog.md' }],
         resultChars: '# Changelog\n\nreal content'.length,
       },
     ]);
@@ -732,7 +732,7 @@ describe('buildDocsResult', () => {
   });
 
   it("marks a bare curl's content as unknown on an HTTP-error body", () => {
-    const command = 'curl https://supabase.com/changelog.md';
+    const command = 'curl https://hookdeck.com/changelog.md';
     const result = buildDocsResult([
       toolCall(
         'command_execution',
@@ -745,7 +745,7 @@ describe('buildDocsResult', () => {
       {
         source: 'shell_fetch',
         query: command,
-        pages: [{ url: 'https://supabase.com/changelog.md' }],
+        pages: [{ url: 'https://hookdeck.com/changelog.md' }],
         resultChars: '404: Not Found'.length,
       },
     ]);
@@ -754,7 +754,7 @@ describe('buildDocsResult', () => {
 
   it("trusts a -f curl's content regardless of body", () => {
     // A real failure would already be routed to `error` by --fail.
-    const command = 'curl -fsSL https://supabase.com/changelog.md';
+    const command = 'curl -fsSL https://hookdeck.com/changelog.md';
     const result = buildDocsResult([
       toolCall(
         'command_execution',
@@ -762,7 +762,7 @@ describe('buildDocsResult', () => {
         {
           name: 'shell',
           command,
-          result: '500 organizations now use Supabase in production',
+          result: '500 organizations now use Hookdeck in production',
         }
       ),
     ]);
@@ -772,15 +772,15 @@ describe('buildDocsResult', () => {
         source: 'shell_fetch',
         query: command,
         hasContent: true,
-        pages: [{ url: 'https://supabase.com/changelog.md' }],
-        resultChars: '500 organizations now use Supabase in production'.length,
+        pages: [{ url: 'https://hookdeck.com/changelog.md' }],
+        resultChars: '500 organizations now use Hookdeck in production'.length,
       },
     ]);
   });
 
   it('drops a wget with 404 response', () => {
     const command =
-      'wget --quiet --output-document=- https://supabase.com/changelog.md';
+      'wget --quiet --output-document=- https://hookdeck.com/changelog.md';
     const result = buildDocsResult([
       toolCall(
         'command_execution',
@@ -796,8 +796,8 @@ describe('buildDocsResult', () => {
     expect(result.calls).toEqual([]);
   });
 
-  it('drops a shell fetch of a supabase service endpoint, which is a probe not a read', () => {
-    const command = 'curl -s https://mcp.supabase.com/mcp';
+  it('drops a shell fetch of a hookdeck service endpoint, which is a probe not a read', () => {
+    const command = 'curl -s https://mcp.hookdeck.com/mcp';
     const result = buildDocsResult([
       toolCall(
         'command_execution',
@@ -810,12 +810,12 @@ describe('buildDocsResult', () => {
   });
 
   it('drops a shell fetch from a lookalike hostname', () => {
-    const command = 'curl https://not-supabase.com/foo';
+    const command = 'curl https://not-hookdeck.com/foo';
     const result = buildDocsResult([
       toolCall(
         'command_execution',
         { command },
-        { name: 'shell', command, result: 'not Supabase docs' }
+        { name: 'shell', command, result: 'not Hookdeck docs' }
       ),
     ]);
 
@@ -824,7 +824,7 @@ describe('buildDocsResult', () => {
 
   it('drops a shell command that only mentions a docs url without fetching it', () => {
     const command =
-      'echo "see https://supabase.com/docs/guides/auth for details"';
+      'echo "see https://hookdeck.com/docs/authentication for details"';
     const result = buildDocsResult([
       toolCall(
         'command_execution',
@@ -832,7 +832,7 @@ describe('buildDocsResult', () => {
         {
           name: 'shell',
           command,
-          result: 'see https://supabase.com/docs/guides/auth for details',
+          result: 'see https://hookdeck.com/docs/authentication for details',
         }
       ),
     ]);
@@ -841,7 +841,7 @@ describe('buildDocsResult', () => {
   });
 
   it('drops an echo that merely mentions curl rather than invoking it', () => {
-    const command = 'echo curl https://supabase.com/changelog.md';
+    const command = 'echo curl https://hookdeck.com/changelog.md';
     const result = buildDocsResult([
       toolCall(
         'command_execution',
@@ -849,7 +849,7 @@ describe('buildDocsResult', () => {
         {
           name: 'shell',
           command,
-          result: 'curl https://supabase.com/changelog.md',
+          result: 'curl https://hookdeck.com/changelog.md',
         }
       ),
     ]);
@@ -861,8 +861,8 @@ describe('buildDocsResult', () => {
     const result = buildDocsResult([
       toolCall(
         'WebFetch',
-        { url: 'https://supabase.com/docs/guides/auth' },
-        { url: 'https://supabase.com/docs/guides/auth' }
+        { url: 'https://hookdeck.com/docs/authentication' },
+        { url: 'https://hookdeck.com/docs/authentication' }
       ),
     ]);
 
@@ -873,7 +873,7 @@ describe('buildDocsResult', () => {
     const result = buildDocsResult([
       toolCall(
         'web_search',
-        { query: 'https://supabase.com/changelog.md' },
+        { query: 'https://hookdeck.com/changelog.md' },
         { name: 'web_search' }
       ),
       toolCall(
@@ -882,7 +882,7 @@ describe('buildDocsResult', () => {
         {
           result: {
             searchDocs: {
-              nodes: [{ href: 'https://supabase.com/docs/guides/auth' }],
+              nodes: [{ href: 'https://hookdeck.com/docs/authentication' }],
             },
           },
         }
@@ -899,8 +899,8 @@ describe('buildDocsResult', () => {
     const result = buildDocsResult([
       toolCall(
         'WebFetch',
-        { url: 'https://supabase.com/docs/guides/auth' },
-        { url: 'https://supabase.com/docs/guides/auth', name: 'web_fetch' }
+        { url: 'https://hookdeck.com/docs/authentication' },
+        { url: 'https://hookdeck.com/docs/authentication', name: 'web_fetch' }
       ),
       toolCall(
         'search_docs',
@@ -914,7 +914,7 @@ describe('buildDocsResult', () => {
               nodes: [
                 {
                   title: 'Auth',
-                  href: 'https://supabase.com/docs/guides/auth',
+                  href: 'https://hookdeck.com/docs/authentication',
                 },
               ],
             },
@@ -925,10 +925,10 @@ describe('buildDocsResult', () => {
 
     expect(result.calls).toHaveLength(2);
     expect(result.calls[0].pages[0].url).toBe(
-      'https://supabase.com/docs/guides/auth'
+      'https://hookdeck.com/docs/authentication'
     );
     expect(result.calls[1].pages[0].url).toBe(
-      'https://supabase.com/docs/guides/auth'
+      'https://hookdeck.com/docs/authentication'
     );
   });
 
@@ -970,7 +970,7 @@ describe('rehydrateTruncatedDocsResults', () => {
     const path = '/home/node/.claude/projects/x/tool-results/y.txt';
     const realContent = JSON.stringify({
       searchDocs: {
-        nodes: [{ href: 'https://supabase.com/docs/guides/auth' }],
+        nodes: [{ href: 'https://hookdeck.com/docs/authentication' }],
       },
     });
     const readFile = vi.fn().mockResolvedValue(realContent);
@@ -1002,7 +1002,7 @@ describe('rehydrateTruncatedDocsResults', () => {
 
   it('rehydrates a shell fetch whose output the CLI truncated to disk', async () => {
     const path = '/home/node/.claude/projects/x/tool-results/changelog.txt';
-    const command = 'curl -fsSL https://supabase.com/changelog.md';
+    const command = 'curl -fsSL https://hookdeck.com/changelog.md';
     const call = toolCall(
       'Bash',
       { command },
