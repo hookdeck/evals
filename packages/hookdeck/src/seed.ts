@@ -39,6 +39,12 @@ export interface SeedEvent {
   /** `ref` of the source to POST at. */
   source: string;
   body?: unknown;
+  /**
+   * Generate a body of roughly this many bytes instead of sending `body`.
+   * For scenarios about size limits, so the seed file stays small: a literal
+   * 10 MiB payload does not belong in version control.
+   */
+  bodyBytes?: number;
   headers?: Record<string, string>;
   /** Send this many copies. Defaults to 1. */
   count?: number;
@@ -114,11 +120,16 @@ export async function applySeed(
         `seed event references source "${event.source}" with no delivery URL`
       );
     }
+    const body = event.bodyBytes
+      ? JSON.stringify({ padding: 'x'.repeat(event.bodyBytes) })
+      : JSON.stringify(event.body ?? {});
     for (let i = 0; i < (event.count ?? 1); i++) {
+      // Oversized payloads are rejected at ingestion (413), which is the point
+      // of some scenarios, so a non-2xx here is not an error.
       await fetch(target.url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...event.headers },
-        body: JSON.stringify(event.body ?? {}),
+        body,
       });
     }
   }

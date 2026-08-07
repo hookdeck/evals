@@ -69,19 +69,40 @@ export interface FixedProjectSourceOptions {
 
 export class FixedProjectSource implements ProjectSource {
   readonly id = 'fixed-project';
-  private readonly client: HookdeckClient;
-  private readonly apiKey: string;
+  private readonly options: FixedProjectSourceOptions;
   private readonly projectId: string;
   private readonly snapshotPath: string;
+  private cachedClient?: HookdeckClient;
 
   constructor(options: FixedProjectSourceOptions) {
-    this.apiKey = options.apiKey;
+    this.options = options;
     this.projectId = options.projectId ?? 'evals-ci';
     this.snapshotPath = options.snapshotPath ?? '.hookdeck-pristine.json';
-    this.client = new HookdeckClient({
-      apiKey: options.apiKey,
-      baseUrl: options.baseUrl,
-    });
+  }
+
+  /**
+   * Built on first use, not in the constructor. Experiment files are imported
+   * to *list* what exists (`--dry`, `list`), and listing should not require
+   * credentials. A missing key then fails when a run actually needs it, with a
+   * message naming the experiment rather than a stack trace at import time.
+   */
+  private get client(): HookdeckClient {
+    if (!this.cachedClient) {
+      if (!this.options.apiKey) {
+        throw new Error(
+          'HOOKDECK_API_KEY is not set: a run needs a project to score against'
+        );
+      }
+      this.cachedClient = new HookdeckClient({
+        apiKey: this.options.apiKey,
+        baseUrl: this.options.baseUrl,
+      });
+    }
+    return this.cachedClient;
+  }
+
+  private get apiKey(): string {
+    return this.options.apiKey;
   }
 
   async acquire(): Promise<LeasedProject> {

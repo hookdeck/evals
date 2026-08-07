@@ -1,0 +1,45 @@
+{
+  "resources": [
+    {
+      "kind": "sources",
+      "ref": "orders",
+      "body": {
+        "name": "orders"
+      }
+    },
+    {
+      "kind": "destinations",
+      "ref": "api",
+      "body": {
+        "name": "orders-api",
+        "type": "HTTP",
+        "config": {
+          "url": "https://mock.hookdeck.com"
+        }
+      }
+    },
+    {
+      "kind": "connections",
+      "body": {
+        "name": "orders-to-api",
+        "source_id": "$ref:orders",
+        "destination_id": "$ref:api"
+      }
+    }
+  ],
+  "events": [
+    {
+      "source": "orders",
+      "count": 3,
+      "body": {
+        "order_id": "ord_ok",
+        "total": 120
+      }
+    },
+    {
+      "source": "orders",
+      "bodyBytes": 12000000,
+      "count": 1
+    }
+  ]
+}
