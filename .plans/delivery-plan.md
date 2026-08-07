@@ -6,10 +6,11 @@
 **Builds on:** [Hookdeck Evals proposal v2](https://app.notion.com/p/3b1783a05de281e19b68f6f77e8e9b65) (3 August 2026)
 **Repo:** https://github.com/hookdeck/evals
 
-> **This file is the source of truth for the plan.** It is written to be public: it
-> carries no internal repository paths, no customer or business figures, no unannounced
-> product plans. Keep it that way when editing. Anything that fails that test belongs
-> in a private note, not here.
+> **This file is the source of truth for the plan**, and it is published. It carries no
+> internal repository paths, no customer or business figures, and no unannounced product
+> plans. Keep it that way when editing; anything failing that test belongs in a private
+> note elsewhere. `AGENTS.md` covers how to work in this repo, and points here for what
+> we are doing and why.
 
 The proposal answers what and why. This answers how we ship it. Claims about existing
 code are verified against the repos unless marked otherwise. Where this plan diverges

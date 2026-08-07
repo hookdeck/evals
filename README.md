@@ -24,8 +24,10 @@ upstream copyright.
 
 ## Plan
 
-`docs/delivery-plan.md` covers the phases, the decisions and why they were made, cost
-and cadence, and what is still open. `AGENTS.md` is the shorter operational version.
+[`.plans/delivery-plan.md`](.plans/delivery-plan.md) covers the phases, the decisions
+and why they were made, cost and cadence, and what is still open.
+[`AGENTS.md`](AGENTS.md) covers how to work in this repo: conventions, and the traps
+worth knowing before changing anything.
 
 ## Quickstart
 
