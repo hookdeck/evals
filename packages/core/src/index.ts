@@ -510,6 +510,11 @@ export type EvalSessionArgs = {
 export type EvalSession = {
   mcpServers: Record<string, McpServerConfig>;
   promptAddendum?: string;
+  /**
+   * Environment for the agent's sandbox. Carries the leased project's
+   * credentials, so the agent can act on it with the CLI or the API.
+   */
+  sandboxEnv?: Record<string, string>;
   scoringContext: ToolScoringContext;
   close(): Promise<void>;
 };

@@ -18,6 +18,13 @@ export interface AgentEnvironmentOptions {
   localDir?: string;
   /** Skills to install into the sandbox (the agent reads them with its file tools). */
   skills?: readonly SkillSource[];
+  /**
+   * Environment for every command the agent runs. This is how credentials for
+   * the leased project reach the agent: the Hookdeck CLI reads
+   * HOOKDECK_API_KEY, so setting it here is what makes the project actionable
+   * without handing the agent a tool it would not have in real life.
+   */
+  env?: Record<string, string>;
 }
 
 export interface AgentEnvironment {
@@ -40,6 +47,7 @@ export async function createAgentEnvironment(
     if (options.localDir) {
       await sandbox.copyToContainer(options.localDir, sandbox.workdir);
     }
+    if (options.env) sandbox.extraEnv = { ...options.env };
     const skills = await installSkills(sandbox, options.skills ?? []);
     return { sandbox, skills, close: () => sandbox.stop() };
   } catch (err) {

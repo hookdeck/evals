@@ -20,10 +20,11 @@ export interface BareSandboxHandle {
  * platform-lite via `host.docker.internal` on the default bridge).
  */
 export async function createBareSandbox(
-  options: { skills?: readonly SkillSource[] } = {}
+  options: { skills?: readonly SkillSource[]; env?: Record<string, string> } = {}
 ): Promise<BareSandboxHandle> {
   const env = await createAgentEnvironment({
     skills: options.skills,
+    env: options.env,
   });
   return {
     sandbox: toAgentSandbox(env.sandbox),

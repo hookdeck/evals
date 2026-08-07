@@ -60,11 +60,18 @@ export function hookdeckRuntime(options: HookdeckRuntimeOptions): EvalRuntime {
 
         return {
           mcpServers,
-          promptAddendum:
-            (options.mcpServers ?? [])
+          promptAddendum: [
+            // The agent is told the project exists and is authenticated, and
+            // nothing else. Which docs to read, and how to do the task, is what
+            // the scenario measures.
+            'You have a Hookdeck project. The Hookdeck CLI is installed and ' +
+              'HOOKDECK_API_KEY is set in your environment, so both the CLI ' +
+              'and the REST API are available to you.',
+            ...(options.mcpServers ?? [])
               .map((s) => s.promptAddendum)
-              .filter((p): p is string => Boolean(p))
-              .join('\n\n') || undefined,
+              .filter((p): p is string => Boolean(p)),
+          ].join('\n\n'),
+          sandboxEnv: { HOOKDECK_API_KEY: project.apiKey },
           scoringContext,
           close: async () => {
             const errors: unknown[] = [];

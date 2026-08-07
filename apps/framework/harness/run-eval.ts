@@ -294,19 +294,12 @@ function readSessionSeedArgs(ev: EvalManifest) {
   };
 }
 
-function basePromptFor(mode: EvalMode): string {
-  if (false) {
-    return (
-      'You are an agent solving a Supabase eval task in a Linux workspace. ' +
-      'Use the provided tools to inspect and modify the workspace and run commands. ' +
-      'When you are done, end your turn with a short summary of what you did.'
-    );
-  }
+function basePromptFor(_mode: EvalMode): string {
   return (
-    'You are an agent solving a Supabase eval task. ' +
-    'Use the provided tools to inspect and modify the project. ' +
+    'You are an agent working on a real Hookdeck project, as a developer would. ' +
+    'Use the provided tools to inspect and change the project. ' +
     'When you are done, end your turn with a short summary of what you did ' +
-    '(or for audit tasks, your findings).'
+    '(or for investigation tasks, your findings).'
   );
 }
 
@@ -385,15 +378,20 @@ async function runOne(
     // skills installed — and reaches the in-container MCP servers' host-side
     // platform-lite via host.docker.internal (so platform-lite binds 0.0.0.0).
     // An in-process agent runs host-side with no sandbox.
-    await using cliSandbox = agentRunsInSandbox
-      ? disposable(await createBareSandbox({ skills: skillSources }))
-      : undefined;
+    // Session first: the sandbox needs the leased project's credentials, so it
+    // cannot be built until the session exists. Disposal runs in reverse, so
+    // the container is torn down before the project is released.
     await using session = disposable(
-      // No hostname: upstream bound platform-lite to 0.0.0.0 so in-container
-      // MCP servers could reach it. We talk to api.hookdeck.com over normal
-      // outbound internet, so there is nothing host-side to bind.
       await exp.runtime.startSession(readSessionSeedArgs(ev))
     );
+    await using cliSandbox = agentRunsInSandbox
+      ? disposable(
+          await createBareSandbox({
+            skills: skillSources,
+            env: session.sandboxEnv,
+          })
+        )
+      : undefined;
 
     // CLI agents read their installed skills from disk (the bare sandbox folds
     // the discovery listing into its promptAddendum). In-process agents have
