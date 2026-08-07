@@ -105,6 +105,9 @@ importers:
       '@hookdeck-evals/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@hookdeck-evals/hookdeck':
+        specifier: workspace:*
+        version: link:../../packages/hookdeck
       '@hookdeck-evals/sandbox':
         specifier: workspace:*
         version: link:../../packages/sandbox
@@ -291,6 +294,19 @@ importers:
       '@opencode-ai/sdk':
         specifier: 'catalog:'
         version: 1.18.5
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.8(@opentelemetry/api@1.9.1)(@types/node@25.9.3)(happy-dom@20.10.2)(vite@7.3.5(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4))
+
+  packages/hookdeck:
+    dependencies:
+      '@hookdeck-evals/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
       vitest:
         specifier: 'catalog:'
         version: 4.1.8(@opentelemetry/api@1.9.1)(@types/node@25.9.3)(happy-dom@20.10.2)(vite@7.3.5(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4))

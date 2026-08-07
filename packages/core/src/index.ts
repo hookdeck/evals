@@ -499,16 +499,12 @@ export type EvalRuntime = {
 };
 
 export type EvalSessionArgs = {
-  projectSeedSql?: string;
-  logsSeedJsonl?: string;
-  functionsSeedDir?: string;
-  pgvector?: boolean;
   /**
-   * Host to bind the platform-lite server to. Defaults to 127.0.0.1 (host-side,
-   * for in-process agents). The harness sets 0.0.0.0 for CLI agents in tools
-   * mode so their in-container MCP servers can reach it via host.docker.internal.
+   * The scenario's `remote/` directory, if it has one. A `seed.json` inside it
+   * describes the Hookdeck project state the scenario starts from. Absent for
+   * scenarios that begin from a pristine project.
    */
-  hostname?: string;
+  remoteDir?: string;
 };
 
 export type EvalSession = {

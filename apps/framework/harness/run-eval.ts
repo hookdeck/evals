@@ -289,17 +289,8 @@ function copyWithheldTests(ev: EvalManifest, workspace: string) {
 }
 
 function readSessionSeedArgs(ev: EvalManifest) {
-  const projectSeedSql = join(ev.remoteDir, 'project.sql');
-  const logsSeedJsonl = join(ev.remoteDir, 'logs.jsonl');
-  const functionsSeedDir = join(ev.remoteDir, 'functions');
-
   return {
-    projectSeedSql: existsSync(projectSeedSql) ? projectSeedSql : undefined,
-    logsSeedJsonl: existsSync(logsSeedJsonl) ? logsSeedJsonl : undefined,
-    functionsSeedDir: existsSync(functionsSeedDir)
-      ? functionsSeedDir
-      : undefined,
-    pgvector: ev.metadata.product.includes('vectors'),
+    remoteDir: existsSync(ev.remoteDir) ? ev.remoteDir : undefined,
   };
 }
 
@@ -398,10 +389,10 @@ async function runOne(
       ? disposable(await createBareSandbox({ skills: skillSources }))
       : undefined;
     await using session = disposable(
-      await exp.runtime.startSession({
-        ...readSessionSeedArgs(ev),
-        hostname: agentRunsInSandbox ? '0.0.0.0' : undefined,
-      })
+      // No hostname: upstream bound platform-lite to 0.0.0.0 so in-container
+      // MCP servers could reach it. We talk to api.hookdeck.com over normal
+      // outbound internet, so there is nothing host-side to bind.
+      await exp.runtime.startSession(readSessionSeedArgs(ev))
     );
 
     // CLI agents read their installed skills from disk (the bare sandbox folds
