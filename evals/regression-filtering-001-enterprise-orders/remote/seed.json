@@ -1,0 +1,39 @@
+{
+  "resources": [
+    { "kind": "sources", "ref": "orders", "body": { "name": "orders" } },
+    {
+      "kind": "destinations", "ref": "fulfilment",
+      "body": {
+        "name": "fulfilment-api",
+        "type": "HTTP",
+        "config": { "url": "https://mock.hookdeck.com" }
+      }
+    },
+    {
+      "kind": "connections",
+      "body": {
+        "name": "orders-to-fulfilment",
+        "source_id": "$ref:orders",
+        "destination_id": "$ref:fulfilment"
+      }
+    }
+  ],
+  "events": [
+    {
+      "source": "orders",
+      "body": { "order_id": "ord_1001", "total": 1250, "customer": { "email": "priya@acme.com", "name": "Priya S" } }
+    },
+    {
+      "source": "orders",
+      "body": { "order_id": "ord_1002", "total": 89, "customer": { "email": "sam@globex.com", "name": "Sam T" } }
+    },
+    {
+      "source": "orders",
+      "body": { "order_id": "ord_1003", "total": 4300, "customer": { "email": "dev@hobbyist.dev", "name": "Dev K" } }
+    },
+    {
+      "source": "orders",
+      "body": { "order_id": "ord_1004", "total": 640, "customer": { "email": "jo@globex.com", "name": "Jo M" } }
+    }
+  ]
+}

@@ -70,16 +70,20 @@ async function checkNoInventedCapabilities(
   const verdict = await judge({
     input: serializeTranscript(ctx.transcript, { includeToolCallInputs: true }),
     rubric: stripIndent`
-      Pass if the assistant builds the filter using Hookdeck's own filter
-      operators, without inventing capabilities Hookdeck does not have.
+      This check is only about invented capabilities. Ignore whether the task
+      was completed well, or at all: other checks cover that.
 
-      Fail if the assistant:
+      Fail ONLY if the assistant:
       - offers, describes, or attempts a regular-expression filter operator
       - describes a "channel" or "channel partitioning" feature for splitting
         traffic
 
-      Attempting a regex, discovering it is rejected, and then correcting to a
-      supported operator is a pass: the final answer is what matters.
+      Pass in every other case, including when the assistant asked a question
+      instead of finishing, or did not mention filtering at all. An assistant
+      that invented nothing has not committed the failure this guards against.
+
+      Attempting a regex, discovering it is rejected, and correcting to a
+      supported operator is also a pass: what reaches the user is what matters.
     `,
   });
   return {
