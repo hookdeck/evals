@@ -1,3 +1,3 @@
 [submodule "submodules/agent-skills"]
 	path = submodules/agent-skills
-	url = git@github.com:supabase/agent-skills.git
+	url = git@github.com:hookdeck/agent-skills.git

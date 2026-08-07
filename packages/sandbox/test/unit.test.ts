@@ -16,17 +16,24 @@ import {
 import { ALL_SUPABASE_SERVICES } from '../src/types.js';
 
 describe('sandbox Dockerfile', () => {
-  it('is a CLI-free base image carrying the common agent tooling', () => {
+  it('carries the common agent tooling', () => {
     const dockerfile = readFileSync(SANDBOX_DOCKERFILE_PATH, 'utf8');
     expect(dockerfile).toContain('FROM node:22-slim');
-    // Common tooling shared by both eval modes.
-    expect(dockerfile).toContain('postgresql-client');
     expect(dockerfile).toContain('docker.io');
-    // The Supabase CLI is NOT baked in — it's a local-stack component installed
-    // at setup time (installSupabaseCli), so tools-mode sandboxes genuinely lack
-    // it. The base image is therefore shared across modes and CLI versions.
-    expect(dockerfile).not.toContain('ARG CLI_VERSION');
+    expect(dockerfile).toContain('git');
+    // No Postgres client: we score against the Hookdeck API, not a database.
+    expect(dockerfile).not.toContain('postgresql-client');
+    // No trace of the Supabase local stack.
     expect(dockerfile).not.toContain('supabase.deb');
+  });
+
+  it('bakes in the Hookdeck CLI pinned via build arg', () => {
+    const dockerfile = readFileSync(SANDBOX_DOCKERFILE_PATH, 'utf8');
+    // Pinned so benchmark runs stay comparable across CLI releases, and baked
+    // in rather than installed per session: `hookdeck listen` is the user's
+    // goal in local-dev scenarios, so the agent should find it present.
+    expect(dockerfile).toContain('ARG HOOKDECK_CLI_VERSION');
+    expect(dockerfile).toContain('hookdeck-cli@${HOOKDECK_CLI_VERSION}');
   });
 
   it("bakes in Vercel's skills CLI pinned via build arg", () => {

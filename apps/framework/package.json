@@ -18,7 +18,6 @@
     "@ai-sdk/anthropic": "catalog:",
     "@ai-sdk/mcp": "catalog:",
     "@ai-sdk/openai": "catalog:",
-    "@supabase-evals/platform-lite": "workspace:*",
     "@electric-sql/pglite": "catalog:",
     "@supabase-evals/core": "workspace:*",
     "@supabase-evals/sandbox": "workspace:*",
