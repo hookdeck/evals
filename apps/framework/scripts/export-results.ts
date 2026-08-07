@@ -16,6 +16,7 @@ import type {
   EvalSuite,
   ExperimentSuite,
 } from '@hookdeck-evals/core/eval-metadata';
+import { collectEnvSecretValues } from '@hookdeck-evals/hookdeck';
 import {
   normalizeExperimentName,
   readExperimentSuiteFilters,
@@ -69,6 +70,36 @@ const MERGE = rawArgs.includes('--merge');
 
 const OUTPUT_FLAG = readRepeatedFlag(rawArgs, 'output')[0];
 const outputPath = OUTPUT_FLAG ? resolve(ROOT, OUTPUT_FLAG) : OUTPUT_PATH;
+
+/**
+ * Refuse to publish anything containing a credential.
+ *
+ * The exported artifact is the published one, so this is the last point where
+ * a secret can be stopped. Today it carries no transcripts and so no secrets,
+ * but the site is meant to gain per-run drill-down, and an agent WILL echo its
+ * key into a transcript: it happened on the first real run. A guard that fails
+ * the export is more durable than remembering to redact.
+ */
+function assertNoSecrets(serialized: string): void {
+  const found = collectEnvSecretValues().filter((v) => serialized.includes(v));
+  if (found.length > 0) {
+    throw new Error(
+      `refusing to write results: output contains ${found.length} credential value(s) from the environment. ` +
+        'Redact transcripts before export.'
+    );
+  }
+  // Catch keys that are not in this process's env, e.g. a key from an earlier
+  // run still sitting in a results file.
+  const shapes = [/\bhd_[A-Za-z0-9_-]{20,}/, /\bsk-[A-Za-z0-9_-]{20,}/];
+  for (const shape of shapes) {
+    const hit = serialized.match(shape);
+    if (hit) {
+      throw new Error(
+        `refusing to write results: output contains something shaped like a credential (${hit[0].slice(0, 6)}…).`
+      );
+    }
+  }
+}
 
 async function readPrompt(evalId: string) {
   const promptPath = resolve(EVALS_DIR, evalId, 'PROMPT.md');
@@ -288,7 +319,9 @@ async function main() {
   }
 
   await mkdir(dirname(outputPath), { recursive: true });
-  await writeFile(outputPath, `${JSON.stringify(results, null, 2)}\n`);
+  const serialized = `${JSON.stringify(results, null, 2)}\n`;
+  assertNoSecrets(serialized);
+  await writeFile(outputPath, serialized);
 
   const passed = results.filter((result) => result.passed).length;
   console.log(

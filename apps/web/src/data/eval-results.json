@@ -1,1 +1,286 @@
-[]
+[
+  {
+    "experiment": "claude-code-sonnet-5-docs-only",
+    "experimentSuite": "benchmark",
+    "experimentDisplay": {
+      "agent": "claude-code",
+      "modelProvider": "anthropic",
+      "modelId": "claude-sonnet-5",
+      "reasoningEffort": "high"
+    },
+    "eval": "regression-filtering-001-enterprise-orders",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "filtering"
+    ],
+    "suite": "regression",
+    "passed": true,
+    "checks": [
+      {
+        "name": "connection has a filter rule",
+        "passed": true
+      },
+      {
+        "name": "filters on the order total",
+        "passed": true,
+        "notes": "expected a numeric comparison against 500"
+      },
+      {
+        "name": "filters on both enterprise domains",
+        "passed": true,
+        "notes": "expected both domains to appear in the rule"
+      },
+      {
+        "name": "did not invent regex filtering or channels",
+        "passed": true,
+        "judgeNotes": "No regex filter operator or channel partitioning feature was offered, described, or attempted in the user-facing result."
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "We're getting far more order webhooks than we can process and I only want the\nbig enterprise ones reaching my service. Send through orders over $500 from\ncustomers on one of our enterprise domains, `@acme.com` or `@globex.com`.\nEverything else should be filtered out.",
+    "promptSourcePath": "evals/regression-filtering-001-enterprise-orders/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "claude-code-sonnet-5-docs-only/regression-filtering-001-enterprise-orders.json"
+  },
+  {
+    "experiment": "claude-code-sonnet-5-docs-only",
+    "experimentSuite": "benchmark",
+    "experimentDisplay": {
+      "agent": "claude-code",
+      "modelProvider": "anthropic",
+      "modelId": "claude-sonnet-5",
+      "reasoningEffort": "high"
+    },
+    "eval": "regression-limits-001-oversized-payload",
+    "stage": "investigate",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "capabilities"
+    ],
+    "suite": "regression",
+    "passed": true,
+    "checks": [
+      {
+        "name": "diagnosed ingestion rejection, not a delivery failure",
+        "passed": true,
+        "judgeNotes": "The answer correctly identifies the missing events as rejected at ingestion due to payload exceeding the inbound size limit, cites PAYLOAD_TOO_LARGE, content-length ~12,000,014/11.44 MB, and explains they never became Events. It does not blame delivery/destination/retries."
+      },
+      {
+        "name": "did not state a wrong payload limit",
+        "passed": true,
+        "judgeNotes": "The assistant states Hookdeck's inbound ingestion limit is 10 MiB."
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "Some of our order events just aren't showing up. Most come through fine but a\nfew never arrive at all, and I can't see them anywhere. Can you work out what's\ngoing on?",
+    "promptSourcePath": "evals/regression-limits-001-oversized-payload/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "claude-code-sonnet-5-docs-only/regression-limits-001-oversized-payload.json"
+  },
+  {
+    "experiment": "claude-code-sonnet-5-docs-only",
+    "experimentSuite": "benchmark",
+    "experimentDisplay": {
+      "agent": "claude-code",
+      "modelProvider": "anthropic",
+      "modelId": "claude-sonnet-5",
+      "reasoningEffort": "high"
+    },
+    "eval": "regression-verification-001-generic-hmac",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "signature-verification"
+    ],
+    "suite": "regression",
+    "passed": true,
+    "checks": [
+      {
+        "name": "created a source using HMAC verification",
+        "passed": true
+      },
+      {
+        "name": "accepts a correctly signed request",
+        "passed": true,
+        "notes": "expected 200, got 200"
+      },
+      {
+        "name": "rejects an incorrectly signed request",
+        "passed": true,
+        "notes": "expected 401, got 401"
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "I'm receiving webhooks from an internal service that isn't one of the providers\nyou support out of the box. It signs each request like this:\n\n```\nPOST /\nX-Acme-Signature: 5xO8jH2Qm1kV9pAzR3sT7uYwXcNbMlKjHgFdSaPoIuY=\nContent-Type: application/json\n\n{\"order_id\":\"ord_4821\",\"total\":1250}\n```\n\nThe signature is the request body signed with SHA-256 using our shared secret\n`acme_whsec_5f2b91`. Set up a Hookdeck source that verifies these.",
+    "promptSourcePath": "evals/regression-verification-001-generic-hmac/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "claude-code-sonnet-5-docs-only/regression-verification-001-generic-hmac.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6-docs-only",
+    "experimentSuite": "benchmark",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "regression-filtering-001-enterprise-orders",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "filtering"
+    ],
+    "suite": "regression",
+    "passed": true,
+    "checks": [
+      {
+        "name": "connection has a filter rule",
+        "passed": true
+      },
+      {
+        "name": "filters on the order total",
+        "passed": true,
+        "notes": "expected a numeric comparison against 500"
+      },
+      {
+        "name": "filters on both enterprise domains",
+        "passed": true,
+        "notes": "expected both domains to appear in the rule"
+      },
+      {
+        "name": "did not invent regex filtering or channels",
+        "passed": true,
+        "judgeNotes": "No regex filter operator or channel/channel partitioning feature was offered or described."
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "We're getting far more order webhooks than we can process and I only want the\nbig enterprise ones reaching my service. Send through orders over $500 from\ncustomers on one of our enterprise domains, `@acme.com` or `@globex.com`.\nEverything else should be filtered out.",
+    "promptSourcePath": "evals/regression-filtering-001-enterprise-orders/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6-docs-only/regression-filtering-001-enterprise-orders.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6-docs-only",
+    "experimentSuite": "benchmark",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "regression-limits-001-oversized-payload",
+    "stage": "investigate",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "capabilities"
+    ],
+    "suite": "regression",
+    "passed": true,
+    "checks": [
+      {
+        "name": "diagnosed ingestion rejection, not a delivery failure",
+        "passed": true,
+        "judgeNotes": "Identifies ingestion rejection as PAYLOAD_TOO_LARGE, cites the specific rejected request and content length, and correctly states it was not a delivery/routing/destination issue."
+      },
+      {
+        "name": "did not state a wrong payload limit",
+        "passed": true,
+        "judgeNotes": "The assistant did not state Hookdeck's maximum inbound payload size/default limit; it only reported the rejected request's content length."
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "Some of our order events just aren't showing up. Most come through fine but a\nfew never arrive at all, and I can't see them anywhere. Can you work out what's\ngoing on?",
+    "promptSourcePath": "evals/regression-limits-001-oversized-payload/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6-docs-only/regression-limits-001-oversized-payload.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6-docs-only",
+    "experimentSuite": "benchmark",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "regression-verification-001-generic-hmac",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "signature-verification"
+    ],
+    "suite": "regression",
+    "passed": true,
+    "checks": [
+      {
+        "name": "created a source using HMAC verification",
+        "passed": true
+      },
+      {
+        "name": "accepts a correctly signed request",
+        "passed": true,
+        "notes": "expected 200, got 200"
+      },
+      {
+        "name": "rejects an incorrectly signed request",
+        "passed": true,
+        "notes": "expected 401, got 401"
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "I'm receiving webhooks from an internal service that isn't one of the providers\nyou support out of the box. It signs each request like this:\n\n```\nPOST /\nX-Acme-Signature: 5xO8jH2Qm1kV9pAzR3sT7uYwXcNbMlKjHgFdSaPoIuY=\nContent-Type: application/json\n\n{\"order_id\":\"ord_4821\",\"total\":1250}\n```\n\nThe signature is the request body signed with SHA-256 using our shared secret\n`acme_whsec_5f2b91`. Set up a Hookdeck source that verifies these.",
+    "promptSourcePath": "evals/regression-verification-001-generic-hmac/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6-docs-only/regression-verification-001-generic-hmac.json"
+  }
+]
