@@ -43,6 +43,14 @@ agent runs inside a container, which needs an API key the same way CI does.
 
 ## Conventions
 
+**Probe a scorer's own queries against a real project before trusting a red
+result.** This has bitten three times: source verification config is redacted on
+read, so it cannot be inspected; `/events` omits the payload unless you pass
+`include=data`; destination create takes `type` plus `config.url`. Each time the
+agent was right and the scorer was wrong, and each time it looked like an agent
+failure until someone read the transcript. A scorer that finds nothing is more
+likely broken than proof that nothing happened.
+
 **Verify API shapes against the live spec, then against a real call.**
 `reference/hookdeck-openapi.json` is fetched from the live API; refresh it with
 the command in `reference/README.md`. Do not use `hookdeck/hookdeck-api-schema`,
@@ -70,6 +78,12 @@ arbiter of truth instead of whether the thing works.
 regex filter operator", and pass in every other case, including an unfinished
 task. A check that reads "pass if it does the task *and* invents nothing" fails
 an agent that invented nothing, which makes the signal unreadable.
+
+**A scenario guarding a hallucination must ask the question.** Prompt phrasing
+decides whether the failure appears at all: asked a capability question, an
+agent may answer from memory; told to do the work, the same agent reads the
+docs and gets it right. Ask the question *and* request the work, so the answer
+stays checkable.
 
 **Put the context an agent needs in the seed, not the prompt.** A scenario with
 no seeded state gives a good agent nothing to discover, so it asks a clarifying

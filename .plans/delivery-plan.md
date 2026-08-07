@@ -426,7 +426,15 @@ Four rules, which follow from that:
    *and* invents nothing", which failed an agent that invented nothing but asked a
    question. Conflating the two makes the hallucination signal unreadable, because a
    failure no longer tells you which half broke.
-7. **Score behaviour, not configuration, wherever the API allows.** Hookdeck redacts
+7. **Phrasing decides whether a hallucination is provoked at all.** Measured on R1:
+   asked *"can I use a regex? what's the closest I can get?"*, Claude Code answered
+   from memory in 33 seconds with zero tool calls and offered a regex pattern. Told to
+   *set the filtering up*, the same agent on the same model read four documentation
+   pages and did not. A scenario guarding a capability hallucination therefore has to
+   ask the question, or it measures something else. Ask it **and** request the work, so
+   the answer stays checkable and failing to act is a real failure rather than a
+   defensible reading of the prompt.
+8. **Score behaviour, not configuration, wherever the API allows.** Hookdeck redacts
    source `config.auth` on read, so R3 cannot inspect the algorithm or encoding an
    agent chose. Signing a request and checking it is accepted, then checking a bad
    signature is rejected, turned out to be the better scorer anyway: it passes an
@@ -755,6 +763,14 @@ requests read-only, and no `created_at` filter on list endpoints.
 **Practice for scenario authoring: check every endpoint against the live spec before
 writing a scorer, and against a real call before trusting it.** Both Phase 1 mismatches
 surfaced only when the code ran.
+
+The same applies to the scorer's own queries, which has now bitten three times: source
+verification config is redacted on read; `/events` omits the payload without
+`include=data`; destination create takes `type` plus `config.url`. In every case the
+agent was right and the scorer was wrong, and it read as an agent failure until someone
+opened the transcript. **A scorer that finds nothing is more likely broken than proof
+that nothing happened.** Probe the queries against a real project before believing a
+red result.
 
 ## Scenario coverage vs. actual feature usage
 
