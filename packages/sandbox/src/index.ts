@@ -3,33 +3,19 @@ export type {
   DockerSandboxOptions,
   RunCommandOptions,
 } from './docker-sandbox.js';
+export { ensureSandboxImage, SANDBOX_DOCKERFILE_PATH } from './image.js';
 export {
-  SUPABASE_CLI_VERSION,
-  SANDBOX_DOCKERFILE_PATH,
-  buildServiceWrapperScript,
-  computeExcludedServices,
-  ensureSupabaseSandboxImage,
-  installSupabaseCli,
-  buildSupabaseStartCommand,
-  startSupabaseProject,
-  setupSupabaseSandbox,
-  teardownSupabaseProject,
-} from './supabase.js';
-export type { SetupSupabaseSandboxOptions } from './supabase.js';
-export {
-  buildLocalStackScoringContext,
-  buildLocalStackTools,
-  localStackRuntime,
   toAgentSandbox,
-} from './local-stack-runtime.js';
-export type { LocalStackRuntimeOptions } from './local-stack-runtime.js';
+  resolveSandboxPath,
+  truncateOutput,
+} from './agent-sandbox.js';
 export {
+  installSkills,
+  buildSkillsPrompt,
   SKILLS_CLI_VERSION,
   SKILLS_INSTALL_DIR,
-  buildSkillsPrompt,
-  frontmatterDescription,
-  installSkills,
   stripFrontmatter,
+  frontmatterDescription,
 } from './skills.js';
 export type { SkillEntry } from './skills.js';
 export { createBareSandbox } from './bare-sandbox.js';
@@ -38,7 +24,5 @@ export { createAgentEnvironment } from './agent-environment.js';
 export type {
   AgentEnvironment,
   AgentEnvironmentOptions,
-  LocalStackSetup,
 } from './agent-environment.js';
-export { ALL_SUPABASE_SERVICES } from './types.js';
-export type { SandboxCommandResult, SupabaseService } from './types.js';
+export type { SandboxCommandResult } from './types.js';

@@ -25,8 +25,6 @@ import {
   readRepeatedFlag,
   readSuiteFilters,
 } from '../lib/cli-args.js';
-import { bootPlatformBackend } from './platform-backend.js';
-import { viteBuild, vitestRun } from './project-runner.js';
 import {
   buildDocsResult,
   buildSkillResult,
@@ -40,7 +38,6 @@ import type {
   EvalMode,
   EvalSuite,
   ToolScorer,
-  LocalStackScorer,
   ScoreResult,
   SkillResult,
   DocsResult,
@@ -307,7 +304,7 @@ function readSessionSeedArgs(ev: EvalManifest) {
 }
 
 function basePromptFor(mode: EvalMode): string {
-  if (mode === 'local-stack') {
+  if (false) {
     return (
       'You are an agent solving a Supabase eval task in a Linux workspace. ' +
       'Use the provided tools to inspect and modify the workspace and run commands. ' +
@@ -380,9 +377,7 @@ async function runOne(
     ev.mode === 'tools' && !agentRunsInSandbox
       ? loadToolsSkills(ev.metadata.skills ?? exp.skills)
       : [];
-  const scorer = (await import(pathToFileURL(ev.evalPath).href)).default as
-    | ToolScorer
-    | LocalStackScorer;
+  const scorer = (await import(pathToFileURL(ev.evalPath).href)).default as ToolScorer;
   let last: ScoreResult = {
     passed: false,
     checks: [{ name: 'ran at least one attempt', passed: false }],
@@ -393,114 +388,6 @@ async function runOne(
   let lastStoppedReason = 'not_started';
 
   for (let attempt = 1; attempt <= RUNS; attempt += 1) {
-    if (ev.mode === 'local-stack') {
-      // Local-stack mode: the experiment's local-stack tool surface provides
-      // the sandbox session; one fresh session per attempt.
-      if (!exp.localStack) {
-        throw new Error(
-          `eval ${ev.id} has interface: cli but experiment "${expName}" does not configure a local stack runtime. ` +
-            `Add \`localStack: localStackRuntime()\` (from "@supabase-evals/sandbox") to experiments/${expName}.ts.`
-        );
-      }
-      // When the eval links to a hosted project, boot a platform-lite backend
-      // (bound to 0.0.0.0 so the sandbox reaches it via host.docker.internal)
-      // and hand the CLI-valid ref/token to the session. Seed it from the eval's
-      // `remote/` dir (project.sql / logs.jsonl / functions) just like the tools
-      // runtime does — otherwise the hosted project boots empty and scorers that
-      // read remote state (e.g. the migration history) have nothing to assert on.
-      await using hostedBackend = ev.metadata.hostedProject
-        ? disposable(
-            await bootPlatformBackend({
-              ...readSessionSeedArgs(ev),
-              ref: HOSTED_PROJECT_REF,
-              accessToken: HOSTED_ACCESS_TOKEN,
-              hostname: '0.0.0.0',
-              // Expose Postgres-wire too, so linked DB workflows (`db push`,
-              // `migration repair`) reach the same project over the wire.
-              pgWire: true,
-            })
-          )
-        : undefined;
-      await using session = disposable(
-        await exp.localStack.startSession({
-          cliVersion: ev.metadata.cliVersion,
-          localDir: ev.localDir,
-          includeServices: ev.metadata.services,
-          projectRunning: ev.metadata.projectRunning,
-          hosted: hostedBackend
-            ? {
-                port: Number(new URL(hostedBackend.url).port),
-                pgPort: hostedBackend.pgPort,
-                ref: hostedBackend.ref,
-                accessToken: hostedBackend.accessToken,
-                mgmt: hostedBackend.mgmt,
-                query: hostedBackend.query,
-                invokeFunction: hostedBackend.invokeFunction,
-              }
-            : undefined,
-          skills: skillSources,
-          skipCliInstall: ev.metadata.skipCliInstall,
-        })
-      );
-
-      const run = await exp.agent.run({
-        systemPrompt: buildSystemPrompt('local-stack', session.promptAddendum),
-        userPrompt: prompt,
-        tools: session.tools,
-        sandbox: session.sandbox,
-        mcpServers: session.mcpServers,
-        timeoutSec: TIMEOUT_SEC,
-      });
-      lastToolCalls = run.toolCalls;
-      lastTranscript = run.transcript;
-      lastAgentReport = run.agentReport;
-      lastStoppedReason = run.stoppedReason;
-
-      // Export the agent's workspace to the host so scorers can run host
-      // tooling (vite/vitest from the repo root) against the produced files
-      // — the tools live on the host, not in the sandbox. Withheld tests are
-      // copied in lazily, only if the scorer asks to run Vitest.
-      const hostWorkspace = workspacePath(expName, ev.id, attempt);
-      rmSync(hostWorkspace, { recursive: true, force: true });
-      await session.exportWorkspace(hostWorkspace);
-      let copiedWithheldTests = false;
-      const ensureWithheldTests = () => {
-        if (copiedWithheldTests) return;
-        copyWithheldTests(ev, hostWorkspace);
-        copiedWithheldTests = true;
-      };
-
-      last = await (scorer as LocalStackScorer)({
-        ...session.scoringContext,
-        toolCalls: run.toolCalls,
-        transcript: run.transcript,
-        agentReport: run.agentReport,
-        hostWorkspace,
-        runViteBuild: () => viteBuild(hostWorkspace),
-        runVitest: () => {
-          ensureWithheldTests();
-          return vitestRun(hostWorkspace);
-        },
-      });
-
-      // Runs after scoring so the scorer sees what the agent actually saw, not rehydrated content.
-      await rehydrateTruncatedDocsResults(session.sandbox, run.toolCalls);
-
-      if (STOP_ON_PASS && last.passed) {
-        return {
-          ...last,
-          attempts: attempt,
-          skills: buildSkillResult(availableSkills, run.toolCalls),
-          docs: buildDocsResult(run.toolCalls),
-          toolCalls: run.toolCalls,
-          transcript: run.transcript,
-          agentReport: run.agentReport,
-          stoppedReason: run.stoppedReason,
-        };
-      }
-      logRetryAttempt(expName, ev, attempt, last);
-      continue;
-    }
 
     // Tools mode: the eval's tool surface is MCP (platform-lite). A CLI agent
     // gets the same sandbox as local-stack minus the running stack — with its
@@ -585,9 +472,6 @@ function formatPlanLine(
   ev: EvalManifest
 ): string {
   const head = `PLAN ${name} x ${ev.id}  stage=${ev.stage} suite=${ev.suite}`;
-  if (ev.mode === 'local-stack') {
-    return `${head} mode=local-stack runtime=${config.localStack?.id} model=${config.agent.modelId}`;
-  }
   return `${head} mode=tools runtime=${config.runtime.id} model=${config.agent.modelId}`;
 }
 
@@ -755,12 +639,6 @@ async function main() {
         console.log(`SKIP ${name} x ${ev.id} (already ran)`);
         continue;
       }
-      if (ev.mode === 'local-stack' && !config.localStack) {
-        console.log(
-          `SKIP ${name} x ${ev.id} (no local stack runtime — add \`localStack: localStackRuntime()\` from "@supabase-evals/sandbox" to experiments/${name}.ts)`
-        );
-        continue;
-      }
       if (config.skipEval?.(ev)) {
         console.log(`SKIP ${name} x ${ev.id} (skipEval)`);
         continue;
@@ -812,7 +690,7 @@ async function main() {
         );
       }
     };
-    if (ev.mode !== 'local-stack') return run();
+    return run();
     const prev = localStackTurn;
     let release!: () => void;
     localStackTurn = new Promise((r) => (release = r));

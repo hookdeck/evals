@@ -6,3 +6,4 @@ dist/
 results/*/
 .sync-tmp/
 
+.spike-pristine.json

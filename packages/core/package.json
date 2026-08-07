@@ -21,7 +21,6 @@
     "@anthropic-ai/sdk": "catalog:",
     "@ai-sdk/mcp": "catalog:",
     "@ai-sdk/openai": "catalog:",
-    "@supabase-evals/platform-lite": "workspace:*",
     "@supabase/supabase-js": "catalog:",
     "ai": "catalog:",
     "executor": "1.4.29",

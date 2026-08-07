@@ -1,11 +1,10 @@
-# Common base image for the agent's sandbox (both eval modes). It carries the
-# general developer tooling every agent run needs; the Supabase CLI is NOT here
-# — it's a local-stack component installed at setup time (installSupabaseCli),
-# so tools-mode sandboxes genuinely lack it. The only mode difference.
+# Base image for the agent's sandbox. Carries the general developer tooling
+# every agent run needs, plus the Hookdeck CLI (which is goal-implied tooling
+# for local-dev scenarios like BM6, and how the agent authenticates a run).
 FROM node:22-slim
 
 RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends \
-    ca-certificates curl git docker.io postgresql-client \
+    ca-certificates curl git docker.io \
   && rm -rf /var/lib/apt/lists/*
 
 # Global npm installs (both the baked-in skills CLI below and the agent's own
@@ -21,3 +20,10 @@ ENV NPM_CONFIG_PREFIX=/home/node/.npm-global
 # offline and instant rather than an npx download per session.
 ARG SKILLS_CLI_VERSION
 RUN npm install -g "skills@${SKILLS_CLI_VERSION}"
+
+# Hookdeck CLI, pinned so runs stay comparable across the benchmark. Baked in
+# rather than installed per session: `hookdeck listen` is the user's goal in
+# local-dev scenarios, so the agent should find the CLI present the way a
+# developer following our install docs would.
+ARG HOOKDECK_CLI_VERSION
+RUN npm install -g "hookdeck-cli@${HOOKDECK_CLI_VERSION}"

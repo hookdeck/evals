@@ -17,14 +17,8 @@ export type {
   SkillResult,
   DocsResult,
   VitestResult,
-  ProjectResult,
-  EdgeFunctionsInvokeInput,
-  EdgeFunctionsInvokeResult,
   ToolEvalContext,
-  LocalStackScoringContext,
-  LocalStackEvalContext,
   ToolScorer,
-  LocalStackScorer,
   ExperimentConfig,
 } from '@supabase-evals/core';
 export { judge, serializeTranscript } from '@supabase-evals/core';

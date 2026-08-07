@@ -1,6 +1,6 @@
 import type { AgentSandbox, SkillSource } from '@supabase-evals/core';
 import { createAgentEnvironment } from './agent-environment.js';
-import { toAgentSandbox } from './local-stack-runtime.js';
+import { toAgentSandbox } from './agent-sandbox.js';
 import { buildSkillsPrompt } from './skills.js';
 
 export interface BareSandboxHandle {
@@ -20,10 +20,9 @@ export interface BareSandboxHandle {
  * platform-lite via `host.docker.internal` on the default bridge).
  */
 export async function createBareSandbox(
-  options: { cliVersion?: string; skills?: readonly SkillSource[] } = {}
+  options: { skills?: readonly SkillSource[] } = {}
 ): Promise<BareSandboxHandle> {
   const env = await createAgentEnvironment({
-    cliVersion: options.cliVersion,
     skills: options.skills,
   });
   return {
