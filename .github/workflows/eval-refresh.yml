@@ -1,5 +1,9 @@
 name: Refresh eval results
 
+# Manual only, deliberately. Automatic triggers arrive in Phase 3 alongside the
+# published scoreboard; until then a run is something a person chooses to spend
+# money on. The inherited nightly schedule and the PR-label triggers were
+# removed rather than left to fire against a half-built suite.
 on:
   workflow_dispatch:
     inputs:
@@ -14,11 +18,11 @@ on:
       suite:
         description: "Comma-separated eval suites to run"
         required: true
-        default: "benchmark"
+        default: "regression"
       experiment_suite:
         description: "Comma-separated experiment suites to run"
         required: true
-        default: "benchmark,no-skills"
+        default: "regression"
       runs:
         description: "Attempts per experiment/eval pair"
         required: true
@@ -32,47 +36,24 @@ on:
         type: boolean
         required: false
         default: false
-      commit_to_branch:
-        description: "Commit exported results to the dispatched branch instead of opening a PR"
-        type: boolean
-        required: false
-        default: false
-  schedule:
-    - cron: '15 6 * * *'
-  pull_request:
-    # Run whenever a PR carrying the run-evals label is opened, pushed to, or
-    # receives the run-evals label. The job-level `if` gates on those cases.
-    types: [opened, synchronize, labeled]
 
 permissions:
   contents: write
-  pull-requests: write
-  actions: read
 
+# Scoring runs against one shared Hookdeck project, so two workflow runs must
+# never overlap. Queue rather than cancel: a cancelled run leaves the project
+# dirty for the next one.
 concurrency:
-  group: eval-refresh-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.ref }}
-  # Supersede an in-flight run when a new commit is pushed to the same PR, but
-  # never cancel a workflow_dispatch run (those open the refresh PR).
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: eval-refresh
+  cancel-in-progress: false
 
 jobs:
   prepare:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'schedule' ||
-      (github.event_name == 'pull_request' &&
-        (contains(github.event.pull_request.labels.*.name, 'run-evals') ||
-         contains(github.event.pull_request.labels.*.name, 'run-evals-changed')) &&
-        github.event.pull_request.head.repo.full_name == github.repository &&
-        (github.event.action != 'labeled' ||
-         github.event.label.name == 'run-evals' ||
-         github.event.label.name == 'run-evals-changed'))
     runs-on: ubuntu-latest
     outputs:
       pairs: ${{ steps.discover.outputs.pairs }}
       runs: ${{ steps.inputs.outputs.runs }}
       timeout_sec: ${{ steps.inputs.outputs.timeout_sec }}
-      filter_changed: ${{ steps.inputs.outputs.filter_changed }}
       do_merge: ${{ steps.inputs.outputs.do_merge }}
     steps:
       - name: Prepare inputs
@@ -81,63 +62,21 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            experiments_override="${{ inputs.experiments }}"
-            eval_id="${{ inputs.eval }}"
-            suite="${{ inputs.suite }}"
-            experiment_suite="${{ inputs.experiment_suite }}"
-            runs="${{ inputs.runs }}"
-            timeout_sec="${{ inputs.timeout_sec }}"
-          elif [ "${{ github.event_name }}" = "schedule" ]; then
-            experiments_override=""
-            eval_id=""
-            suite="regression"
-            experiment_suite="regression"
-            runs="2"
-            timeout_sec="720"
-          else
-            experiments_override=""
-            eval_id=""
-            suite="benchmark,regression"
-            experiment_suite="benchmark,no-skills,regression"
-            runs="2"
-            timeout_sec="720"
-          fi
-
-          suite_json="$(jq -Rc 'split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(length > 0))' <<< "$suite")"
-          experiment_suite_json="$(jq -Rc 'split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(length > 0))' <<< "$experiment_suite")"
-
-          # run-evals takes priority; run-evals-changed only filters when run-evals is absent.
-          # filter_changed drives the changed-eval filter (PR-only, needs a PR diff).
-          filter_changed="false"
-          if [ "${{ github.event_name }}" = "pull_request" ] && \
-             [ "${{ contains(github.event.pull_request.labels.*.name, 'run-evals-changed') }}" = "true" ] && \
-             [ "${{ contains(github.event.pull_request.labels.*.name, 'run-evals') }}" = "false" ]; then
-            filter_changed="true"
-          fi
-
-          # do_merge drives the export --merge (graft into existing results). It's
-          # always on for the changed path, and opt-in for manual dispatch.
-          do_merge="$filter_changed"
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.merge }}" = "true" ]; then
-            do_merge="true"
-          fi
+          suite_json="$(jq -Rc 'split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(length > 0))' <<< "${{ inputs.suite }}")"
+          experiment_suite_json="$(jq -Rc 'split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(length > 0))' <<< "${{ inputs.experiment_suite }}")"
 
           {
-            echo "experiments_override=$experiments_override"
-            echo "eval=$eval_id"
+            echo "experiments_override=${{ inputs.experiments }}"
+            echo "eval=${{ inputs.eval }}"
             echo "suite=$suite_json"
             echo "experiment_suite=$experiment_suite_json"
-            echo "runs=$runs"
-            echo "timeout_sec=$timeout_sec"
-            echo "filter_changed=$filter_changed"
-            echo "do_merge=$do_merge"
+            echo "runs=${{ inputs.runs }}"
+            echo "timeout_sec=${{ inputs.timeout_sec }}"
+            echo "do_merge=${{ inputs.merge }}"
           } >> "$GITHUB_OUTPUT"
 
       - name: Checkout
         uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
-        with:
-          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
 
       - name: Install pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
@@ -153,8 +92,6 @@ jobs:
 
       - name: Discover eval pairs
         id: discover
-        env:
-          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
@@ -181,30 +118,9 @@ jobs:
             done
           fi
 
-          if [ "${{ steps.inputs.outputs.filter_changed }}" = "true" ]; then
-            changed_evals=$(gh pr diff ${{ github.event.pull_request.number }} --name-only \
-              | grep '^evals/' | cut -d/ -f2 | sort -u || true)
-
-            if [ -z "$changed_evals" ]; then
-              echo "No eval directories changed in this PR — nothing to run"
-              echo "pairs=[]" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-
-            echo "Changed eval dirs: $changed_evals"
-            filtered=()
-            for id in "${matching[@]}"; do
-              if echo "$changed_evals" | grep -qx "$id"; then
-                filtered+=("$id")
-              fi
-            done
-            matching=("${filtered[@]+"${filtered[@]}"}")
-          fi
-
           if [ "${#matching[@]}" -eq 0 ]; then
-            echo "Changed evals don't match requested suites: $suite_json"
-            echo "pairs=[]" >> "$GITHUB_OUTPUT"
-            exit 0
+            echo "No evals matched the requested suites: $suite_json" >&2
+            exit 1
           fi
 
           pairs='[]'
@@ -250,22 +166,23 @@ jobs:
 
   run-evals:
     needs: prepare
-    if: needs.prepare.outputs.pairs != '[]'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      # One shared project means one run at a time. Source and destination names
+      # are unique per project, so concurrent pairs collide with each other and
+      # each pair's reset deletes the others' resources mid-run.
+      max-parallel: 1
       matrix:
         include: ${{ fromJSON(needs.prepare.outputs.pairs) }}
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
+      HOOKDECK_API_KEY: ${{ secrets.HOOKDECK_API_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
-        with:
-          submodules: recursive
-          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
 
       - name: Install pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
@@ -279,6 +196,21 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Check required secrets
+        # Fail here with a readable message rather than deep inside a run, where
+        # a missing key surfaces as an agent that silently does nothing.
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=()
+          [ -n "${HOOKDECK_API_KEY}" ] || missing+=(HOOKDECK_API_KEY)
+          [ -n "${OPENAI_API_KEY}" ] || missing+=(OPENAI_API_KEY)
+          [ -n "${ANTHROPIC_API_KEY}" ] || missing+=(ANTHROPIC_API_KEY)
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::missing repository secrets: ${missing[*]}"
+            exit 1
+          fi
+
       - name: Write eval environment
         shell: bash
         run: |
@@ -288,6 +220,7 @@ jobs:
             echo "ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}"
             echo "OPENAI_API_KEY=${OPENAI_API_KEY}"
             echo "AI_GATEWAY_API_KEY=${AI_GATEWAY_API_KEY}"
+            echo "HOOKDECK_API_KEY=${HOOKDECK_API_KEY}"
           } > .env
 
       - name: Run evals
@@ -319,28 +252,10 @@ jobs:
 
   publish-results:
     needs: [prepare, run-evals]
-    if: needs.prepare.outputs.pairs != '[]'
     runs-on: ubuntu-latest
     steps:
-      - name: Generate GitHub App token
-        id: generate-token
-        # A GitHub App token is needed so the push below can trigger the
-        # gh-pages workflow: GITHUB_TOKEN pushes don't trigger other workflows.
-        # https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow#triggering-a-workflow-from-a-workflow
-        if: >-
-          github.event_name == 'schedule' ||
-          (github.event_name == 'workflow_dispatch' && !inputs.commit_to_branch)
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          app-id: ${{ secrets.GH_APP_ID }}
-          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
-
       - name: Checkout
         uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
-        with:
-          submodules: recursive
-          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
-          token: ${{ steps.generate-token.outputs.token || github.token }}
 
       - name: Install pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
@@ -403,7 +318,6 @@ jobs:
           fi
 
       - name: Upload exported results
-        if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: eval-results-json
@@ -411,14 +325,11 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-      - name: Commit exported results to branch
-        # PR runs commit to the PR head branch. Manual dispatch commits to the
-        # selected branch only when commit_to_branch is enabled. Scheduled runs
-        # go through a PR instead (see "Create results pull request" below):
-        # main's branch protection rejects a direct push.
-        if: >-
-          github.event_name == 'pull_request' ||
-          (github.event_name == 'workflow_dispatch' && inputs.commit_to_branch)
+      - name: Commit exported results
+        # Results are committed to the dispatched branch. Supabase's version
+        # opened a PR through a GitHub App and self-merged it on the schedule;
+        # that needs an app we have not set up, and there is no schedule to
+        # serve. Restore it in Phase 3 if the scoreboard needs it.
         shell: bash
         run: |
           set -euo pipefail
@@ -438,31 +349,3 @@ jobs:
 
           git commit -m "chore: refresh eval results"
           git push
-
-      - name: Create results pull request
-        if: >-
-          github.event_name == 'schedule' ||
-          (github.event_name == 'workflow_dispatch' && !inputs.commit_to_branch)
-        id: cpr
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
-        with:
-          token: ${{ steps.generate-token.outputs.token }}
-          add-paths: apps/web/src/data/*eval-results.json
-          # Per-ref-and-event head branch so a branch refresh PR can't collide
-          # with another ref's, or with the scheduled run's.
-          branch: chore/refresh-eval-results-${{ github.ref_name }}-${{ github.event_name }}
-          base: ${{ github.ref_name }}
-          commit-message: "chore: refresh eval results"
-          title: "chore: refresh eval results"
-          body: |
-            Refreshes `apps/web/src/data/eval-results.json` from the latest automated eval run.
-          # Draft PRs can't be merged, and the scheduled path merges itself.
-          draft: ${{ github.event_name != 'schedule' }}
-          delete-branch: true
-
-      - name: Merge scheduled results pull request
-        # The app is on the ruleset's bypass list, so no review is required.
-        if: github.event_name == 'schedule' && steps.cpr.outputs.pull-request-number
-        env:
-          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
-        run: gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" --squash --delete-branch

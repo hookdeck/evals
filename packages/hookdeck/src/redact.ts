@@ -8,15 +8,15 @@
  */
 
 const ENV_SECRET_KEYS = [
-  "HOOKDECK_API_KEY",
-  "OUTPOST_API_KEY",
-  "ANTHROPIC_API_KEY",
-  "OPENAI_API_KEY",
-  "AI_GATEWAY_API_KEY",
+  'HOOKDECK_API_KEY',
+  'OUTPOST_API_KEY',
+  'ANTHROPIC_API_KEY',
+  'OPENAI_API_KEY',
+  'AI_GATEWAY_API_KEY',
   // Scenarios need somewhere to deliver to; the URL is a shared secret in the
   // sense that possession of it lets anyone post events into a run.
-  "EVAL_TEST_DESTINATION_URL",
-  "HOOKDECK_TEST_WEBHOOK_URL",
+  'EVAL_TEST_DESTINATION_URL',
+  'HOOKDECK_TEST_WEBHOOK_URL',
 ] as const;
 
 export function collectEnvSecretValues(): string[] {
@@ -37,26 +37,26 @@ export function redactSecrets(text: string, maxLen?: number): string {
   let s = text;
   s = s.replace(
     /\bAuthorization:\s*Bearer\s+\S+/gi,
-    "Authorization: Bearer [REDACTED]",
+    'Authorization: Bearer [REDACTED]'
   );
   s = s.replace(
     /\bAuthorization:\s*Basic\s+[A-Za-z0-9+/=]+/gi,
-    "Authorization: Basic [REDACTED]",
+    'Authorization: Basic [REDACTED]'
   );
-  s = s.replace(/Bearer\s+sk-ant-api[^\s"'`<>]+/gi, "Bearer [REDACTED]");
-  s = s.replace(/Bearer\s+sk-proj-[^\s"'`<>]+/gi, "Bearer [REDACTED]");
-  s = s.replace(/Bearer\s+[A-Za-z0-9._~-]{20,}/g, "Bearer [REDACTED]");
-  s = s.replace(/\bx-api-key\s*:\s*[^\s\n]+/gi, "x-api-key: [REDACTED]");
-  s = s.replace(/\bapi-key\s*:\s*[^\s\n]+/gi, "api-key: [REDACTED]");
-  s = s.replace(/\bx-auth-token\s*:\s*[^\s\n]+/gi, "x-auth-token: [REDACTED]");
-  s = s.replace(/\baccess-token\s*:\s*[^\s\n]+/gi, "access-token: [REDACTED]");
+  s = s.replace(/Bearer\s+sk-ant-api[^\s"'`<>]+/gi, 'Bearer [REDACTED]');
+  s = s.replace(/Bearer\s+sk-proj-[^\s"'`<>]+/gi, 'Bearer [REDACTED]');
+  s = s.replace(/Bearer\s+[A-Za-z0-9._~-]{20,}/g, 'Bearer [REDACTED]');
+  s = s.replace(/\bx-api-key\s*:\s*[^\s\n]+/gi, 'x-api-key: [REDACTED]');
+  s = s.replace(/\bapi-key\s*:\s*[^\s\n]+/gi, 'api-key: [REDACTED]');
+  s = s.replace(/\bx-auth-token\s*:\s*[^\s\n]+/gi, 'x-auth-token: [REDACTED]');
+  s = s.replace(/\baccess-token\s*:\s*[^\s\n]+/gi, 'access-token: [REDACTED]');
   s = s.replace(
     /([?&](?:api[_-]?key|access[_-]?token|token|client[_-]?secret|secret)=)([^&#\s"'`<>]+)/gi,
-    "$1[REDACTED]",
+    '$1[REDACTED]'
   );
   s = s.replace(
     /\b([A-Z][A-Z0-9_]*(?:KEY|TOKEN|SECRET|PASSWORD))=([^\s\n"'`#]+)/g,
-    "$1=[REDACTED]",
+    '$1=[REDACTED]'
   );
   if (maxLen !== undefined && s.length > maxLen) {
     s = `${s.slice(0, maxLen)}…`;
@@ -64,11 +64,14 @@ export function redactSecrets(text: string, maxLen?: number): string {
   return s;
 }
 
-function redactKnownLiteralValues(text: string, secrets: readonly string[]): string {
+function redactKnownLiteralValues(
+  text: string,
+  secrets: readonly string[]
+): string {
   let s = text;
   for (const secret of secrets) {
     if (secret.length >= 8) {
-      s = s.split(secret).join("[REDACTED]");
+      s = s.split(secret).join('[REDACTED]');
     }
   }
   return s;
@@ -76,18 +79,21 @@ function redactKnownLiteralValues(text: string, secrets: readonly string[]): str
 
 /** Full artifact redaction: patterns plus literal values from the current process env. */
 export function redactSecretsForArtifact(text: string): string {
-  return redactKnownLiteralValues(redactSecrets(text), collectEnvSecretValues());
+  return redactKnownLiteralValues(
+    redactSecrets(text),
+    collectEnvSecretValues()
+  );
 }
 
 /** Redact string leaves in an artifact object; preserves JSON structure when serialized. */
 export function redactArtifactDeep(value: unknown): unknown {
-  if (typeof value === "string") {
+  if (typeof value === 'string') {
     return redactSecretsForArtifact(value);
   }
   if (Array.isArray(value)) {
     return value.map(redactArtifactDeep);
   }
-  if (typeof value === "object" && value !== null) {
+  if (typeof value === 'object' && value !== null) {
     const out: Record<string, unknown> = {};
     for (const [key, child] of Object.entries(value)) {
       out[key] = redactArtifactDeep(child);

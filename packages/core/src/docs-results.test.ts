@@ -229,7 +229,9 @@ describe('buildDocsResult', () => {
       ),
     ]);
 
-    expect(result.calls[0].query).toBe('https://hookdeck.com/docs/authentication');
+    expect(result.calls[0].query).toBe(
+      'https://hookdeck.com/docs/authentication'
+    );
   });
 
   it('ignores a fetch call on a non-Hookdeck domain', () => {

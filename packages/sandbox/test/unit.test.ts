@@ -2,10 +2,7 @@ import { readFileSync } from 'node:fs';
 import { parseEvalMarkdown } from '@hookdeck-evals/core/eval-markdown';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SANDBOX_DOCKERFILE_PATH } from '../src/image.js';
-import {
-  resolveSandboxPath,
-  truncateOutput,
-} from '../src/agent-sandbox.js';
+import { resolveSandboxPath, truncateOutput } from '../src/agent-sandbox.js';
 import type { DockerSandbox } from '../src/docker-sandbox.js';
 import {
   SKILLS_CLI_VERSION,
@@ -43,7 +40,6 @@ describe('sandbox Dockerfile', () => {
       'npm install -g "skills@${SKILLS_CLI_VERSION}"'
     );
   });
-
 });
 
 describe('frontmatterDescription', () => {
@@ -103,7 +99,6 @@ describe('SKILLS_CLI_VERSION', () => {
   });
 });
 
-
 describe('cliVersion frontmatter', () => {
   it('accepts a pinned semantic version', () => {
     const { metadata } = parseEvalMarkdown(
@@ -113,8 +108,8 @@ describe('cliVersion frontmatter', () => {
         'suite: regression',
         'interface: cli',
         'cliVersion: 2.109.1',
-        'product: database',
-        'topic: migrations',
+        'product: event-gateway',
+        'topic: filtering',
         '---',
         'Fix it.',
       ].join('\n')
@@ -132,8 +127,8 @@ describe('cliVersion frontmatter', () => {
           'suite: regression',
           'interface: cli',
           'cliVersion: latest',
-          'product: database',
-          'topic: migrations',
+          'product: event-gateway',
+          'topic: filtering',
           '---',
           'Fix it.',
         ].join('\n')
@@ -149,7 +144,7 @@ describe('skills frontmatter', () => {
       'stage: build',
       'suite: regression',
       'interface: cli',
-      'product: [database]',
+      'product: [event-gateway]',
       'topic: [sdk]',
       extra,
       '---',
@@ -182,7 +177,7 @@ describe('skipCliInstall frontmatter', () => {
       'stage: build',
       'suite: regression',
       'interface: cli',
-      'product: [database]',
+      'product: [event-gateway]',
       'topic: [sdk]',
       extra,
       '---',
@@ -237,4 +232,3 @@ describe('truncateOutput', () => {
     expect(truncated).toContain('...[truncated');
   });
 });
-

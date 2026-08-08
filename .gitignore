@@ -8,3 +8,7 @@ results/*/
 
 .spike-pristine.json
 
+
+# Runtime artefact: the provisioner writes this on first acquire.
+.hookdeck-pristine.json
+**/.hookdeck-pristine.json

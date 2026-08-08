@@ -85,6 +85,7 @@ async function findHmacSource(
     '/sources?limit=100'
   );
   return (models ?? []).find(
-    (s) => (s.config as { auth_type?: string } | undefined)?.auth_type === 'HMAC'
+    (s) =>
+      (s.config as { auth_type?: string } | undefined)?.auth_type === 'HMAC'
   );
 }

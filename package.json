@@ -2,10 +2,7 @@
   "name": "hookdeck-evals",
   "private": true,
   "type": "module",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "workspaces": ["apps/*", "packages/*"],
   "scripts": {
     "check": "pnpm --filter @hookdeck-evals/framework check && pnpm --filter @hookdeck-evals/core test && pnpm --filter @hookdeck-evals/sandbox test && pnpm --filter @hookdeck-evals/web test",
     "eval": "pnpm --filter @hookdeck-evals/framework eval",

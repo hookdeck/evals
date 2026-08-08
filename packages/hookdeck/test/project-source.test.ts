@@ -124,9 +124,7 @@ describe('FixedProjectSource', () => {
 
     await new FixedProjectSource({ apiKey: 'k', snapshotPath }).acquire();
 
-    expect(deleted).toEqual([
-      { kind: 'issue-triggers', id: 'it_added_later' },
-    ]);
+    expect(deleted).toEqual([{ kind: 'issue-triggers', id: 'it_added_later' }]);
   });
 
   it('returns a lease carrying acquiredAt, for scoping scorer queries', async () => {

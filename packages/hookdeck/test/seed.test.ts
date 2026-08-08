@@ -2,7 +2,12 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { HookdeckClient, applySeed, readSeed, type Seed } from '../src/index.js';
+import {
+  HookdeckClient,
+  applySeed,
+  readSeed,
+  type Seed,
+} from '../src/index.js';
 
 /** Records every call so tests can assert order and shape. */
 function recordingFetch(responses: Record<string, unknown> = {}) {
@@ -12,7 +17,11 @@ function recordingFetch(responses: Record<string, unknown> = {}) {
     const path = u.pathname.replace(/^\/[^/]+/, '');
     const method = init?.method ?? 'GET';
     const body = init?.body ? JSON.parse(String(init.body)) : undefined;
-    calls.push({ method, path: u.origin.includes('hkdk') ? u.href : path, body });
+    calls.push({
+      method,
+      path: u.origin.includes('hkdk') ? u.href : path,
+      body,
+    });
     const key = `${method} ${path}`;
     return new Response(JSON.stringify(responses[key] ?? { id: 'generated' }), {
       status: 200,
@@ -109,7 +118,9 @@ describe('applySeed', () => {
   });
 
   it('honours an explicit method on a `then` step', async () => {
-    const { impl, calls } = recordingFetch({ 'POST /sources': { id: 'src_1' } });
+    const { impl, calls } = recordingFetch({
+      'POST /sources': { id: 'src_1' },
+    });
     vi.stubGlobal('fetch', impl);
     await applySeed(client(), {
       resources: [

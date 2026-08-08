@@ -363,7 +363,8 @@ async function runOne(
     ev.mode === 'tools' && !agentRunsInSandbox
       ? loadToolsSkills(ev.metadata.skills ?? exp.skills)
       : [];
-  const scorer = (await import(pathToFileURL(ev.evalPath).href)).default as ToolScorer;
+  const scorer = (await import(pathToFileURL(ev.evalPath).href))
+    .default as ToolScorer;
   let last: ScoreResult = {
     passed: false,
     checks: [{ name: 'ran at least one attempt', passed: false }],
@@ -375,7 +376,6 @@ async function runOne(
   let lastUsage: AgentRunResult['usage'];
 
   for (let attempt = 1; attempt <= RUNS; attempt += 1) {
-
     // Tools mode: the eval's tool surface is MCP (platform-lite). A CLI agent
     // gets the same sandbox as local-stack minus the running stack — with its
     // skills installed — and reaches the in-container MCP servers' host-side

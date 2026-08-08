@@ -105,13 +105,18 @@ describe("the eval dimension", () => {
 })
 
 describe("dimensionShortTitle", () => {
-  it("prefers the compact title when the axis defines one", () => {
-    // The model axis splits agent (caption) from model (short title).
-    const experiment = sortedResults[0].experiment
-    expect(dimensionShortTitle(DIMENSIONS.model, experiment)).not.toBe(
-      DIMENSIONS.model.title(experiment)
-    )
-  })
+  // Both titles resolve through the published export, so this needs a row to
+  // resolve against. Skips until the first results are published.
+  it.skipIf(sortedResults.length === 0)(
+    "prefers the compact title when the axis defines one",
+    () => {
+      // The model axis splits agent (caption) from model (short title).
+      const experiment = sortedResults[0].experiment
+      expect(dimensionShortTitle(DIMENSIONS.model, experiment)).not.toBe(
+        DIMENSIONS.model.title(experiment)
+      )
+    }
+  )
 
   it("falls back to the full title for an axis with no compact form", () => {
     expect(dimensionShortTitle(DIMENSIONS.stage, "build")).toBe("Build")

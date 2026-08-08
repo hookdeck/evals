@@ -161,9 +161,9 @@ through the API, so a shared project accumulates history, and a scorer that just
 
 ## Skills
 
-Skills come from [`supabase/agent-skills`](https://github.com/supabase/agent-skills), pinned as a git submodule at `submodules/agent-skills`. The `skills/` directory contains symlinks into the submodule.
+Skills come from [`hookdeck/agent-skills`](https://github.com/hookdeck/agent-skills), pinned as a git submodule at `submodules/agent-skills`. A `skills/` directory of symlinks into the submodule exposes them to experiments.
 
-To use a skill in an experiment, reference its directory name in the experiment's `skills` array.
+No skill is wired up yet: every current experiment is docs-only, and which skills to measure against is a benchmark-phase decision. The submodule is declared and the loading machinery below is intact, so wiring one up means checking the submodule out (`git submodule update --init`), symlinking it under `skills/`, adding `submodules: recursive` back to the workflow checkouts, and naming it in an experiment's `skills` array.
 
 Both runtimes load skills lazily ([progressive disclosure](https://ai-sdk.dev/cookbook/guides/agent-skills)): only each skill's name+description is in the system prompt, and the agent pulls a skill's full instructions on demand. They differ only in how the body is fetched, because the tools-mode agent has no filesystem:
 

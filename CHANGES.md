@@ -23,6 +23,9 @@ and every change since.
   `agent-driver`), which exercised the Supabase runtime.
 - All upstream scenarios (`evals/`) and experiment configs (`experiments/`). Ours
   replace them.
+- `.github/workflows/append-gh-pages-history.yml`, which appended each results
+  commit to a `gh-pages` branch. There is no `gh-pages` branch and no published
+  scoreboard here yet; restore it from the first commit when there is.
 
 ## Replaced
 
@@ -36,6 +39,11 @@ and every change since.
   and a rename.
 - `McpServerDefinition.createConfig()` takes a Hookdeck project context rather than a
   platform-lite one.
+- `.github/workflows/eval-refresh.yml` is manual-only. Upstream ran nightly on a
+  schedule and on PR labels, and published through a GitHub App. Scoring here runs
+  against one shared project, so the matrix is `max-parallel: 1` and the workflow
+  takes a queueing concurrency group; results are committed to the dispatched
+  branch rather than opened as a self-merging PR.
 
 ## Retained
 

@@ -20,4 +20,4 @@ export { readSeed, applySeed } from './seed.js';
 export type { Seed, SeedResource, SeedEvent, AppliedSeed } from './seed.js';
 export { hookdeckRuntime, hookdeckMcpServer } from './runtime.js';
 export type { HookdeckRuntimeOptions } from './runtime.js';
-export { collectEnvSecretValues, redactSecrets } from "./redact.js";
+export { collectEnvSecretValues, redactSecrets } from './redact.js';
