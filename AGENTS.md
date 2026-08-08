@@ -6,9 +6,17 @@ knowing before you change anything.
 
 ## Status
 
-Phase 0 (framework spike) and Phase 1 (the project provisioner) are done. The
-regression suite exists and passes on both primary agents. No benchmark
-scenarios yet, and no CI.
+Phase 0 (framework spike) and Phase 1 (the project provisioner) are done.
+
+Three regression scenarios and one benchmark scenario exist. Two regression
+scenarios pass on both primary agents; `regression-filtering-001-regex-capability`
+fails on Claude Code and passes on Codex, which is the June 2026 incident
+reproduced rather than a defect in the scenario.
+
+CI runs formatting and unit tests. `eval-refresh` is manual dispatch only and
+needs `HOOKDECK_API_KEY`, `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` set as
+repository secrets before it can do anything; none are set yet. Nothing is
+published: both results files are empty.
 
 ## Plans
 
@@ -31,8 +39,13 @@ failing that test belongs in a private note elsewhere.
 cp .env.example .env     # then fill it in
 pnpm install
 docker info              # a daemon must be running
-pnpm --filter @hookdeck-evals/framework exec tsx harness/run-eval.ts --dry --suite regression
+pnpm eval -- --dry --suite regression
 ```
+
+Run through `pnpm eval`. It is the only entry point that loads `.env` (via
+`node --env-file`); calling `harness/run-eval.ts` with `tsx` directly starts
+with an empty environment and every experiment is skipped for a missing key,
+which reads like a configuration problem rather than a wrong command.
 
 `HOOKDECK_API_KEY` is a project key for a dedicated `evals-ci` project, in an
 organisation with no production data. `OPENAI_API_KEY` is needed by the default LLM judge, so any judged
@@ -79,11 +92,15 @@ regex filter operator", and pass in every other case, including an unfinished
 task. A check that reads "pass if it does the task *and* invents nothing" fails
 an agent that invented nothing, which makes the signal unreadable.
 
-**A scenario guarding a hallucination must ask the question.** Prompt phrasing
-decides whether the failure appears at all: asked a capability question, an
-agent may answer from memory; told to do the work, the same agent reads the
-docs and gets it right. Ask the question *and* request the work, so the answer
-stays checkable.
+**A scenario guarding a hallucination asks the question and nothing else.**
+Prompt phrasing decides whether the failure appears at all. Measured on the two
+filtering scenarios, which differ by one clause: asked the capability question
+alone, Claude Code answered in 40 seconds with zero tool calls and offered a
+regex. Add "set the filtering up" and it reads three or four docs pages and
+answers correctly. An instruction to build gives the agent a reason to look
+things up that the original ticket never had, so adding one to a regression
+scenario suppresses the very failure it exists to catch. Ask for work in a
+benchmark scenario; keep a regression scenario to the question.
 
 **Put the context an agent needs in the seed, not the prompt.** A scenario with
 no seeded state gives a good agent nothing to discover, so it asks a clarifying

@@ -68,7 +68,7 @@ Running evals executes experiment x eval pairs and writes local result files und
 Run a single eval with one experiment:
 
 ```bash
-pnpm eval -- --eval resolve-dataapi-001-empty-results --experiment claude-code-sonnet-5
+pnpm eval -- --eval regression-verification-001-generic-hmac --experiment claude-code-sonnet-5-docs-only
 ```
 
 
@@ -76,10 +76,10 @@ Run selected evals across multiple experiments:
 
 ```bash
 pnpm eval -- \
-  --experiment claude-code-sonnet-5 \
-  --experiment claude-code-opus-5 \
-  --eval resolve-dataapi-001-empty-results \
-  --eval investigate-auth-001-deleted-user-access
+  --experiment claude-code-sonnet-5-docs-only \
+  --experiment codex-gpt-5.6-docs-only \
+  --eval regression-verification-001-generic-hmac \
+  --eval regression-limits-001-oversized-payload
 ```
 
 `--suite`, `--experiment-suite`, `--experiment`, and `--eval` accept multiple inputs via repeated flags as well as comma-separated values.

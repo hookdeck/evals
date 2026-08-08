@@ -8,20 +8,16 @@ import {
 import { stripIndent } from 'common-tags';
 
 /**
- * The regression this guards is the June 2026 incident: an assistant told a
- * customer Hookdeck had regex payload filtering and a "Channel" field. It has
- * neither.
+ * A build task: filter a payload field by prefix so only the current reference
+ * format reaches the endpoint.
  *
- * The prompt asks the regex question, because phrasing is what triggers the
- * failure. Measured on this scenario: asked "what's the closest I can get?",
- * Claude Code answered from memory in 33 seconds with zero tool calls and
- * offered a regex. Told to set the filtering up, the same agent read four docs
- * pages and did not. So the question has to be in the prompt, or the scenario
- * cannot catch what it exists to catch.
- *
- * The prompt then asks for the work too, so both checks are fair: an agent is
- * being asked to answer *and* act, and failing to act is a real failure rather
- * than a defensible reading.
+ * The prompt asks the regex question as well, so the negative check below is
+ * fair rather than a trap. It does not carry the June 2026 regression on its
+ * own: told to set the filtering up, both agents read the docs and answer
+ * correctly. `regression-filtering-001-regex-capability` asks the question
+ * without asking for the work, which is the phrasing that reproduces the
+ * incident. The two scenarios are deliberately near-identical apart from that
+ * clause, and the difference between their results is the measurement.
  */
 const scorer: ToolScorer = async (ctx) => {
   const checks: CheckResult[] = [

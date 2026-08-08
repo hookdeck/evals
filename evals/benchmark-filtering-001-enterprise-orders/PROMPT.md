@@ -1,11 +1,11 @@
 ---
 stage: build
-suite: regression
+suite: benchmark
 product:
   - event-gateway
 topic:
   - filtering
-motivation: Support ticket, June 2026. An assistant described regex payload filtering and a "Channel" field, neither of which exist, and the integration was built against both before the mistake surfaced.
+motivation: Filtering a payload field by prefix is the most common shaping task in support, and the operator that does it is not the one most agents reach for first. The scenario measures whether an agent can build filtering that works while answering a capability question correctly along the way.
 ---
 
 Our order references look like `ORD-2026-AC-4821`. We migrated formats at the

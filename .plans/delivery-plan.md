@@ -363,14 +363,31 @@ historical run data to compare against. Leave 02, 03, 04, 06, and 07 in the outp
 inner loop; they are the same journey in TypeScript, Python, and Go, which is depth
 rather than breadth. That resolves open question 3.
 
-### The three regression scenarios
+### The regression scenarios
 
-**R1, filtering.** *"Only send orders through to my endpoint when they're over \$500 and
-the customer is on one of our enterprise domains."* Correct answers use `$gte` and
-`$endsWith`. There is no regex operator, so an agent reaching for one produces a rule
-the API rejects and the task fails on its own. Deterministic: the connection has a
-filter rule, a matching event routes, a non-matching one does not. Negative judged
-check: did not offer regex filtering or a channels feature.
+**R1, filtering.** Built, then split in two once measurement showed one prompt could
+not carry both jobs. Both scenarios open the same way: order references look like
+`ORD-2026-AC-4821`, the format changed at the start of the year, and the old ones
+still arrive.
+
+`regression-filtering-001-regex-capability` asks the capability question and stops
+there: *"can I use a regex on the reference? What is the closest I can get?"* One
+check, a pure negative: did the assistant claim regex filtering or a channels feature
+exists. No seed and nothing to build, because a capability question is answerable from
+the documentation alone. This is the June 2026 incident, and it reproduces: Claude Code
+answers in 40 seconds with zero tool calls and offers two regex patterns, Codex answers
+correctly.
+
+`benchmark-filtering-001-enterprise-orders` adds *"whatever the answer, set up the
+filtering so only the current format reaches my endpoint"* and seeds a source, a
+destination and a connection. It keeps the negative check and adds an outcome probe:
+send one reference in each format and confirm the current one arrives and the legacy
+one does not. Correct answers use `$startsWith`; the probe scores whether the filtering
+works rather than whether the rule matches a shape we guessed.
+
+Both agents pass the benchmark version, so it does not discriminate between them today.
+It stays because it is a fair build task and the pair is the measurement: identical
+scenarios either side of one clause, where the difference in results is the finding.
 
 **R2, payload limits.** Seed a source and send one request above the 10 MiB inbound
 ceiling so it is rejected with `PAYLOAD_TOO_LARGE`, then: *"some of our events just
@@ -428,12 +445,15 @@ Four rules, which follow from that:
    failure no longer tells you which half broke.
 7. **Phrasing decides whether a hallucination is provoked at all.** Measured on R1:
    asked *"can I use a regex? what's the closest I can get?"*, Claude Code answered
-   from memory in 33 seconds with zero tool calls and offered a regex pattern. Told to
-   *set the filtering up*, the same agent on the same model read four documentation
-   pages and did not. A scenario guarding a capability hallucination therefore has to
-   ask the question, or it measures something else. Ask it **and** request the work, so
-   the answer stays checkable and failing to act is a real failure rather than a
-   defensible reading of the prompt.
+   from memory in 40 seconds with zero tool calls and offered a regex pattern. Told to
+   *set the filtering up*, the same agent on the same model read three to four
+   documentation pages and did not. The first attempt to hold both in one prompt asked
+   the question and requested the work, on the reasoning that this kept the answer
+   checkable. It did the opposite: an instruction to build gives an agent a reason to
+   look things up that the original support ticket never had, and the scenario stopped
+   catching what it existed to catch. Hence the split. A regression scenario guarding a
+   capability hallucination asks the question and nothing else; asking for work belongs
+   in the benchmark suite.
 8. **Score behaviour, not configuration, wherever the API allows.** Hookdeck redacts
    source `config.auth` on read, so R3 cannot inspect the algorithm or encoding an
    agent chose. Signing a request and checking it is accepted, then checking a bad
@@ -580,10 +600,23 @@ This is supabase/evals' `eval-refresh.yml` model: a `prepare` job discovers
 pair. Lift it, change the schedule block and the suite defaults, and add the shard
 loop from Phase 1 until the org key lands.
 
+**Where this stands today.** The table above is the Phase 3 target. What runs now is
+formatting and unit tests on pull requests, plus `eval-refresh` on manual dispatch
+only. Lifting the file wholesale turned out to carry more than the schedule: it
+arrived live on supabase/evals' nightly cron and fired against a half-built suite, and
+its matrix ran pairs concurrently, which one shared project cannot support. It is now
+`max-parallel: 1` behind a queueing concurrency group, and it will not run at all
+until `HOOKDECK_API_KEY`, `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` are set as
+repository secrets. That is deliberate: an automatic trigger should arrive with the
+scoreboard, not before it, so that every run until then is one a person chose to pay
+for.
+
 **Results storage:** results committed to the repo as JSON, exported by
 `export-results.ts`, with a `gh-pages` branch appending history so the site can show
 trend lines. Also lifted from supabase/evals, which has `append-gh-pages-history.yml`
-doing exactly this.
+doing exactly this. That workflow has been removed for now rather than left pointing
+at a branch that does not exist; restore it from the first commit when there is a
+scoreboard to append to. Nothing is published yet, and both results files are empty.
 
 **Secrets in a public repo.** Five: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`,
 `AI_GATEWAY_API_KEY`, `HOOKDECK_API_KEY` (the `evals-ci` project; becomes an org-level
@@ -595,7 +628,7 @@ key when those endpoints ship), `OUTPOST_API_KEY`. Three rules:
    the condition verbatim.
 2. Run `redact-secrets.ts` over every transcript before export. Transcripts are the
    published artifact and an agent will echo its API key into one eventually.
-3. Scope the keys to the dedicated a dedicated organization with no production
+3. Scope the keys to a dedicated organization with no production
    data and no billing relationship, so the blast radius of a leak is a set of
    throwaway projects. This matters more once the key is org-level, since a key that
    can create and delete projects is a bigger credential than a project-scoped one.
