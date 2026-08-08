@@ -13,10 +13,11 @@ scenarios pass on both primary agents; `regression-filtering-001-regex-capabilit
 fails on Claude Code and passes on Codex, which is the June 2026 incident
 reproduced rather than a defect in the scenario.
 
-CI runs formatting and unit tests. `eval-refresh` is manual dispatch only and
-needs `HOOKDECK_API_KEY`, `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` set as
-repository secrets before it can do anything; none are set yet. Nothing is
-published: both results files are empty.
+CI runs formatting and unit tests. `eval-refresh` is manual dispatch only.
+`HOOKDECK_API_KEY`, `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` are set as
+repository secrets, so a dispatch will spend; `AI_GATEWAY_API_KEY` is not set
+and is not needed until secondary models go on the scoreboard. The workflow has
+not been run in CI yet. Nothing is published: both results files are empty.
 
 ## Plans
 
