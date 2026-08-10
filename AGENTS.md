@@ -16,8 +16,12 @@ reproduced rather than a defect in the scenario.
 CI runs formatting and unit tests. `eval-refresh` is manual dispatch only.
 `HOOKDECK_API_KEY`, `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` are set as
 repository secrets, so a dispatch will spend; `AI_GATEWAY_API_KEY` is not set
-and is not needed until secondary models go on the scoreboard. The workflow has
-not been run in CI yet. Nothing is published: both results files are empty.
+and is not needed until secondary models go on the scoreboard.
+
+The regression suite has run end to end in CI and scored identically to local:
+Claude Code fails `regression-filtering-001-regex-capability` and passes the
+other two, Codex passes all three. Six pairs took 22 minutes and $1.30 of Claude
+Code, the wall clock being one shared project forcing `max-parallel: 1`.
 
 ## Plans
 
