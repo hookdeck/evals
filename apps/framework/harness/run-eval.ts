@@ -426,6 +426,9 @@ async function runOne(
       toolCalls: run.toolCalls,
       transcript: run.transcript,
       agentReport: run.agentReport,
+      // Still running: the rehydrate call below uses it too. Scenarios whose
+      // deliverable is code need to run what the agent wrote.
+      sandbox: cliSandbox?.sandbox,
     });
 
     // Runs after scoring so the scorer sees what the agent actually saw, not rehydrated content.

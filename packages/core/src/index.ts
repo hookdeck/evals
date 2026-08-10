@@ -211,6 +211,23 @@ export interface ToolEvalContext extends ToolScoringContext {
   toolCalls: ToolCallRecord[];
   transcript: TranscriptPart[];
   agentReport?: string;
+  /**
+   * The agent's workspace, still running when the scorer is called. Present for
+   * CLI agents, absent for in-process ones (`aiSdkAgent`), so a scorer that
+   * needs it must say so rather than assume it.
+   *
+   * This is what makes a scenario scoreable when the deliverable is code rather
+   * than project configuration: install and run the handler the agent wrote,
+   * send it a signed request, check the response. Prefer it to reading the
+   * source, for the same reason source verification is scored by signing a
+   * request. Code that looks right and does not run is a failure, and code that
+   * works by a route we did not anticipate is not.
+   *
+   * Anything run here runs inside the container, so a scenario that starts a
+   * server must also stop it: the sandbox is torn down after scoring, but a
+   * process still holding the port will fail the next attempt in the same run.
+   */
+  sandbox?: AgentSandbox;
 }
 export type ToolScorer = (ctx: ToolEvalContext) => Promise<ScoreResult>;
 export type AgentRunArgs = {
