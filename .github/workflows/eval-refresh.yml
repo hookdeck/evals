@@ -39,6 +39,10 @@ on:
 
 permissions:
   contents: write
+  # `publish-results` downloads each matrix job's artifact with `gh run download`,
+  # which lists the run's artifacts through the API. Without this the listing is a
+  # 403 and the job fails after every eval has already run and been paid for.
+  actions: read
 
 # Scoring runs against one shared Hookdeck project, so two workflow runs must
 # never overlap. Queue rather than cancel: a cancelled run leaves the project
