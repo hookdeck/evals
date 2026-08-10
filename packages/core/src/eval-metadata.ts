@@ -87,9 +87,9 @@ export type ExperimentDisplayMetadata = z.infer<
 >;
 
 /**
- * Interface(s) the agent uses to act on Supabase — a benchmark dimension
+ * Interface(s) the agent uses to act on Hookdeck — a benchmark dimension
  * (cross-team KPI), not the runtime switch. `mcp` = the platform-lite MCP/tool
- * surface; `cli` = the real Supabase CLI inside a local-stack Docker sandbox.
+ * surface; `cli` = the real Hookdeck CLI inside the sandbox.
  *
  * Whether a sandbox boots is decided separately by the presence of a `local/`
  * directory (see the eval runner): `local/` ⇒ sandbox, otherwise the in-memory
@@ -131,14 +131,14 @@ export type EvalMetadata = {
   hostedProject?: boolean;
   /**
    * Overrides the experiment's `skills` list for this eval only. An empty
-   * list (`skills: []`) tests an agent with no pre-installed Supabase
+   * list (`skills: []`) tests an agent with no pre-installed Hookdeck
    * skills, regardless of which experiment runs it — for a scenario where
    * the prompt asks the agent to install skills itself. Omit the key
    * entirely to use the experiment's own skill list.
    */
   skills?: string[];
   /**
-   * Skips installing the real Supabase CLI into the sandbox before the agent
+   * Skips installing the real Hookdeck CLI into the sandbox before the agent
    * starts (sandbox evals only). Defaults to false. Set true only for
    * scenarios whose prompt has the agent install the CLI itself — the
    * harness itself never invokes `supabase` when this is set, so pair it
@@ -198,7 +198,7 @@ const toTokenList = (value: unknown): unknown => {
     .filter((item) => typeof item === 'string' && item.length > 0);
 };
 
-// `services` and `skills` are literal identifiers (Supabase CLI service names
+// `services` and `skills` are literal identifiers (Hookdeck CLI service names
 // like `postgres-meta`, or skill directory names like
 // `supabase-postgres-best-practices`), not enum tokens. They must NOT go
 // through normalizeToken: folding hyphens to underscores would turn

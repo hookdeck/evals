@@ -402,6 +402,38 @@ judge at all.**
 The five-minute-job half of the original R2 belongs in BM10, which is the same problem
 with a different number, rather than being tested twice.
 
+### First finding: a skill an agent never loads cannot help it
+
+The `+skills` row was wired and pointed at the scenario the baseline fails, on the
+theory that shipping a skill is how we fix a hallucination. One run, so treat it as a
+lead rather than a result, but it did not go that way.
+
+The skills were available to the agent and it loaded neither. Zero tool calls, zero
+documentation pages, 42 seconds, the same invented regex operator as the baseline. The
+plumbing is fine, which the run proves: both skills were offered.
+
+Two causes look identical in that transcript and are worth separating, because only one
+of them is ours to fix.
+
+The first is inherent to progressive disclosure. Only a skill's name and description
+reach the system prompt; loading the body is a choice the agent makes. An agent that is
+confidently wrong does not know it needs help, so the failures a skill would most
+usefully catch are exactly the ones where it never gets opened. A skill is a remedy for
+knowing you are ignorant.
+
+The second is a one-line fix and probably the larger effect here. The `event-gateway`
+skill's description does not contain the words filter, filtering, rule or transform,
+though the skill body names them as core Rules. An agent choosing whether to load it,
+for a question about filtering, sees nothing that says the skill covers filtering. The
+description is the only thing it can judge from.
+
+That is a concrete thing to hand back: descriptions have to advertise what the body
+covers, because a description is a routing decision rather than a summary. It is also
+testable rather than theoretical. Add filtering to the description, re-run the same
+scenario, and the load rate answers the question. That is the improvement loop working
+on its first real pass, and it argues for keeping the `+skills` row even if it turns
+out to move nothing, because the gap is the diagnostic.
+
 ### How regression scenarios are written
 
 Regression scenarios are **tasks with verifiable end states**, exactly like benchmark
