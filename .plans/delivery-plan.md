@@ -412,27 +412,32 @@ The skills were available to the agent and it loaded neither. Zero tool calls, z
 documentation pages, 42 seconds, the same invented regex operator as the baseline. The
 plumbing is fine, which the run proves: both skills were offered.
 
-Two causes look identical in that transcript and are worth separating, because only one
-of them is ours to fix.
+The first read was that the skill descriptions failed to advertise filtering, which is
+true of `event-gateway` and does not explain this. Check what the agent actually had in
+front of it. The system prompt says *"you are an agent working on a real Hookdeck
+project... use the provided tools to inspect and change the project"*. The `hookdeck`
+skill's description says *"use when working with any Hookdeck product and unsure which
+skill to use"*. The match could hardly be more direct, and the agent loaded nothing and
+called nothing.
 
-The first is inherent to progressive disclosure. Only a skill's name and description
-reach the system prompt; loading the body is a choice the agent makes. An agent that is
-confidently wrong does not know it needs help, so the failures a skill would most
-usefully catch are exactly the ones where it never gets opened. A skill is a remedy for
-knowing you are ignorant.
+So the finding is not about discoverability. **A skill is a remedy for knowing you are
+ignorant, and this agent was not ignorant, it was certain.** Progressive disclosure only
+ever offers; something has to prompt the agent to accept, and a confident wrong answer
+prompts nothing. The failures a skill would most usefully prevent are exactly the ones
+where it never gets opened, and that holds however good the skill is.
 
-The second is a one-line fix and probably the larger effect here. The `event-gateway`
-skill's description does not contain the words filter, filtering, rule or transform,
-though the skill body names them as core Rules. An agent choosing whether to load it,
-for a question about filtering, sees nothing that says the skill covers filtering. The
-description is the only thing it can judge from.
+Which sets a limit worth knowing before we sell skills as the fix for hallucination.
+They should lift tasks an agent knows it cannot complete from memory, which is most
+build work, and do very little for questions it thinks it can already answer. The
+benchmark suite is build-heavy, so expect the `+skills` row to move there and stay flat
+on the regression suite. If that is what the numbers say, it is a finding about how
+skills work rather than a disappointing result.
 
-That is a concrete thing to hand back: descriptions have to advertise what the body
-covers, because a description is a routing decision rather than a summary. It is also
-testable rather than theoretical. Add filtering to the description, re-run the same
-scenario, and the load rate answers the question. That is the improvement loop working
-on its first real pass, and it argues for keeping the `+skills` row even if it turns
-out to move nothing, because the gap is the diagnostic.
+Worth fixing anyway, separately: `event-gateway`'s description omits filter, filtering,
+rule and transform, though the body names them as core Rules. A description is a routing
+decision rather than a summary. That is a real defect, just not this one.
+
+One run, one agent, one scenario. Confirm with repeats before anyone acts on it.
 
 ### How regression scenarios are written
 
