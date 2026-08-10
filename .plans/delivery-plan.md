@@ -439,6 +439,43 @@ decision rather than a summary. That is a real defect, just not this one.
 
 One run, one agent, one scenario. Confirm with repeats before anyone acts on it.
 
+### What BM1's first run showed
+
+Scored 2 of 4 at $1.92 in under seven minutes. The agent's work was good and both
+failures were the scorer's, which is the third time that has been true and the reason
+the rule exists.
+
+**Skills get loaded on build tasks.** `loaded: ["hookdeck", "event-gateway"]`, against
+`loaded: []` on the regression question. That is the prediction above confirmed on its
+first test: an agent reaches for a skill when it knows it cannot proceed from memory,
+and not when it thinks it already knows. Two data points, so hold it lightly, but they
+point the same way.
+
+**An agent can install skills itself, and this one did.** It ran `npx skills add
+hookdeck/webhook-skills --skill stripe-webhooks` and used the result. The sandbox has
+network access because scenarios need the documentation, and the skills registry is on
+the same network. This breaks the axis: a `-no-skills` run is only a baseline if it
+stays without skills, and nothing currently stops it self-installing. The measured
+delta is the project's headline number, so this has to be handled before any of it is
+published. Detecting it is cheap, since the transcript records the install. The
+detection is worth having regardless of what we do about it, because "the agent went
+and found our skills unprompted" is a good result for the skills programme even as it
+is a bad one for the experiment design.
+
+**The scorer has to own process lifecycle.** Nothing was listening when scoring ran,
+so both live checks failed. The agent was right: asked to set this up, it wrote the
+handler, configured the connection, and documented `npm start` and `hookdeck listen` as
+things the developer runs. The deliverable is code and configuration, not a running
+process, and a scorer that expects a live server is scoring tidiness. It should start
+what the agent built, exercise it, and stop it.
+
+**And the handler needs a secret the API does not expose.** To verify
+`x-hookdeck-signature` the handler needs Hookdeck's signing secret. The agent could not
+read it either and left a placeholder in `.env.example`, which is the correct thing to
+do and also means the positive path cannot pass however the processes are managed. The
+seed has to supply it, the way it already supplies the Stripe secret, sourced from the
+environment rather than committed.
+
 ### How regression scenarios are written
 
 Regression scenarios are **tasks with verifiable end states**, exactly like benchmark
