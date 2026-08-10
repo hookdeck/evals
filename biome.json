@@ -12,6 +12,7 @@
       "apps/web",
       "results",
       "submodules",
+      "skills",
       "**/.hookdeck-pristine.json",
       "reference"
     ]

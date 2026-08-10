@@ -161,9 +161,25 @@ through the API, so a shared project accumulates history, and a scorer that just
 
 ## Skills
 
-Skills come from [`hookdeck/agent-skills`](https://github.com/hookdeck/agent-skills), pinned as a git submodule at `submodules/agent-skills`. A `skills/` directory of symlinks into the submodule exposes them to experiments.
+Skills come from [`hookdeck/agent-skills`](https://github.com/hookdeck/agent-skills), pinned as a git submodule at `submodules/agent-skills`. A `skills/` directory of symlinks into the submodule exposes them to experiments: `hookdeck` (routes to the right product skill), `event-gateway`, and `outpost`.
 
-No skill is wired up yet: every current experiment is docs-only, and which skills to measure against is a benchmark-phase decision. The submodule is declared and the loading machinery below is intact, so wiring one up means checking the submodule out (`git submodule update --init`), symlinking it under `skills/`, adding `submodules: recursive` back to the workflow checkouts, and naming it in an experiment's `skills` array.
+To use a skill in an experiment, name its directory in the experiment's `skills` array. Event Gateway scenarios want `['hookdeck', 'event-gateway']`, which is the pair a real user installs rather than the product skill alone.
+
+`skills` is in biome's ignore list. Ignoring `submodules` does not ignore a symlink pointing into it, and the skills carry example apps with their own biome config on a newer major that fails to parse against ours.
+
+### What an agent already has
+
+Skills are the only axis. Everything below is in every experiment, so a scoreboard row differs from its neighbour by skills and nothing else:
+
+| Layer | In the baseline | What it is |
+|---|---|---|
+| Public documentation | Yes | What the agent has to find. No copy of it ships with the scenario. |
+| Hookdeck CLI, pinned | Yes, baked into the sandbox image | Not agent-specific, but an agent enabler. `hookdeck listen` is the user's goal in some scenarios. |
+| REST API via `HOOKDECK_API_KEY` | Yes, in the sandbox environment | The action surface. Anything an agent creates, it creates here or through the CLI. |
+| Skills | No, this is the axis | Agent-specific guidance. |
+| MCP (`hookdeck mcp`, ships in the CLI) | No | Read-only: eleven analysis tools that cannot create or mutate. Expect it to lift investigate and resolve while leaving build flat, which makes it a finding to publish rather than a launch row. |
+
+The `-docs-only` experiment suffix undersells this: those runs have the CLI and a live API key, not documentation alone.
 
 Both runtimes load skills lazily ([progressive disclosure](https://ai-sdk.dev/cookbook/guides/agent-skills)): only each skill's name+description is in the system prompt, and the agent pulls a skill's full instructions on demand. They differ only in how the body is fetched, because the tools-mode agent has no filesystem:
 

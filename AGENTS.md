@@ -83,6 +83,16 @@ or encoding an agent chose. Signing a request and checking it is accepted is
 both possible and better: it passes an agent that reached a correct setup by an
 unanticipated route, and fails config that looks right but rejects real traffic.
 
+**Skills are the axis; the CLI and the API are the baseline.** Every experiment
+gets the pinned Hookdeck CLI (baked into the sandbox image) and a live
+`HOOKDECK_API_KEY`, so a scoreboard row differs from its neighbour by skills and
+nothing else. The MCP server is not a launch row: it ships inside the CLI and is
+read-only, eleven analysis tools that cannot create or mutate, so it should lift
+investigate and resolve while leaving build flat. Measure it on the investigate
+and resolve scenarios and publish that as a finding about the product. The
+`-docs-only` experiment suffix undersells the baseline, which has the CLI and a
+key, not documentation alone.
+
 **Prefer deterministic checks.** Across supabase/evals, 69 of 91 checks are
 deterministic and 22 are judged. A scenario that is entirely judged is a design
 smell.

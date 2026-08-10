@@ -81,6 +81,10 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
+        with:
+          # skills/ symlinks into the agent-skills submodule; without it a
+          # skills experiment installs nothing and silently scores as baseline.
+          submodules: recursive
 
       - name: Install pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
@@ -187,6 +191,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
+        with:
+          # skills/ symlinks into the agent-skills submodule; without it a
+          # skills experiment installs nothing and silently scores as baseline.
+          submodules: recursive
 
       - name: Install pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
@@ -260,6 +268,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
+        with:
+          # skills/ symlinks into the agent-skills submodule; without it a
+          # skills experiment installs nothing and silently scores as baseline.
+          submodules: recursive
 
       - name: Install pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
