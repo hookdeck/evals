@@ -557,6 +557,19 @@ Measured, not estimated. Two caveats: they are Sonnet 4.6, and they include a
 and casual by design), offset by more docs fetching in the docs-only experiment. Treat
 $0.40 median as the central estimate and re-baseline after the spike.
 
+**Re-baselined, and the estimate holds.** The first full CI run of the regression suite
+on Claude Code Sonnet 5, docs-only, one attempt each: $0.11, $0.40, $0.79. Median
+$0.40, mean $0.43, against a $0.40 central estimate carried over from a different model
+and a different scenario set. The spread tracks how much work a scenario asks for: the
+capability question that reads no documentation is the cheapest, and the one that
+configures verification and gets probed twice is the dearest. Codex cannot be compared
+in money yet, for the reasons in `deriveUsage`.
+
+Wall clock is the number that moved. Six pairs took 22 minutes, because one shared
+project forces the matrix to run one job at a time. That is the constraint the
+org-level key removes, and it is what makes it worth asking about rather than waiting
+for.
+
 ### What a weekly full run costs
 
 12 benchmark scenarios, 6 experiments (docs-only, +MCP, +skills, on Claude Code and
