@@ -642,11 +642,24 @@ formatting and unit tests on pull requests, plus `eval-refresh` on manual dispat
 only. Lifting the file wholesale turned out to carry more than the schedule: it
 arrived live on supabase/evals' nightly cron and fired against a half-built suite, and
 its matrix ran pairs concurrently, which one shared project cannot support. It is now
-`max-parallel: 1` behind a queueing concurrency group, and it will not run at all
-until `HOOKDECK_API_KEY`, `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` are set as
-repository secrets. That is deliberate: an automatic trigger should arrive with the
-scoreboard, not before it, so that every run until then is one a person chose to pay
-for.
+`max-parallel: 1` behind a queueing concurrency group. An automatic trigger should
+arrive with the scoreboard, not before it, so that every run until then is one a
+person chose to pay for.
+
+**It has run end to end, and the scores match local.** Claude Code fails
+`regression-filtering-001-regex-capability` and passes the other two; Codex passes all
+three. A scorer that behaves the same on a GitHub runner as on a laptop is the thing
+worth knowing, because it means the shared project and the sandbox both survive the
+move.
+
+Two failures found by running it rather than reading it, both in the last job, after
+every eval had run and been paid for. `publish-results` needs `actions: read` to list
+its own run's artifacts, which was dropped when the workflow was simplified. And the
+push of exported results has to rebase first: a full run takes tens of minutes, so the
+branch has usually moved by the time results exist, and a plain push is rejected. The
+lesson generalises past CI. A pipeline whose expensive work happens before its fragile
+step should be exercised end to end before it is trusted, because the cheap failure
+and the expensive one arrive together.
 
 **Results storage:** results committed to the repo as JSON, exported by
 `export-results.ts`, with a `gh-pages` branch appending history so the site can show
