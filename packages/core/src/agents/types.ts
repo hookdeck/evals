@@ -124,6 +124,14 @@ export interface AgentRunner<M extends string = string> {
 export type RunUsage = {
   inputTokens?: number;
   outputTokens?: number;
+  /**
+   * Cached input tokens, where the agent separates them out. Needed before a
+   * token count can be priced: an agentic loop resends its whole conversation
+   * each turn, so most input tokens are cache hits and cached input is an order
+   * of magnitude cheaper than fresh input. Pricing `inputTokens` in full would
+   * overstate cost by roughly that much.
+   */
+  cachedInputTokens?: number;
   /** Only when the agent reports it directly. */
   costUsd?: number;
 };

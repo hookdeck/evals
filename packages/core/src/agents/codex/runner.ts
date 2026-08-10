@@ -101,12 +101,24 @@ export const codexRunner: AgentRunner<CodexModel> = {
   },
 
   deriveUsage(raw) {
-    // Codex reports token counts on `turn.completed`, not a cost. Cost has to
-    // be derived from a price table, which we do not keep yet, so only the
-    // tokens are recorded and the cost stays undefined rather than guessed.
+    // Codex reports token counts on `turn.completed`, not a cost, so the cost
+    // stays undefined rather than guessed.
+    //
+    // Pricing these counts is not the small job it looks. `gpt-5.6` resolves to
+    // one of several variants, each priced differently, each with a short and a
+    // long context tier, and cached input runs about a tenth of fresh input. A
+    // measured run reported 361k input tokens against 4k output: on an agentic
+    // loop that is mostly the conversation being resent, so almost all of it
+    // should price as cache hits. Pricing it as fresh input would overstate the
+    // run by roughly an order of magnitude and publish a confident wrong number
+    // next to Claude Code's real one.
+    //
+    // `cached_input_tokens` is read here so the next run tells us whether the
+    // CLI separates it out. That is the missing input for a price table.
     if (!raw) return undefined;
     let input: number | undefined;
     let output: number | undefined;
+    let cached: number | undefined;
     for (const line of raw.split('\n')) {
       if (!line.includes('turn.completed')) continue;
       try {
@@ -115,12 +127,20 @@ export const codexRunner: AgentRunner<CodexModel> = {
         if (typeof usage?.input_tokens === 'number') input = usage.input_tokens;
         if (typeof usage?.output_tokens === 'number')
           output = usage.output_tokens;
+        // Name unconfirmed against a live payload; both spellings seen in the wild.
+        const cachedRaw =
+          usage?.cached_input_tokens ?? usage?.cache_read_tokens;
+        if (typeof cachedRaw === 'number') cached = cachedRaw;
       } catch {
         // a non-JSON line is not a usage record
       }
     }
     if (input === undefined && output === undefined) return undefined;
-    return { inputTokens: input, outputTokens: output };
+    return {
+      inputTokens: input,
+      outputTokens: output,
+      cachedInputTokens: cached,
+    };
   },
 
   deriveStopReason(raw, command) {
