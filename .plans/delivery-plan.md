@@ -471,9 +471,10 @@ Phase 1 overlap.
    judged scoring paths.
 2. **BM1, BM6 (build, event-gateway).** Blank project. Migrated from agent-skills'
    `receive-webhooks`. First real use of the provisioner.
-3. **BM12, BM13 (Outpost).** Outpost is a separate API with its own key and needs no
-   Hookdeck project, so these run while the provisioner is still settling. BM13 is
-   promoted from outpost/08.
+3. **BM12, BM13 (Outpost).** Scored against managed Outpost, which means an Outpost
+   project on the Hookdeck platform rather than a self-hosted open-source instance.
+   BM13 is promoted from outpost/08. These move after the provisioner rather than
+   alongside it; see below for why the ordering changed.
 4. **BM2, BM3, BM4, BM5 (build, event-gateway).** Config-heavy, all deterministic
    scorers against API state.
 5. **BM7, BM8, BM9 (investigate/resolve).** Need seeded state including event history.
@@ -490,6 +491,29 @@ Phase 1 overlap.
    the same rate-limit config, so it is a destination whose behaviour we control.
 
 Items 1 and 2 are v0. Items 3 to 6 are v1.
+
+### Outpost is scored managed, not self-hosted
+
+**Decision: score against managed Outpost on the Hookdeck platform.** Self-hosted
+open-source Outpost was the cheaper option and the earlier assumption, and it is the
+wrong one. The benchmark's claim is how well an agent builds with what a customer
+buys, and a self-hosted instance is a different product with a different setup path.
+The migration source already points the same way: the agent-skills scenario is named
+`outpost-managed-quickstart`. It also collapses two environment models into one,
+because a managed Outpost project fits the `ProjectSource` seam that already exists
+rather than needing a parallel one.
+
+**This costs us the reason Outpost was sequenced early.** The old ordering ran BM12
+and BM13 while the provisioner settled, on the grounds that Outpost needed no Hookdeck
+project. Managed Outpost does, so those scenarios inherit the same constraints as
+every other: one environment at a time, reset between runs, no free parallelism, and
+provisioning work before scenario work. They move after the provisioner instead of
+beside it, and Outpost stops being the cheap filler it looked like.
+
+**Open, and worth settling before BM12 starts.** Whether an Outpost project is
+provisioned and keyed the same way an Event Gateway project is, or needs its own
+acquire path. That decides whether `ProjectSource` gains a variant or just a
+parameter.
 
 ### Rethink triggers
 
