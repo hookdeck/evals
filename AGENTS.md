@@ -8,10 +8,20 @@ knowing before you change anything.
 
 Phase 0 (framework spike) and Phase 1 (the project provisioner) are done.
 
-Three regression scenarios and one benchmark scenario exist. Two regression
-scenarios pass on both primary agents; `regression-filtering-001-regex-capability`
-fails on Claude Code and passes on Codex, which is the June 2026 incident
-reproduced rather than a defect in the scenario.
+Three regression scenarios and two benchmark scenarios exist, run by four
+experiments: `claude-code-sonnet-5` and `codex-gpt-5.6` with
+`['hookdeck', 'event-gateway']`, and `-no-skills` variants of each.
+
+Two regression scenarios pass on both primary agents;
+`regression-filtering-001-regex-capability` fails on Claude Code and passes on
+Codex, which is the June 2026 incident reproduced rather than a defect in the
+scenario. `benchmark-filtering-001-enterprise-orders` passes on both, so it does
+not discriminate yet. `benchmark-verification-001-stripe-express` (BM1) has run
+once, scored 2/4, and has since been rebuilt around what that run showed; the
+rebuilt version is unrun.
+
+BM6 is next: local dev, `hookdeck listen`, deliberately smaller than BM1 so the
+tunnel is isolated rather than bundled with provider setup and handler code.
 
 CI runs formatting and unit tests. `eval-refresh` is manual dispatch only.
 `HOOKDECK_API_KEY`, `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` are set as
@@ -82,6 +92,17 @@ redacts source `config.auth` on read, so a scorer cannot inspect the algorithm
 or encoding an agent chose. Signing a request and checking it is accepted is
 both possible and better: it passes an agent that reached a correct setup by an
 unanticipated route, and fails config that looks right but rejects real traffic.
+
+**An agent can install skills itself, and a baseline that does is not a
+baseline.** The sandbox has network access because scenarios need the
+documentation, and the skills registry is on that network. `skills.selfInstalled`
+on a result records what the agent fetched. Read it by repo: a product skill
+(`hookdeck`, `event-gateway`) pulled into a `-no-skills` run invalidates that run
+as a baseline and should be excluded from the delta; a provider skill
+(`stripe-webhooks`) is legitimate, because documenting a third party's signature
+format was never Hookdeck's job and we maintain those skills for exactly this.
+Do not block the network to prevent it: the docs need it, and a baseline that
+cannot reach the internet is unrealistic in the other direction.
 
 **Skills are the axis; the CLI and the API are the baseline.** Every experiment
 gets the pinned Hookdeck CLI (baked into the sandbox image) and a live

@@ -30,15 +30,28 @@ from the proposal, the divergences are listed at the end.
 Roughly 20 working days of Phil's time to launch-ready, plus the page and launch blog
 running in parallel from the end of Phase 3.
 
-**Status 7 Aug: Phases 0 done, repo created.** The spike passed and this repo is it:
-four commits, `git log` showing the derivation from supabase/evals. Typecheck passes,
-core 103/103 and sandbox 19/19. **Next: Phase 1, the provisioner** (2 days), then the
-first scenarios. The GitHub remote does not exist yet, so nothing is pushed.
+**Status 10 Aug: Phases 0 and 1 done, Phase 2 underway, Phase 3 partly done ahead
+of itself.** The repo is at `hookdeck/evals` and pushed. Build, formatting and 225
+unit tests are green.
 
-Two things to start in parallel, both minutes of effort:
+Scenarios: three regression, two benchmark. Four experiments, two agents with and
+without skills. The regression suite has run end to end in CI and scored identically
+to a laptop, which closes the Phase 1 risk that the shared project and the container
+would not survive the move off local. `regression-filtering-001-regex-capability`
+fails on Claude Code and passes on Codex, and that failure is the June 2026 incident
+reproduced on demand.
 
-- ~~Create the org and `evals-ci`~~ done 7 Aug: a dedicated org and an `evals-ci` project. Still to add: `evals-local`, and keys into GitHub secrets and Doppler.
-- Ask the platform team the two org-key questions under Open questions.
+CI is manual dispatch only, with secrets set, and has completed a full run including
+publishing. The weekly schedule is deliberately not wired: an automatic trigger should
+arrive with the scoreboard rather than before it.
+
+**Next: BM6, then BM1's second run.** BM1 ran once, scored 2 of 4, and was rebuilt
+around what that run showed; the rebuilt version is unrun. BM6 comes first because it
+isolates local delivery, which BM1 bundles with provider setup and handler code.
+
+Still to do, both small: `evals-local`, and the two org-key questions for the platform
+team under Open questions. The second one now has a number behind it, since six pairs
+took 22 minutes serialised on one project.
 
 ---
 
@@ -454,13 +467,26 @@ point the same way.
 **An agent can install skills itself, and this one did.** It ran `npx skills add
 hookdeck/webhook-skills --skill stripe-webhooks` and used the result. The sandbox has
 network access because scenarios need the documentation, and the skills registry is on
-the same network. This breaks the axis: a `-no-skills` run is only a baseline if it
-stays without skills, and nothing currently stops it self-installing. The measured
-delta is the project's headline number, so this has to be handled before any of it is
-published. Detecting it is cheap, since the transcript records the install. The
-detection is worth having regardless of what we do about it, because "the agent went
-and found our skills unprompted" is a good result for the skills programme even as it
-is a bad one for the experiment design.
+the same network.
+
+Resolved by splitting the question rather than answering it once, because two different
+things were being conflated. Product skills (`hookdeck`, `event-gateway`) are the axis:
+a `-no-skills` run that installs one has stopped being a baseline, and the delta between
+arms is the number this project publishes, so that run is excluded from it. Provider
+skills (`stripe-webhooks`) are not the axis: documenting a third party's signature
+format was never Hookdeck's responsibility, we maintain those skills for exactly this
+case, and an agent finding them is the system working. Recorded either way, in
+`skills.selfInstalled`, read off the commands the agent ran.
+
+Blocking the network was considered and rejected. The documentation is on it, and a
+baseline that cannot reach the internet is unrealistic in the opposite direction.
+
+supabase/evals draws the same line from the other side. Their harness sources skills
+"from the local `skills/` directory, never the network", so the controlled arm stays
+controlled, while their eval metadata supports a per-eval `skills: []` override
+described as "for a scenario where the prompt asks the agent to install skills itself".
+Deliberate self-installation is a declared scenario type there; incidental
+self-installation is the case neither suite had handled.
 
 **The scorer has to own process lifecycle.** Nothing was listening when scoring ran,
 so both live checks failed. The agent was right: asked to set this up, it wrote the

@@ -262,6 +262,13 @@ export const skillResultSchema = z.object({
   available: z.array(z.string()),
   // Skills whose full instructions were actually loaded during the run.
   loaded: z.array(z.string()),
+  // Skills the agent fetched from the network itself, which the harness did not
+  // give it. The sandbox has network access because scenarios need the
+  // documentation, and the skills registry is on that same network, so an agent
+  // can install a skill mid-run. Recorded because a no-skills run that installs
+  // a product skill has stopped being a baseline, and the delta between the two
+  // arms is the number this project publishes.
+  selfInstalled: z.array(z.string()).optional(),
 });
 export type SkillResult = z.infer<typeof skillResultSchema>;
 

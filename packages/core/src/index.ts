@@ -68,7 +68,7 @@ export {
   docsPageSourceSchema,
 } from './eval-metadata.js';
 export { parseEvalMarkdown } from './eval-markdown.js';
-export { buildSkillResult } from './skill-results.js';
+export { buildSkillResult, findSelfInstalledSkills } from './skill-results.js';
 export {
   buildDocsResult,
   rehydrateTruncatedDocsResults,
