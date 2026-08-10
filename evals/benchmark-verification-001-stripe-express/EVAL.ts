@@ -19,21 +19,29 @@ import type {
  * covered in the documentation, which is what makes this worth measuring
  * against a skills-equipped run.
  *
- * Scored by sending real traffic rather than by reading configuration. The
- * scorer signs a request the way Stripe would, using the secret seeded in
- * `local/.env` so both sides know it, and then asks Hookdeck what the delivery
- * attempt returned. That is the only way to send genuinely Hookdeck-signed
- * traffic at the handler: the signing secret Hookdeck uses is not exposed on
- * the API, so a scorer cannot forge one. Going through the real delivery path
- * needs no secret and tests the whole chain.
+ * Scored by sending real traffic rather than by reading configuration, in two
+ * halves that fail independently.
  *
- * The negative needs no secret either, because producing an invalid signature
- * is easy. It is checked directly against the handler, in the sandbox.
+ * The Hookdeck half signs a request the way Stripe would, using the secret in
+ * `local/.env`, and checks the source accepts it and records an event. The
+ * handler half starts what the agent wrote, signs with the project's signing
+ * secret from `HOOKDECK_SIGNING_SECRET`, and posts straight at it.
+ *
+ * The first version scored the handler through the real delivery path, which
+ * meant Hookdeck had to reach localhost, which meant a live `hookdeck listen`
+ * tunnel at scoring time. That failed for a reason that had nothing to do with
+ * the agent: asked to set this up, it wrote the handler, configured the
+ * connection, and documented `npm start` as the developer's step, which is
+ * correct. The deliverable is code and configuration, not a running process. So
+ * the scorer runs the process itself, and the tunnel belongs to the local-dev
+ * scenario that is actually about tunnels.
  */
 const STRIPE_WEBHOOK_SECRET = 'whsec_51KzQmTestSecretForEvalsOnly0xA9';
-const DEFAULT_PORT = 3000;
-/** Rule evaluation and delivery are not synchronous with the POST. */
-const DELIVERY_WAIT_MS = 15_000;
+const PORT = 3100;
+/** Ingestion is not synchronous with the POST. */
+const INGEST_WAIT_MS = 8_000;
+/** Long enough for `npm install` on a cold workspace. */
+const BOOT_TIMEOUT_MS = 180_000;
 
 const scorer: ToolScorer = async (ctx) => {
   const source = await findStripeSource(ctx);
@@ -52,8 +60,8 @@ const scorer: ToolScorer = async (ctx) => {
 
   const checks: CheckResult[] = [
     { name: 'created a Stripe source', passed: true },
-    ...(await checkDeliverySucceeds(ctx, String(source.url))),
-    await checkRejectsForgedSignature(ctx),
+    await checkSourceAcceptsStripe(ctx, String(source.url)),
+    ...(await checkHandler(ctx)),
   ];
 
   return { passed: checks.every((c) => c.passed), checks };
@@ -62,17 +70,16 @@ const scorer: ToolScorer = async (ctx) => {
 export default scorer;
 
 /**
- * The positive path, end to end: sign as Stripe, post at the source, and read
- * back what the handler answered Hookdeck.
+ * The Hookdeck half: does a genuine Stripe request get in.
  *
- * A 200 means the handler verified a real `x-hookdeck-signature` and accepted
- * it. Anything else means it turned away traffic it should have taken, which is
- * the failure a developer would see as "my webhooks stopped working".
+ * Proves the agent configured the source's verification with the secret the
+ * developer already had, rather than creating a source that accepts anything.
+ * Nothing here depends on where the connection points.
  */
-async function checkDeliverySucceeds(
+async function checkSourceAcceptsStripe(
   ctx: ToolEvalContext,
   sourceUrl: string
-): Promise<CheckResult[]> {
+): Promise<CheckResult> {
   const sentAt = new Date();
   const body = JSON.stringify({
     id: 'evt_test_checkout_completed',
@@ -90,94 +97,125 @@ async function checkDeliverySucceeds(
   });
 
   if (!res.ok) {
-    return [
-      {
-        name: 'a genuine Stripe request is accepted at the source',
-        passed: false,
-        notes: `source returned ${res.status}; the Stripe verification secret is probably not the one in local/.env`,
-      },
-      { name: 'the handler accepted the delivered event', passed: false },
-    ];
+    return {
+      name: 'a genuine Stripe request is accepted at the source',
+      passed: false,
+      notes: `source returned ${res.status}; the verification secret is probably not the one in local/.env`,
+    };
   }
 
-  await new Promise((resolve) => setTimeout(resolve, DELIVERY_WAIT_MS));
-  const attempt = await attemptForProbe(ctx, sentAt);
-
-  return [
-    {
-      name: 'a genuine Stripe request is accepted at the source',
-      passed: true,
-    },
-    {
-      name: 'the handler accepted the delivered event',
-      passed: attempt?.response_status === 200,
-      notes: attempt
-        ? `delivery attempt returned ${attempt.response_status}, expected 200`
-        : 'no delivery attempt recorded: nothing was listening, so the event was never delivered',
-    },
-  ];
-}
-
-/**
- * The attempt for the event this scorer just sent, found by event id rather
- * than by time.
- *
- * `/attempts` takes an `event_id` filter and has no time filter, and the
- * project is shared across runs, so picking "the most recent attempt" would
- * eventually read a different run's delivery and score this one on it. Find our
- * event first, then ask only about that event's attempts.
- */
-async function attemptForProbe(
-  ctx: ToolEvalContext,
-  sentAt: Date
-): Promise<{ response_status?: number } | undefined> {
-  const { models: events } = await ctx.api<{
-    models?: { id?: string; created_at?: string }[];
-  }>('GET', '/events?limit=100&order_by=created_at&dir=desc');
-
-  const event = (events ?? []).find(
+  await new Promise((resolve) => setTimeout(resolve, INGEST_WAIT_MS));
+  const { models } = await ctx.api<{ models?: { created_at?: string }[] }>(
+    'GET',
+    '/events?limit=100&order_by=created_at&dir=desc'
+  );
+  const arrived = (models ?? []).some(
     (e) => e.created_at && new Date(e.created_at) >= sentAt
   );
-  if (!event?.id) return undefined;
 
-  const { models: attempts } = await ctx.api<{
-    models?: { response_status?: number }[];
-  }>('GET', `/attempts?event_id=${encodeURIComponent(event.id)}&limit=100`);
-
-  return (attempts ?? [])[0];
+  return {
+    name: 'a genuine Stripe request is accepted at the source',
+    passed: arrived,
+    notes: arrived
+      ? undefined
+      : 'accepted at the edge but no event was recorded',
+  };
 }
 
 /**
- * The negative, checked straight at the handler rather than through Hookdeck.
+ * The handler half: run what the agent wrote and sign requests at it.
  *
- * Guards the failure the positive check cannot see: a handler that returns 200
- * to everything passes on delivery alone and verifies nothing. Runs in the
- * sandbox because the handler is on localhost inside the container.
+ * The scorer owns the process. The agent's job was to write the handler and
+ * document how to start it, not to leave a server running, so scoring starts it
+ * on a port of the scorer's choosing and stops it afterwards.
+ *
+ * Both directions are checked because either alone is passable by a broken
+ * handler: one that rejects everything passes the negative, and one that
+ * verifies nothing passes the positive.
  */
-async function checkRejectsForgedSignature(
-  ctx: ToolEvalContext
-): Promise<CheckResult> {
-  const name = 'the handler rejects a forged signature';
-  if (!ctx.sandbox) {
-    return { name, passed: false, notes: 'no sandbox to reach the handler' };
+async function checkHandler(ctx: ToolEvalContext): Promise<CheckResult[]> {
+  const names = [
+    'the handler accepts a genuine Hookdeck signature',
+    'the handler rejects a forged signature',
+  ];
+  const failBoth = (notes: string) =>
+    names.map((name) => ({ name, passed: false, notes }));
+
+  if (!ctx.sandbox) return failBoth('no sandbox to run the handler in');
+  const secret = process.env.HOOKDECK_SIGNING_SECRET;
+  if (!secret) {
+    return failBoth(
+      'HOOKDECK_SIGNING_SECRET is not set, so a genuine signature cannot be produced'
+    );
   }
 
-  const port = await handlerPort(ctx);
-  const result = await ctx.sandbox.exec(
-    `curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:${port}/orders ` +
-      `-H 'Content-Type: application/json' ` +
-      `-H 'x-hookdeck-signature: bm90LWEtcmVhbC1zaWduYXR1cmU=' ` +
-      `-d '{"id":"evt_forged","type":"checkout.session.completed"}'`
+  const dir = await handlerDir(ctx);
+  if (!dir) return failBoth('no package.json found in the workspace');
+
+  await ctx.sandbox.exec(
+    `cd ${dir} && npm install --no-audit --no-fund 2>&1 | tail -2`,
+    { timeoutMs: BOOT_TIMEOUT_MS }
+  );
+  // Backgrounded and detached: the scorer needs the shell back.
+  await ctx.sandbox.exec(
+    `cd ${dir} && PORT=${PORT} nohup npm start > /tmp/handler.log 2>&1 & sleep 6; echo started`,
+    { timeoutMs: 60_000 }
   );
 
-  const status = Number.parseInt(result.stdout.trim(), 10);
-  return {
-    name,
-    // 2xx means it took the request on trust. A connection failure (000) is not
-    // a pass either: it means nothing was running to reject anything.
-    passed: status >= 400 && status < 500,
-    notes: `expected a 4xx, got ${result.stdout.trim() || 'no response'}`,
-  };
+  try {
+    const body = JSON.stringify({
+      id: 'evt_scored',
+      type: 'checkout.session.completed',
+    });
+    const valid = await post(ctx, body, hookdeckSignature(body, secret));
+    const forged = await post(ctx, body, 'bm90LWEtcmVhbC1zaWduYXR1cmU=');
+
+    return [
+      {
+        name: names[0],
+        passed: valid === 200,
+        notes: `expected 200, got ${valid || 'no response (handler did not start; see /tmp/handler.log)'}`,
+      },
+      {
+        name: names[1],
+        // A 4xx. A connection failure is not a pass: nothing was there to reject.
+        passed: forged >= 400 && forged < 500,
+        notes: `expected a 4xx, got ${forged || 'no response'}`,
+      },
+    ];
+  } finally {
+    await ctx.sandbox.exec(`pkill -f "node .*server" || true`);
+  }
+}
+
+/** POST at the handler from inside the sandbox, returning the status code. */
+async function post(
+  ctx: ToolEvalContext,
+  body: string,
+  signature: string
+): Promise<number> {
+  const result = await ctx.sandbox?.exec(
+    `curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:${PORT}/orders ` +
+      `-H 'Content-Type: application/json' ` +
+      `-H 'x-hookdeck-signature: ${signature}' ` +
+      `-H 'x-hookdeck-verified: true' ` +
+      `--data-binary '${body}'`
+  );
+  return Number.parseInt(result?.stdout.trim() ?? '', 10) || 0;
+}
+
+/** Hookdeck's scheme: HMAC SHA-256 over the raw body, base64. Not hex. */
+function hookdeckSignature(body: string, secret: string): string {
+  return createHmac('sha256', secret).update(body).digest('base64');
+}
+
+/** Where the agent put the app. It may have nested it rather than used the root. */
+async function handlerDir(ctx: ToolEvalContext): Promise<string | undefined> {
+  const found = await ctx.sandbox?.exec(
+    `find . -maxdepth 3 -name package.json -not -path '*/node_modules/*' | head -1`
+  );
+  const path = found?.stdout.trim();
+  return path ? path.replace(/\/package\.json$/, '') : undefined;
 }
 
 /** Stripe's scheme: `t=<unix>,v1=<hex hmac sha256 of "t.body">`. Hex, not base64. */
@@ -187,23 +225,6 @@ function stripeSignature(body: string): string {
     .update(`${timestamp}.${body}`)
     .digest('hex');
   return `t=${timestamp},v1=${signature}`;
-}
-
-/**
- * The port the handler is on. The seeded app reads `PORT` and defaults to 3000,
- * but an agent may have moved it, and `hookdeck listen <port>` records the port
- * it was pointed at, so prefer what the CLI destination says.
- */
-async function handlerPort(ctx: ToolEvalContext): Promise<number> {
-  const { models } = await ctx.api<{ models?: Record<string, unknown>[] }>(
-    'GET',
-    '/destinations?limit=100'
-  );
-  for (const destination of models ?? []) {
-    const config = destination.config as { port?: number } | undefined;
-    if (typeof config?.port === 'number') return config.port;
-  }
-  return DEFAULT_PORT;
 }
 
 async function findStripeSource(

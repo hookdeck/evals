@@ -71,7 +71,20 @@ export function hookdeckRuntime(options: HookdeckRuntimeOptions): EvalRuntime {
               .map((s) => s.promptAddendum)
               .filter((p): p is string => Boolean(p)),
           ].join('\n\n'),
-          sandboxEnv: { HOOKDECK_API_KEY: project.apiKey },
+          sandboxEnv: {
+            HOOKDECK_API_KEY: project.apiKey,
+            // The secret Hookdeck signs forwarded requests with, so a handler
+            // an agent writes can verify `x-hookdeck-signature`. It is
+            // project-scoped and lives in the dashboard rather than on the API,
+            // so there is no way to look it up at run time; without it here an
+            // agent can only leave a placeholder, which is what happened on
+            // BM1's first run. Passing it also lets a scorer sign a request
+            // itself and check the handler directly, rather than needing a live
+            // tunnel for Hookdeck to deliver through.
+            ...(process.env.HOOKDECK_SIGNING_SECRET
+              ? { HOOKDECK_SIGNING_SECRET: process.env.HOOKDECK_SIGNING_SECRET }
+              : {}),
+          },
           scoringContext,
           close: async () => {
             const errors: unknown[] = [];
