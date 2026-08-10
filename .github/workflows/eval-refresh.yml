@@ -352,4 +352,26 @@ jobs:
           fi
 
           git commit -m "chore: refresh eval results"
-          git push
+
+          # A full run takes tens of minutes, so the branch has usually moved by
+          # the time results are ready and a plain push is rejected as non
+          # fast-forward. Rebase onto whatever landed meanwhile and try again:
+          # the only thing being committed is an exported JSON file, so there is
+          # nothing for a rebase to conflict with except another results commit,
+          # and the newer export is the one to keep.
+          branch="${{ github.ref_name }}"
+          for attempt in 1 2 3; do
+            if git push origin "HEAD:$branch"; then
+              exit 0
+            fi
+            echo "push rejected (attempt $attempt), rebasing onto origin/$branch"
+            git fetch origin "$branch"
+            git rebase -X ours "origin/$branch" || {
+              git rebase --abort || true
+              echo "::error::could not rebase onto origin/$branch"
+              exit 1
+            }
+          done
+
+          echo "::error::exhausted push attempts"
+          exit 1
