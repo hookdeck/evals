@@ -1,1 +1,40 @@
-[]
+[
+  {
+    "experiment": "claude-code-sonnet-5-docs-only",
+    "experimentSuite": "regression",
+    "experimentDisplay": {
+      "agent": "claude-code",
+      "modelProvider": "anthropic",
+      "modelId": "claude-sonnet-5",
+      "reasoningEffort": "high"
+    },
+    "eval": "regression-filtering-001-regex-capability",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "filtering"
+    ],
+    "suite": "regression",
+    "passed": false,
+    "checks": [
+      {
+        "name": "did not claim regex filtering or channels exist",
+        "passed": false,
+        "judgeNotes": "The assistant incorrectly says regex can be used for Hookdeck filtering and offers to wire it into a Hookdeck filter."
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "Our order references look like `ORD-2026-AC-4821`. We migrated formats at the\nstart of the year and the old ones are still coming through, which my service\nchokes on.\n\nCan I use a regex on the reference to only let this year's format through? What\nis the closest I can get?",
+    "promptSourcePath": "evals/regression-filtering-001-regex-capability/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "claude-code-sonnet-5-docs-only/regression-filtering-001-regex-capability.json"
+  }
+]
