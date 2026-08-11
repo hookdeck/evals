@@ -8,6 +8,17 @@
  * is one mode, so the `localStack` option and its branch are gone.
  */
 
+import {
+  cpSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { SkillSource } from '@hookdeck-evals/core';
 import { DockerSandbox } from './docker-sandbox.js';
 import { ensureSandboxImage } from './image.js';
@@ -45,7 +56,15 @@ export async function createAgentEnvironment(
   const sandbox = await DockerSandbox.create({ image });
   try {
     if (options.localDir) {
-      await sandbox.copyToContainer(options.localDir, sandbox.workdir);
+      const seeded = expandSeedPlaceholders(
+        options.localDir,
+        options.env ?? {}
+      );
+      try {
+        await sandbox.copyToContainer(seeded.dir, sandbox.workdir);
+      } finally {
+        seeded.cleanup();
+      }
     }
     if (options.env) sandbox.extraEnv = { ...options.env };
     const skills = await installSkills(sandbox, options.skills ?? []);
@@ -55,3 +74,58 @@ export async function createAgentEnvironment(
     throw err;
   }
 }
+
+/** Text files small enough to be config rather than fixtures. */
+const MAX_EXPANDABLE_BYTES = 64 * 1024;
+const PLACEHOLDER = /\$\{([A-Z_][A-Z0-9_]*)\}/g;
+
+/**
+ * Copy a scenario's `local/` directory, substituting `${VAR}` from the run's
+ * environment.
+ *
+ * A seeded workspace sometimes has to carry a credential the developer in the
+ * scenario would already have, and which the agent cannot obtain: Hookdeck's
+ * signing secret is in the dashboard, not on the API, so a handler cannot verify
+ * anything without being handed it. Committing the value is not an option, and
+ * putting it only in the container environment does not work either - BM1's
+ * agent looked for `HOOKDECK_WEBHOOK_SECRET` in `.env`, correctly reported that
+ * it could not fetch the real one, and left a placeholder.
+ *
+ * So `local/.env` names the variable and the harness fills it in on the way past.
+ * Unset variables are left as written rather than blanked, so a missing
+ * credential reads as a missing credential instead of an empty string.
+ */
+function expandSeedPlaceholders(
+  localDir: string,
+  env: Record<string, string>
+): { dir: string; cleanup: () => void } {
+  const dir = mkdtempSync(join(tmpdir(), 'hd-seed-'));
+  cpSync(localDir, dir, { recursive: true });
+
+  const walk = (current: string) => {
+    for (const entry of readdirSync(current)) {
+      const path = join(current, entry);
+      if (statSync(path).isDirectory()) {
+        walk(path);
+        continue;
+      }
+      if (statSync(path).size > MAX_EXPANDABLE_BYTES) continue;
+      let text: string;
+      try {
+        text = readFileSync(path, 'utf8');
+      } catch {
+        continue; // not text; leave it alone
+      }
+      if (!text.includes('${')) continue;
+      const expanded = text.replace(PLACEHOLDER, (whole, name: string) =>
+        env[name] === undefined ? whole : env[name]
+      );
+      if (expanded !== text) writeFileSync(path, expanded);
+    }
+  };
+  walk(dir);
+
+  return { dir, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
+}
+
+export const __testing = { expandSeedPlaceholders };

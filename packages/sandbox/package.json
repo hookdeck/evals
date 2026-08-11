@@ -11,8 +11,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run test/unit.test.ts",
-    "test:docker": "SANDBOX_DOCKER_TESTS=1 vitest run test/docker.test.ts"
+    "test": "vitest run"
   },
   "dependencies": {
     "@hookdeck-evals/core": "workspace:*",

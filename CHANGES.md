@@ -26,6 +26,10 @@ and every change since.
 - `.github/workflows/append-gh-pages-history.yml`, which appended each results
   commit to a `gh-pages` branch. There is no `gh-pages` branch and no published
   scoreboard here yet; restore it from the first commit when there is.
+- `packages/sandbox/test/docker.test.ts`, an integration test for the Supabase
+  local stack. It imports four modules removed with that runtime and had been
+  dead since; it never failed because the package's test script globbed a single
+  file. That script now runs the whole directory.
 
 ## Replaced
 
