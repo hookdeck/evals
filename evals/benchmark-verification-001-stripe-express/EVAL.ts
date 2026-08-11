@@ -176,18 +176,50 @@ async function checkHandler(ctx: ToolEvalContext): Promise<CheckResult[]> {
   );
 
   try {
+    // A realistic event, not a minimal one. Stripe events always carry
+    // `data.object`, so a handler that reads `event.data.object` to do its work
+    // is correct, and a probe body without it crashes that handler with a 500
+    // and scores it as rejecting valid traffic. Send what Stripe sends.
     const body = JSON.stringify({
       id: 'evt_scored',
+      object: 'event',
       type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_test_scored',
+          object: 'checkout.session',
+          amount_total: 4200,
+          currency: 'gbp',
+          payment_status: 'paid',
+        },
+      },
     });
     const valid = await post(ctx, body, hookdeckSignature(body, secret));
     const forged = await post(ctx, body, 'bm90LWEtcmVhbC1zaWduYXR1cmU=');
+
+    // The handler's own output on failure. The sandbox is destroyed after
+    // scoring, so a note pointing at a log inside it is a dead end by the time
+    // anyone reads the result; a 500 says the handler crashed but not why.
+    const log =
+      valid === 200
+        ? undefined
+        : (
+            await ctx.sandbox.exec(
+              `tail -5 /tmp/handler.log 2>/dev/null || echo '(no handler log)'`
+            )
+          ).stdout
+            .trim()
+            .replace(/\s+/g, ' ')
+            .slice(0, 300);
 
     return [
       {
         name: names[0],
         passed: valid === 200,
-        notes: `expected 200, got ${valid || 'no response (handler did not start; see /tmp/handler.log)'}`,
+        notes:
+          valid === 200
+            ? undefined
+            : `expected 200, got ${valid || 'no response'}. handler said: ${log}`,
       },
       {
         name: names[1],
