@@ -188,7 +188,17 @@ async function checkHandler(ctx: ToolEvalContext): Promise<CheckResult[]> {
   }
 }
 
-/** POST at the handler from inside the sandbox, returning the status code. */
+/**
+ * POST at the handler from inside the sandbox, returning the status code.
+ *
+ * Carries the provider's signature as well as Hookdeck's, because that is what
+ * a real delivery looks like: Hookdeck forwards the original request headers
+ * and adds its own. Sending only `x-hookdeck-signature` fails a handler that
+ * checks both, and checking both is what the documentation recommends and what
+ * an agent following it builds. Scored a correct handler as broken until the
+ * status codes gave it away: 401 for a forged Hookdeck signature, 400 for a
+ * good one with no Stripe signature behind it.
+ */
 async function post(
   ctx: ToolEvalContext,
   body: string,
@@ -199,6 +209,7 @@ async function post(
       `-H 'Content-Type: application/json' ` +
       `-H 'x-hookdeck-signature: ${signature}' ` +
       `-H 'x-hookdeck-verified: true' ` +
+      `-H 'Stripe-Signature: ${stripeSignature(body)}' ` +
       `--data-binary '${body}'`
   );
   return Number.parseInt(result?.stdout.trim() ?? '', 10) || 0;
