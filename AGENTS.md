@@ -9,7 +9,7 @@ knowing before you change anything.
 Phase 0 (framework spike) and Phase 1 (the project provisioner) are done.
 Phase 2 is underway and parts of Phase 3 landed early.
 
-**Scenarios: seven.** Three regression, four benchmark.
+**Scenarios: eight.** Three regression, five benchmark.
 
 | Suite | Stage | Scenario | Where it stands |
 |---|---|---|---|
@@ -19,7 +19,8 @@ Phase 2 is underway and parts of Phase 3 landed early.
 | benchmark | build | filtering-001-enterprise-orders | Passes everything run against it |
 | benchmark | build | verification-001-stripe-express | Passes Sonnet 5 both arms; fails GPT-5.4-mini 4/5 |
 | benchmark | build | localdev-001-listen-locally | Passes Sonnet 5 both arms; fails GPT-5.4-mini |
-| benchmark | investigate | investigate-001-failing-deliveries | Scored 2/3, the failing check was the scorer's and is fixed. Unrun since |
+| benchmark | investigate | investigate-001-failing-deliveries | Passes Claude Code 3/3 |
+| benchmark | resolve | resolve-001-paused-connection | Passes Claude Code 2/2, first run, no scorer fixes. Fully deterministic |
 
 **Experiments: five.** `claude-code-sonnet-5` and `codex-gpt-5.6` with
 `['hookdeck', 'event-gateway']`, `-no-skills` twins of each, and
@@ -51,8 +52,18 @@ that arrives with the scoreboard.
 Nothing is published. Both results files are empty, and the results web app is
 still Supabase's shell (see Traps).
 
-**Next:** re-run BM7 to confirm the scorer fix, then BM8 and BM9 (resolve). The
-`?status=` seeding technique makes those cheap to build now.
+**Next:** BM9, the scoped bulk retry, which needs a harness change first. Its
+scenario is "the endpoint is fixed now, redeliver the failed events from the
+last hour, but only for the checkout source", so events have to fail *before*
+the endpoint is repaired. `applySeed` runs every resource and its `then` steps,
+then all events, with no way to change state afterwards. A top-level `after`
+block of requests applied post-events, with `$ref:` resolution in the path,
+would unlock this and any other scenario where state changes after history
+exists.
+
+Also unrun: BM7 and BM8 against `-no-skills` and the weak model, which is what
+tells us whether the investigate and resolve scenarios discriminate or are
+another floor.
 
 ## Plans
 
