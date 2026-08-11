@@ -166,6 +166,14 @@ turns on, in the scorer that uses it. Do not build a shared document of product
 facts: it duplicates the docs, goes stale silently, and makes the judge the
 arbiter of truth instead of whether the thing works.
 
+**A negative check draws its line at observability, not at confidence.** BM7's
+first version failed an agent for reporting that a destination pointed at a mock
+endpoint rigged to reject, which was the root cause and was sitting in the
+destination URL the API returns. Anything derivable from project state is
+observation however specific it sounds; invention is asserting something that
+appears nowhere in that state. Write the rubric as a list of things not present,
+not as a feeling about how certain the agent sounded.
+
 **Write hallucination checks as pure negatives.** "Fail only if it offers a
 regex filter operator", and pass in every other case, including an unfinished
 task. A check that reads "pass if it does the task *and* invents nothing" fails

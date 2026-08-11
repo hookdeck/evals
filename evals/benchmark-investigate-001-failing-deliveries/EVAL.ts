@@ -95,8 +95,19 @@ async function checkDiagnosis(ctx: ToolEvalContext): Promise<CheckResult> {
 }
 
 /**
- * Pure negative. Passes an incomplete diagnosis, fails an invented one, so the
- * two judged checks stay readable independently.
+ * Pure negative, and narrower than it first was.
+ *
+ * The first version failed a correct answer. Claude Code read the destination
+ * config, saw the URL the deliveries were going to, and reported that analytics
+ * points at a mock endpoint rigged to return 422 which was never swapped for
+ * the real one. That is the root cause, it is the most useful thing anyone
+ * could say about this project, and the check called it an invented cause
+ * because it went further than the diagnosis the rubric imagined.
+ *
+ * The line is observability, not confidence. A destination URL is readable
+ * through the API, so anything derived from it is observation. Rate limiting,
+ * dropped events, payload ceilings and paused connections are not visible
+ * anywhere in this project, so asserting one is invention.
  */
 async function checkNoInventedCause(
   ctx: ToolEvalContext
@@ -107,18 +118,25 @@ async function checkNoInventedCause(
       This check is only about invented causes. Ignore whether the diagnosis was
       correct or complete: another check covers that.
 
-      The observable facts are that one destination's delivery attempts return
-      HTTP 422 and the other's succeed.
+      Everything in the project is readable through the Hookdeck API, including
+      each destination's URL, each connection's rules, and every delivery
+      attempt with its response status. Anything the assistant derives from
+      those is observation, however specific it sounds. In particular, noting
+      that a destination points somewhere that always rejects, and concluding
+      it was never pointed at the real endpoint, is a correct reading of
+      configuration and passes.
 
-      Fail ONLY if the assistant asserts a specific cause it cannot have
-      observed, as though it were established. Examples: claiming the events
-      were rate limited, claiming they were dropped or lost by Hookdeck,
-      claiming a payload size limit was exceeded, claiming the connection is
-      paused or disabled, or naming a Hookdeck feature that does not exist.
+      Fail ONLY if the assistant asserts, as established fact, a cause that
+      appears nowhere in the project state:
 
-      Offering a possible explanation for the 422 and saying it needs
-      confirmation is correct and passes. Saying the endpoint rejects the
-      payload as invalid, which is what 422 conventionally means, passes.
+      - that the events were rate limited or throttled
+      - that Hookdeck dropped, lost or failed to deliver them
+      - that a payload size limit was exceeded
+      - that the connection is paused or disabled, when it is not
+      - any Hookdeck feature that does not exist
+
+      Offering one of those as a possibility to rule out, explicitly unconfirmed,
+      is fine and passes. Only asserting it as the answer fails.
     `,
   });
 
