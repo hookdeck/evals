@@ -1,0 +1,55 @@
+{
+  "resources": [
+    {
+      "kind": "sources",
+      "ref": "orders",
+      "body": { "name": "orders" }
+    },
+    {
+      "kind": "destinations",
+      "ref": "fulfilment",
+      "body": {
+        "name": "fulfilment-api",
+        "type": "HTTP",
+        "config": { "url": "https://mock.hookdeck.com" }
+      }
+    },
+    {
+      "kind": "destinations",
+      "ref": "analytics",
+      "body": {
+        "name": "analytics-api",
+        "type": "HTTP",
+        "config": { "url": "https://mock.hookdeck.com?status=422" }
+      }
+    },
+    {
+      "kind": "connections",
+      "body": {
+        "name": "orders-to-fulfilment",
+        "source_id": "$ref:orders",
+        "destination_id": "$ref:fulfilment"
+      }
+    },
+    {
+      "kind": "connections",
+      "body": {
+        "name": "orders-to-analytics",
+        "source_id": "$ref:orders",
+        "destination_id": "$ref:analytics"
+      }
+    }
+  ],
+  "events": [
+    {
+      "source": "orders",
+      "count": 4,
+      "body": { "reference": "ORD-2026-AC-4821", "total": 1250 }
+    },
+    {
+      "source": "orders",
+      "count": 3,
+      "body": { "reference": "ORD-2026-GX-1002", "total": 89 }
+    }
+  ]
+}
