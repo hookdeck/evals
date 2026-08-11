@@ -8,20 +8,22 @@ knowing before you change anything.
 
 Phase 0 (framework spike) and Phase 1 (the project provisioner) are done.
 
-Three regression scenarios and two benchmark scenarios exist, run by four
+Three regression scenarios and three benchmark scenarios exist, run by four
 experiments: `claude-code-sonnet-5` and `codex-gpt-5.6` with
 `['hookdeck', 'event-gateway']`, and `-no-skills` variants of each.
 
-Two regression scenarios pass on both primary agents;
+Regression: two pass on both primary agents.
 `regression-filtering-001-regex-capability` fails on Claude Code and passes on
 Codex, which is the June 2026 incident reproduced rather than a defect in the
-scenario. `benchmark-filtering-001-enterprise-orders` passes on both, so it does
-not discriminate yet. `benchmark-verification-001-stripe-express` (BM1) has run
-once, scored 2/4, and has since been rebuilt around what that run showed; the
-rebuilt version is unrun.
+scenario.
 
-BM6 is next: local dev, `hookdeck listen`, deliberately smaller than BM1 so the
-tunnel is isolated rather than bundled with provider setup and handler code.
+Benchmark: `benchmark-localdev-001-listen-locally` (BM6) passes 3/3 on Claude
+Code, and its scorer is the proven path for running an agent's code, starting a
+tunnel and observing a real delivery. `benchmark-filtering-001-enterprise-orders`
+passes on both agents, so it does not discriminate yet.
+`benchmark-verification-001-stripe-express` (BM1) has not yet passed; every run
+before the workspace-seeding fix ran against an empty workspace, so its earlier
+results say nothing about the scenario.
 
 CI runs formatting and unit tests. `eval-refresh` is manual dispatch only.
 `HOOKDECK_API_KEY`, `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` are set as
@@ -78,6 +80,25 @@ Runs bill per token. A local Claude Code subscription does not cover them: the
 agent runs inside a container, which needs an API key the same way CI does.
 
 ## Conventions
+
+**When a scorer disagrees with an agent, read the agent's report first.** It has
+been the cheapest answer every time and it keeps getting skipped. It named the
+credential it could not fetch, and the variable name it looked for
+(`HOOKDECK_WEBHOOK_SECRET`, which was better than the one we had invented). It
+showed the exact `hookdeck listen` invocation that works headless, including the
+`--output compact` the scorer was missing. Treat the report as evidence, not
+commentary.
+
+**A scorer must own every process it depends on.** Start what it needs, stop
+what it does not. An agent that verifies its own work leaves servers and tunnels
+running, on its own ports, writing to its own logs, and Hookdeck will deliver to
+that session instead of the scorer's. Failing a scenario because the agent was
+thorough is the worst thing a scorer can reward.
+
+**Put diagnostics in the check notes, not in a file in the sandbox.** The
+container is destroyed after scoring, so "see /tmp/x.log" is a dead end by the
+time anyone reads the failure. Tailing that log into the notes turned a run per
+guess into a five-minute diagnosis.
 
 **Probe a scorer's own queries against a real project before trusting a red
 result.** This has bitten three times: source verification config is redacted on
