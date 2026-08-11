@@ -23,11 +23,24 @@ export async function createBareSandbox(
   options: {
     skills?: readonly SkillSource[];
     env?: Record<string, string>;
+    /**
+     * A scenario's `local/` directory, seeding the agent's workspace.
+     *
+     * Upstream only ever seeded this through the local-stack path, and tools
+     * mode had no local files to carry, so when that path was removed the
+     * seeding went with it and nothing noticed: a scenario with a `local/`
+     * directory ran against an empty workspace. An agent asked to work on code
+     * that is not there either asks where it is, which scores zero for
+     * behaving correctly, or writes its own, which scores something other than
+     * what the scenario meant to measure.
+     */
+    localDir?: string;
   } = {}
 ): Promise<BareSandboxHandle> {
   const env = await createAgentEnvironment({
     skills: options.skills,
     env: options.env,
+    localDir: options.localDir,
   });
   return {
     sandbox: toAgentSandbox(env.sandbox),

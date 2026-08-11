@@ -34,7 +34,6 @@ import {
 } from '@hookdeck-evals/core';
 import type {
   ExperimentConfig,
-  EvalInterface,
   EvalManifest,
   EvalMode,
   EvalSuite,
@@ -106,18 +105,14 @@ function readFlag(name: string): string | undefined {
 }
 
 /**
- * Resolve the run mode. The sandbox (local-stack) is needed when the agent
- * uses the Supabase CLI (`interface: cli`) — including bootstrap scenarios that
- * start from an empty workspace — or when the eval ships a `local/` workspace
- * of starting files. Everything else runs against the in-memory tools runtime.
+ * Every run is what upstream called tools mode. The local-stack branch went
+ * with the Supabase runtime, so the distinction no longer exists, and this
+ * returning `local-stack` for any scenario shipping a `local/` directory was a
+ * leftover that quietly suppressed skill loading for in-process agents.
  *
- * `interface` is otherwise a benchmark dimension (KPI), not a runtime switch.
+ * `interface` remains a benchmark dimension, not a runtime switch.
  */
-function resolveEvalMode(
-  interfaceKind: EvalInterface | undefined,
-  hasLocal: boolean
-): EvalMode {
-  if (interfaceKind === 'cli' || hasLocal) return 'local-stack';
+function resolveEvalMode(): EvalMode {
   return 'tools';
 }
 
@@ -136,7 +131,7 @@ function discoverEvals(): EvalManifest[] {
       `evals/${id}/PROMPT.md`
     ).metadata;
     const hasLocal = existsSync(localDir) && statSync(localDir).isDirectory();
-    const mode = resolveEvalMode(metadata.interface, hasLocal);
+    const mode = resolveEvalMode();
     out.push({
       id,
       mode,
@@ -392,6 +387,7 @@ async function runOne(
           await createBareSandbox({
             skills: skillSources,
             env: session.sandboxEnv,
+            localDir: ev.localDir,
           })
         )
       : undefined;
