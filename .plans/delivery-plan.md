@@ -761,6 +761,19 @@ lesson generalises past CI. A pipeline whose expensive work happens before its f
 step should be exercised end to end before it is trusted, because the cheap failure
 and the expensive one arrive together.
 
+**The results app has not been retargeted.** Worth stating plainly because the
+opposite is easy to assume: we kept it, it renders our data, and the numbers in it are
+ours. Everything around them is not. The logo, the "Back to Supabase" header, the "with
+a Supabase project" footer, the hero reading "across Supabase", and a `supabase.com`
+hostname check that decides the base path are all upstream's, and the journey-stage
+descriptions were too until they were rewritten, one of them advertising a `deploy`
+stage no scenario of ours can ever be filed under.
+
+This is Phase 3 work, and it gates the page design rather than following it: a mock
+taken from the app as it stands copies Supabase's branding and copy. The exported row
+also carries no cost or token data, so a cost column is a decision about what to export
+rather than a field to read.
+
 **Results storage:** results committed to the repo as JSON, exported by
 `export-results.ts`, with a `gh-pages` branch appending history so the site can show
 trend lines. Also lifted from supabase/evals, which has `append-gh-pages-history.yml`

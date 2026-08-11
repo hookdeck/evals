@@ -24,9 +24,8 @@ describe("sortResults", () => {
         makeResult({ eval: "a", category: "resolve" }),
         makeResult({ eval: "b", category: "build" }),
         makeResult({ eval: "c", category: "investigate" }),
-        makeResult({ eval: "d", category: "deploy" }),
       ])
-    ).toEqual(["b", "d", "c", "a"])
+    ).toEqual(["b", "c", "a"])
   })
 
   it("sorts an unrecognized stage last", () => {

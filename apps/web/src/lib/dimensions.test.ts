@@ -53,7 +53,9 @@ describe("the stage dimension", () => {
 
   it("titles a stage and explains it in the tooltip", () => {
     expect(DIMENSIONS.stage.title("investigate")).toBe("Investigate")
-    expect(DIMENSIONS.stage.tooltip?.("investigate")).toContain("observability")
+    expect(DIMENSIONS.stage.tooltip?.("investigate")).toContain(
+      "delivery history"
+    )
   })
 
   it("titles a stage it does not recognize as Unknown", () => {

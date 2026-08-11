@@ -154,6 +154,17 @@ question and scores zero for behaving correctly.
 tool, a customer, or an internal ticket. Internal context belongs in
 a comment in `EVAL.ts`.
 
+**The results web app is still Supabase's, apart from the data.** It carries
+their logo, a "Back to Supabase" header, a "with a Supabase project" footer, a
+hero reading "across Supabase", and a `supabase.com` hostname check that decides
+the base path. `CHANGES.md` records the app as retained unchanged, which is
+true and easy to read as harmless; it is not, because the app is the published
+artefact. `JOURNEY_STAGES` has been retargeted because it is part of the data
+model and a stale `deploy` stage advertised a column no scenario can ever fill.
+The rest is Phase 3 work and has to happen before anything is shown to anyone,
+including before the page is designed: mocking a UI from the current app copies
+Supabase's branding and prose.
+
 ## Traps
 
 **Regression scenarios passing is correct.** They guard against a mistake

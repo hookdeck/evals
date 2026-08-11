@@ -11,30 +11,30 @@ import rawResults from "@/data/eval-results.json"
  */
 
 /** The Supabase developer journey. Every eval is filed under one stage. */
+// Must stay in step with `evalStageSchema` in @hookdeck-evals/core, which is
+// the enum a scenario's frontmatter is validated against. Upstream's `deploy`
+// stage is deliberately absent: Event Gateway is SaaS with no deploy step, so
+// no scenario can ever be filed under it and a column for it would be
+// permanently empty. It becomes real if we cover config promotion between
+// environments or self-hosted Outpost.
 export const JOURNEY_STAGES = [
   {
     id: "build",
     label: "Build",
     description:
-      "Tests whether an agent can write strong Supabase code, either directly with tools or through project evals that connect Supabase to a front end.",
-  },
-  {
-    id: "deploy",
-    label: "Deploy",
-    description:
-      "Will measure how well an agent follows Supabase deployment patterns, including declarative schemas and CLI workflows.",
+      "Tests whether an agent can set a project up correctly from a standing start: receiving a provider's events, verifying signatures, shaping and routing what arrives.",
   },
   {
     id: "investigate",
     label: "Investigate",
     description:
-      "Tests whether an agent can gather project context, interpret observability data, and identify the underlying issue.",
+      "Tests whether an agent can gather project context, interpret delivery history, and identify the underlying issue.",
   },
   {
     id: "resolve",
     label: "Resolve",
     description:
-      "Tests whether an agent can turn detected issues into a solution, either by changing project code or using tools such as database.query.",
+      "Tests whether an agent can turn a diagnosed issue into a fix, by changing project configuration or redelivering what failed.",
   },
 ] as const
 
