@@ -527,32 +527,44 @@ flag in the error. The first is better, because the failure is silent from the o
 
 This is what the benchmark is for, arriving before launch and about our own tooling.
 
-### A claim worth checking: do events queue when `hookdeck listen` is down
+### Confirmed: nothing queues when `hookdeck listen` is not running
 
-Found while debugging BM1, and flagged rather than asserted, because it is a claim
-about product behaviour that deserves confirmation from whoever owns delivery.
+Found while debugging BM1, and confirmed against the platform source rather than left
+as an inference.
 
-The agent set up a CLI destination and told the user it had configured retries "so
+An agent set up a CLI destination and told the user it had configured retries "so
 events queue and retry automatically if your local server or `hookdeck listen` session
-is briefly down while you're developing". That is a reasonable thing to believe and it
-is what a developer would want.
+is briefly down while you're developing". Half of that is right and the half that is
+wrong is the half a developer relies on.
 
-What the request records show is different. A Stripe-signed request sent while no CLI
-session was connected came back `verified: true`, `rejection_cause: null`,
-`ignored_count: 1`, and produced no event. The same request sent while the agent's own
-`listen` session was live produced an event that delivered successfully. So on this
-evidence a CLI destination with nothing connected has its requests ignored rather than
-queued, and there is no event for a retry to apply to.
+What the request records show, across several runs: with a session connected, a
+verified request produces a CLI event and delivers. With no session connected, the
+same request is `verified: true` with no rejection, produces no event of any kind, and
+carries `ignored_count: 1`. Ingestion has an explicit branch for it: a connection whose
+destination has no URL, with zero CLI sessions, is ignored with cause
+`CLI_DISCONNECTED`.
 
-If that is right, the agent stated a durability guarantee the product does not give,
-in the exact situation a developer is most likely to rely on it: closing a laptop lid
-mid-session. That is a regression scenario waiting to be written, and a docs gap
-before it is anything else. Retries genuinely do apply to delivery failures; the gap
-is between "my server returned 500" and "my tunnel was not running", which look alike
-from the outside and behave differently.
+So it is intended behaviour, not a defect. But it means there is no event, and retries
+apply to events. If the local server is down while the tunnel is up, an event exists,
+delivery fails, and retries do exactly what the agent described. If the tunnel itself
+is down, nothing is created and nothing is retried. Those two cases are
+indistinguishable to a developer looking at their own machine, and only one of them is
+recoverable.
 
-Two things to settle before writing it: whether ignored-versus-queued is the intended
-behaviour, and whether it is documented anywhere an agent would find it.
+Three things follow, in order of how cheaply they can be fixed:
+
+1. **`ignored_count` is hidden from the public API reference** (`x-docs-hide`), so the
+   one field that says "accepted, and went nowhere" is not visible to anyone reading
+   the docs. An agent debugging this cannot find it.
+2. **The distinction is a docs gap.** Nothing an agent is likely to read explains that
+   `listen` being down loses events while the server being down does not.
+3. **This is a regression scenario**, once the docs say something for it to be scored
+   against: an agent asked about durability while developing locally should not promise
+   queuing it does not get.
+
+The scenario that surfaced this was passing on its own terms at the time. The finding
+came out of a scorer disagreeing with an agent, which is the third time today that
+disagreement has been worth more than the score.
 
 ### How regression scenarios are written
 
