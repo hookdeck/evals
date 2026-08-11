@@ -30,28 +30,30 @@ from the proposal, the divergences are listed at the end.
 Roughly 20 working days of Phil's time to launch-ready, plus the page and launch blog
 running in parallel from the end of Phase 3.
 
-**Status 10 Aug: Phases 0 and 1 done, Phase 2 underway, Phase 3 partly done ahead
-of itself.** The repo is at `hookdeck/evals` and pushed. Build, formatting and 225
-unit tests are green.
+**Status 11 Aug: Phases 0 and 1 done, Phase 2 underway, parts of Phase 3 landed
+early.** Seven scenarios (three regression, four benchmark), five experiments, and a
+CI workflow that has run end to end including publishing. Build, formatting and 231
+unit tests are green. `AGENTS.md` carries the scenario-by-scenario state.
 
-Scenarios: three regression, two benchmark. Four experiments, two agents with and
-without skills. The regression suite has run end to end in CI and scored identically
-to a laptop, which closes the Phase 1 risk that the shared project and the container
-would not survive the move off local. `regression-filtering-001-regex-capability`
-fails on Claude Code and passes on Codex, and that failure is the June 2026 incident
-reproduced on demand.
+Two things changed the shape of the plan today, both from measurement rather than
+argument.
 
-CI is manual dispatch only, with secrets set, and has completed a full run including
-publishing. The weekly schedule is deliberately not wired: an automatic trigger should
-arrive with the scoreboard rather than before it.
+**The aided delta is zero so far, and that is not an anomaly.** Skills changed no
+outcome on either build scenario and cost 39% and 56% more. supabase/evals' own
+published results show the same picture at larger sample: twelve of their nineteen
+benchmark scenarios are passed by every agent, and their skills delta is +3, +1, +1, 0
+and -1 across five agents. The proposal's primary metric may simply not be where the
+signal is, and the regression suite already produces a cleaner one.
 
-**Next: BM6, then BM1's second run.** BM1 ran once, scored 2 of 4, and was rebuilt
-around what that run showed; the rebuilt version is unrun. BM6 comes first because it
-isolates local delivery, which BM1 bundles with provider setup and handler code.
+**Investigate and resolve move up.** They were scheduled last because they are hardest
+to seed. Supabase's data says they are where discrimination lives, and the
+`?status=` trick against the mock destination makes seeding failure states cheap. BM7
+is written and its first run found a scorer bug rather than an agent one; BM8 and BM9
+are next.
 
-Still to do, both small: `evals-local`, and the two org-key questions for the platform
-team under Open questions. The second one now has a number behind it, since six pairs
-took 22 minutes serialised on one project.
+Still open and unchanged: `evals-local`, and the org-key questions for the platform
+team. The concurrency one now has a number behind it, since six pairs took 22 minutes
+serialised on one project.
 
 ---
 

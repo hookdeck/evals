@@ -68,7 +68,7 @@ Running evals executes experiment x eval pairs and writes local result files und
 Run a single eval with one experiment:
 
 ```bash
-pnpm eval -- --eval regression-verification-001-generic-hmac --experiment claude-code-sonnet-5-docs-only
+pnpm eval -- --eval regression-verification-001-generic-hmac --experiment claude-code-sonnet-5
 ```
 
 
@@ -76,8 +76,8 @@ Run selected evals across multiple experiments:
 
 ```bash
 pnpm eval -- \
-  --experiment claude-code-sonnet-5-docs-only \
-  --experiment codex-gpt-5.6-docs-only \
+  --experiment claude-code-sonnet-5 \
+  --experiment codex-gpt-5.6 \
   --eval regression-verification-001-generic-hmac \
   --eval regression-limits-001-oversized-payload
 ```
@@ -111,7 +111,9 @@ Every eval contains:
 1. `PROMPT.md` - frontmatter metadata plus the task description the agent sees.
 2. `EVAL.ts` - a default-exported scorer.
 3. Optional `remote/seed.json` - the Hookdeck project state the agent starts from: resources to create, and events to send at a seeded source. Events are seeded by sending them, because there is no create-event API.
-4. Optional `local/` - files copied into the agent's workspace before it starts.
+4. Optional `local/` - files copied into the agent's workspace before it starts. Text files may contain `${VAR}` placeholders, filled from the run's environment during the copy, for a credential the scenario's developer would already hold but the agent cannot fetch. An unset variable is left as written rather than blanked.
+
+To seed failing deliveries, point a destination at `https://mock.hookdeck.com?status=<code>`; the parameter works on any path, so `https://mock.hookdeck.com/api/v2/analytics/collect?status=422` both fails and reads like a real endpoint.
 
 Put the context an agent needs in the seed, not the prompt. The prompt is what a real
 person would type; everything needed to work the task out should be discoverable from
@@ -179,7 +181,7 @@ Skills are the only axis. Everything below is in every experiment, so a scoreboa
 | Skills | No, this is the axis | Agent-specific guidance. |
 | MCP (`hookdeck mcp`, ships in the CLI) | No | Read-only: eleven analysis tools that cannot create or mutate. Expect it to lift investigate and resolve while leaving build flat, which makes it a finding to publish rather than a launch row. |
 
-The `-docs-only` experiment suffix undersells this: those runs have the CLI and a live API key, not documentation alone.
+So `-no-skills` is the baseline's honest name: those runs still have the CLI and a live API key. It is not a documentation-only agent, and the page should not imply one.
 
 Both runtimes load skills lazily ([progressive disclosure](https://ai-sdk.dev/cookbook/guides/agent-skills)): only each skill's name+description is in the system prompt, and the agent pulls a skill's full instructions on demand. They differ only in how the body is fetched, because the tools-mode agent has no filesystem:
 

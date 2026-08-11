@@ -7,47 +7,52 @@ knowing before you change anything.
 ## Status
 
 Phase 0 (framework spike) and Phase 1 (the project provisioner) are done.
+Phase 2 is underway and parts of Phase 3 landed early.
 
-Three regression scenarios and three benchmark scenarios exist, run by four
-experiments: `claude-code-sonnet-5` and `codex-gpt-5.6` with
-`['hookdeck', 'event-gateway']`, and `-no-skills` variants of each.
+**Scenarios: seven.** Three regression, four benchmark.
 
-Regression: two pass on both primary agents.
-`regression-filtering-001-regex-capability` fails on Claude Code and passes on
-Codex, which is the June 2026 incident reproduced rather than a defect in the
-scenario.
+| Suite | Stage | Scenario | Where it stands |
+|---|---|---|---|
+| regression | build | filtering-001-regex-capability | Fails Claude Code, passes Codex. The June 2026 incident reproduced |
+| regression | build | verification-001-generic-hmac | Passes both |
+| regression | investigate | limits-001-oversized-payload | Passes both |
+| benchmark | build | filtering-001-enterprise-orders | Passes everything run against it |
+| benchmark | build | verification-001-stripe-express | Passes Sonnet 5 both arms; fails GPT-5.4-mini 4/5 |
+| benchmark | build | localdev-001-listen-locally | Passes Sonnet 5 both arms; fails GPT-5.4-mini |
+| benchmark | investigate | investigate-001-failing-deliveries | Scored 2/3, the failing check was the scorer's and is fixed. Unrun since |
 
-Benchmark: all three pass on Claude Code with skills.
-`benchmark-verification-001-stripe-express` (BM1) 5/5 and
-`benchmark-localdev-001-listen-locally` (BM6) 3/3, both scored by running the
-agent's code; `benchmark-filtering-001-enterprise-orders` passes on both agents.
+**Experiments: five.** `claude-code-sonnet-5` and `codex-gpt-5.6` with
+`['hookdeck', 'event-gateway']`, `-no-skills` twins of each, and
+`codex-gpt-5.4-mini-no-skills` as a deliberately weaker model.
 
-The three build scenarios are flat across the frontier and discriminating below
-it. Every Sonnet 5 configuration passes all three, with or without skills, and
-skills changed no outcome while costing 39% and 56% more. GPT-5.4-mini
-(`codex-gpt-5.4-mini-no-skills`) fails two of the three. So they are a floor
-rather than dead weight: do not read "everyone passes" as "no signal" without
-testing the bottom of the range.
+**What the numbers say so far.** Skills changed no outcome on either build
+scenario and cost 39% and 56% more. The build scenarios are flat across the
+frontier and discriminating below it, so they are a floor rather than dead
+weight. The only scenario that splits two frontier agents is a regression one,
+and it asks a capability question rather than for work. On this evidence agents
+build with Hookdeck from documentation alone and fail when stating what it
+cannot do, which is not the headline the proposal assumed. See the plan.
 
-BM7 (`benchmark-investigate-001-failing-deliveries`) is the first investigate
-scenario, written because supabase's published results show investigate is where
-their signal is. Not yet run.
+**Three product findings, all from runs rather than speculation**, and all about
+`hookdeck listen`: it crashes without a TTY unless given `--output compact`; a
+CLI destination with no connected session has its requests ignored with cause
+`CLI_DISCONNECTED` rather than queued, so nothing retries; and it falls back to
+an unauthenticated guest Console session even with `HOOKDECK_API_KEY` in the
+environment, which let a weaker model report success while bypassing the project
+entirely. The plan has the detail.
 
-The regression suite is where the signal is:
-`regression-filtering-001-regex-capability` splits the two agents reliably. Asked
-what the product can do, an agent answers from memory and invents; asked to build
-something, it reads the documentation and succeeds. Build scenarios have to be
-harder than the vendor golden path to discriminate at all. See the plan.
+CI runs formatting and unit tests on pull requests. `eval-refresh` is manual
+dispatch only, with `HOOKDECK_API_KEY`, `HOOKDECK_WEBHOOK_SECRET`,
+`ANTHROPIC_API_KEY` and `OPENAI_API_KEY` set as repository secrets, so a
+dispatch will spend. It has completed end to end including publishing, and the
+regression suite scored identically in CI and locally. No schedule is wired:
+that arrives with the scoreboard.
 
-CI runs formatting and unit tests. `eval-refresh` is manual dispatch only.
-`HOOKDECK_API_KEY`, `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` are set as
-repository secrets, so a dispatch will spend; `AI_GATEWAY_API_KEY` is not set
-and is not needed until secondary models go on the scoreboard.
+Nothing is published. Both results files are empty, and the results web app is
+still Supabase's shell (see Traps).
 
-The regression suite has run end to end in CI and scored identically to local:
-Claude Code fails `regression-filtering-001-regex-capability` and passes the
-other two, Codex passes all three. Six pairs took 22 minutes and $1.30 of Claude
-Code, the wall clock being one shared project forcing `max-parallel: 1`.
+**Next:** re-run BM7 to confirm the scorer fix, then BM8 and BM9 (resolve). The
+`?status=` seeding technique makes those cheap to build now.
 
 ## Plans
 
@@ -114,8 +119,31 @@ container is destroyed after scoring, so "see /tmp/x.log" is a dead end by the
 time anyone reads the failure. Tailing that log into the notes turned a run per
 guess into a five-minute diagnosis.
 
+**Send what the real thing sends.** Every BM1 failure across seven runs was a
+scorer probing with something no real client would send, then recording a
+correct handler as broken. Sign as the provider *and* as Hookdeck, because a
+real delivery carries both. Include `data.object`, because every Stripe event
+has one. Supply the secrets the developer in the scenario would already hold.
+Seed the workspace they would already have. If a probe is not something the
+provider would actually put on the wire, the scenario is measuring the probe.
+
+**Build the smallest scenario that exercises a mechanism, before the one that
+uses it.** BM6 isolates local delivery; BM1 bundles it with provider setup and
+handler code. BM6 found the workspace-seeding bug, the process-conflict bug and
+the TTY crash in four runs and about $2. BM1 had been failing on the first of
+those for four runs and about $10, and could not say which of its parts was
+broken. When a scenario fails in a way that could be any of three subsystems,
+the cheapest next move is a scenario that only has one of them.
+
+**Test the floor before concluding a scenario carries no signal.** All three
+build scenarios pass on every Sonnet 5 configuration, which read as no signal
+until `codex-gpt-5.4-mini-no-skills` failed two of them. Flat at the top of the
+range and discriminating below it is a floor, and a floor is worth publishing.
+supabase/evals is the same shape: twelve of their nineteen scenarios are passed
+by every agent.
+
 **Probe a scorer's own queries against a real project before trusting a red
-result.** This has bitten three times: source verification config is redacted on
+result.** This has bitten most times a scorer has gone red: source verification config is redacted on
 read, so it cannot be inspected; `/events` omits the payload unless you pass
 `include=data`; destination create takes `type` plus `config.url`. Each time the
 agent was right and the scorer was wrong, and each time it looked like an agent
@@ -154,8 +182,8 @@ nothing else. The MCP server is not a launch row: it ships inside the CLI and is
 read-only, eleven analysis tools that cannot create or mutate, so it should lift
 investigate and resolve while leaving build flat. Measure it on the investigate
 and resolve scenarios and publish that as a finding about the product. The
-`-docs-only` experiment suffix undersells the baseline, which has the CLI and a
-key, not documentation alone.
+baseline is named `-no-skills` rather than docs-only for that reason: it still
+has the CLI and a key.
 
 **Prefer deterministic checks.** Across supabase/evals, 69 of 91 checks are
 deterministic and 22 are judged. A scenario that is entirely judged is a design
@@ -209,6 +237,17 @@ including before the page is designed: mocking a UI from the current app copies
 Supabase's branding and prose.
 
 ## Traps
+
+**Seeding a scenario: two things worth knowing before writing one.**
+`local/` files support `${VAR}` placeholders, expanded from the run environment
+on the way into the sandbox, so a workspace can carry a credential the agent
+cannot fetch (`HOOKDECK_WEBHOOK_SECRET` lives in the dashboard, not the API)
+without committing it. An unset variable is left as written rather than blanked,
+so a missing credential reads as missing instead of as an empty string that
+looks configured. And `https://mock.hookdeck.com?status=<code>` returns that
+status on any path, which is how a scenario seeds failing deliveries: point a
+destination at `.../collect?status=422` and every attempt to it fails while
+another destination succeeds.
 
 **Regression scenarios passing is correct.** They guard against a mistake
 already seen and fixed; all agents passing is the desired state. For benchmark
