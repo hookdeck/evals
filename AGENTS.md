@@ -62,9 +62,17 @@ Run through `pnpm eval`. It is the only entry point that loads `.env` (via
 with an empty environment and every experiment is skipped for a missing key,
 which reads like a configuration problem rather than a wrong command.
 
+`.env` is the only env file read here, loaded explicitly by `pnpm eval` through
+`node --env-file`. A `.env.local` is read by nothing; if one exists, it is a
+leftover, and a second copy of a credential is worse than none because the one
+you edit is not the one in use.
+
 `HOOKDECK_API_KEY` is a project key for a dedicated `evals-ci` project, in an
-organisation with no production data. `OPENAI_API_KEY` is needed by the default LLM judge, so any judged
-scenario needs it whichever agent produced the run.
+organisation with no production data. `HOOKDECK_SIGNING_SECRET` is that
+project's signing secret from the dashboard, not available on the API, and
+scenarios that score a handler cannot pass without it. `OPENAI_API_KEY` is
+needed by the default LLM judge, so any judged scenario needs it whichever agent
+produced the run.
 
 Runs bill per token. A local Claude Code subscription does not cover them: the
 agent runs inside a container, which needs an API key the same way CI does.
