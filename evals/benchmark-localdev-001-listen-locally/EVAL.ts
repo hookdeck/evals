@@ -141,8 +141,14 @@ async function checkEventArrivesLocally(
     `hookdeck ci --api-key "$HOOKDECK_API_KEY" 2>&1 | tail -1`,
     { timeoutMs: 60_000 }
   );
+  // `--output compact` is not optional here. The default is an interactive
+  // Bubble Tea UI that opens /dev/tty and dies with "could not open a new TTY"
+  // anywhere without a terminal, which is every non-interactive context: this
+  // scorer, CI, a Docker entrypoint, and an agent's own shell. The agent found
+  // this and used the flag; the scorer did not, and read the resulting silence
+  // as an agent that had not set the tunnel up.
   const listen =
-    `hookdeck listen ${PORT} ${shellArg(sourceName)}` +
+    `hookdeck listen ${PORT} ${shellArg(sourceName)} --output compact` +
     (path && path !== '/' ? ` --path ${shellArg(path)}` : '');
   await ctx.sandbox.exec(
     `nohup ${listen} > /tmp/bm6-listen.log 2>&1 & sleep ${TUNNEL_BOOT_MS / 1000}; echo listening`,
