@@ -22,10 +22,17 @@ Benchmark: all three pass on Claude Code with skills.
 `benchmark-localdev-001-listen-locally` (BM6) 3/3, both scored by running the
 agent's code; `benchmark-filtering-001-enterprise-orders` passes on both agents.
 
-None of the three has been shown to discriminate. A benchmark scenario needs at
-least one agent to fail or it carries no signal, and only Claude-with-skills has
-been run against BM1 and BM6. Running them against `-no-skills` is the open
-question, and it is the axis the scoreboard publishes.
+None of the three discriminates. BM1 and BM6 both pass on the `-no-skills`
+baseline with clean skill records, and BM6's baseline read no documentation at
+all. Skills changed no outcome and cost 39% and 56% more. A benchmark scenario
+needs at least one agent to fail or it carries no signal, so the benchmark suite
+currently has three scenarios and zero signal.
+
+The regression suite is where the signal is:
+`regression-filtering-001-regex-capability` splits the two agents reliably. Asked
+what the product can do, an agent answers from memory and invents; asked to build
+something, it reads the documentation and succeeds. Build scenarios have to be
+harder than the vendor golden path to discriminate at all. See the plan.
 
 CI runs formatting and unit tests. `eval-refresh` is manual dispatch only.
 `HOOKDECK_API_KEY`, `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` are set as

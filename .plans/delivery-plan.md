@@ -566,6 +566,52 @@ The scenario that surfaced this was passing on its own terms at the time. The fi
 came out of a scorer disagreeing with an agent, which is the third time today that
 disagreement has been worth more than the score.
 
+### The first delta, and it is zero
+
+Both build scenarios run against the baseline. Both pass.
+
+| Scenario | no-skills | +skills |
+|---|---|---|
+| BM1, Stripe into an Express handler | 5/5, $1.45, 5 docs pages | 5/5, $2.02 |
+| BM6, events arriving at a local service | 3/3, $0.62, **0 docs pages** | 3/3, $0.97 |
+
+Clean baselines: no skills available, none loaded, none self-installed. So this is a
+real measurement rather than a leak.
+
+Skills changed no outcome and cost 39% and 56% more. One run each, so the percentages
+are indicative, but the direction is consistent and the pass rates are not close calls.
+
+The BM6 baseline is the sharper number. It reached a working tunnel and a delivered
+event having read **no documentation at all**. That is a task a frontier model already
+knows how to do, and a scenario that asks nothing of our docs or our skills cannot
+measure either.
+
+**Neither scenario discriminates, so neither is carrying benchmark signal today.** Our
+own rule says a benchmark scenario needs at least one agent to fail. On this evidence
+we have three benchmark scenarios and zero discriminating ones.
+
+The regression suite is the contrast, and it points at where the signal actually is.
+`regression-filtering-001-regex-capability` fails Claude Code and passes Codex,
+reliably, on a capability question. Asked *what can this product do*, an agent answers
+from memory and invents. Asked *build this*, the same agent reads the documentation and
+succeeds.
+
+That reframes the headline. The evidence so far says frontier agents build with
+Hookdeck successfully from documentation alone, and fail when stating what the product
+cannot do. If that holds up, it is a better and more honest story than "skills lift
+build success", and it points investment at capability accuracy rather than at
+build-time guidance.
+
+Two things follow for scenario selection. Build scenarios need to be harder than the
+vendor golden path to discriminate at all: the trap has to be somewhere the
+documentation is thin or the correct answer is counterintuitive, not somewhere a
+competent developer would get it right. And the suite should stop assuming the aided
+delta is the headline until a scenario produces one.
+
+Worth re-testing on weaker models before concluding. A baseline that passes on Sonnet 5
+may still fail on Haiku or a smaller Codex model, which would make these scenarios
+useful as a floor rather than useless.
+
 ### How regression scenarios are written
 
 Regression scenarios are **tasks with verifiable end states**, exactly like benchmark
