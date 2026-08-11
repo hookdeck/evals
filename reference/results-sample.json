@@ -1,0 +1,149 @@
+[
+  {
+    "experiment": "claude-code-sonnet-5",
+    "experimentSuite": "benchmark",
+    "experimentDisplay": {
+      "agent": "claude-code",
+      "modelProvider": "anthropic",
+      "modelId": "claude-sonnet-5",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-filtering-001-enterprise-orders",
+    "stage": "build",
+    "product": ["event-gateway"],
+    "topic": ["filtering"],
+    "suite": "benchmark",
+    "passed": true,
+    "attempts": 1,
+    "checks": [
+      { "name": "did not claim regex filtering or channels exist", "passed": true, "judgeNotes": "States regex is unsupported and offers $startsWith instead." },
+      { "name": "current-format references still reach the endpoint", "passed": true, "notes": "expected an event for ORD-2026-ZZ-9001, found 1" },
+      { "name": "legacy references are filtered out", "passed": true, "notes": "expected no event for LEGACY-99002, found 0" }
+    ],
+    "skills": {
+      "available": ["hookdeck", "event-gateway"],
+      "loaded": ["event-gateway"]
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_fetch",
+          "query": "How do Hookdeck connection filters work?",
+          "hasContent": true,
+          "resultChars": 18240,
+          "pages": [{ "url": "https://hookdeck.com/docs/filters", "title": "Filters" }]
+        }
+      ]
+    },
+    "prompt": "Our order references look like `ORD-2026-AC-4821`. We migrated formats at the start of the year and the old ones are still coming through, which my service chokes on.",
+    "promptSourcePath": "evals/benchmark-filtering-001-enterprise-orders/PROMPT.md",
+    "sourcePath": "claude-code-sonnet-5/benchmark-filtering-001-enterprise-orders.json"
+  },
+  {
+    "experiment": "claude-code-sonnet-5-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "claude-code",
+      "modelProvider": "anthropic",
+      "modelId": "claude-sonnet-5",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-verification-001-stripe-express",
+    "stage": "build",
+    "product": ["event-gateway"],
+    "topic": ["signature-verification"],
+    "suite": "benchmark",
+    "passed": false,
+    "attempts": 2,
+    "checks": [
+      { "name": "created a Stripe source", "passed": true },
+      { "name": "a genuine Stripe request is accepted at the source", "passed": true },
+      { "name": "the handler accepts a genuine Hookdeck signature", "passed": false, "notes": "expected 200, got 401" },
+      { "name": "the handler rejects a forged signature", "passed": true, "notes": "expected a 4xx, got 401" }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": [],
+      "selfInstalled": ["stripe-webhooks"]
+    },
+    "docs": { "calls": [] },
+    "prompt": "We're taking Stripe payments and I need our orders API to react when a checkout completes.",
+    "promptSourcePath": "evals/benchmark-verification-001-stripe-express/PROMPT.md",
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-verification-001-stripe-express.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6",
+    "experimentSuite": "benchmark",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-verification-001-stripe-express",
+    "stage": "build",
+    "product": ["event-gateway"],
+    "topic": ["signature-verification"],
+    "suite": "benchmark",
+    "passed": true,
+    "attempts": 1,
+    "checks": [
+      { "name": "created a Stripe source", "passed": true },
+      { "name": "a genuine Stripe request is accepted at the source", "passed": true },
+      { "name": "the handler accepts a genuine Hookdeck signature", "passed": true, "notes": "expected 200, got 200" },
+      { "name": "the handler rejects a forged signature", "passed": true, "notes": "expected a 4xx, got 401" }
+    ],
+    "skills": {
+      "available": ["hookdeck", "event-gateway"],
+      "loaded": ["hookdeck", "event-gateway"]
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "search_docs",
+          "query": "hookdeck signature verification",
+          "hasContent": true,
+          "resultChars": 9120,
+          "pages": [
+            { "url": "https://hookdeck.com/docs/authentication", "title": "Authentication" },
+            { "url": "https://hookdeck.com/docs/sources", "title": "Sources" }
+          ]
+        },
+        {
+          "source": "shell_fetch",
+          "query": "curl -s https://hookdeck.com/docs/destinations",
+          "pages": [{ "url": "https://hookdeck.com/docs/destinations" }]
+        }
+      ]
+    },
+    "prompt": "We're taking Stripe payments and I need our orders API to react when a checkout completes.",
+    "promptSourcePath": "evals/benchmark-verification-001-stripe-express/PROMPT.md",
+    "sourcePath": "codex-gpt-5.6/benchmark-verification-001-stripe-express.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6"
+    },
+    "eval": "benchmark-filtering-001-enterprise-orders",
+    "stage": "build",
+    "product": ["event-gateway"],
+    "topic": ["filtering"],
+    "suite": "benchmark",
+    "passed": false,
+    "attempts": 2,
+    "checks": [
+      { "name": "did not claim regex filtering or channels exist", "passed": false, "judgeNotes": "The assistant suggests a regex pattern instead of stating that Hookdeck filters do not support regex." },
+      { "name": "current-format references still reach the endpoint", "passed": true, "notes": "expected an event for ORD-2026-ZZ-9001, found 1" },
+      { "name": "legacy references are filtered out", "passed": false, "notes": "expected no event for LEGACY-99002, found 1" }
+    ],
+    "skills": { "available": [], "loaded": [] },
+    "docs": { "calls": [] },
+    "prompt": "Our order references look like `ORD-2026-AC-4821`. We migrated formats at the start of the year and the old ones are still coming through, which my service chokes on.",
+    "promptSourcePath": "evals/benchmark-filtering-001-enterprise-orders/PROMPT.md",
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-filtering-001-enterprise-orders.json"
+  }
+]

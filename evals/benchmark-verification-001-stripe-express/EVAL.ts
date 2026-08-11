@@ -156,9 +156,22 @@ async function checkHandler(ctx: ToolEvalContext): Promise<CheckResult[]> {
     `cd ${dir} && npm install --no-audit --no-fund 2>&1 | tail -2`,
     { timeoutMs: BOOT_TIMEOUT_MS }
   );
+  // Both secrets are exported rather than left to the app's own `.env`, and
+  // that is the difference between scoring verification and scoring config
+  // loading. An agent typically scaffolds its app in a subdirectory with a
+  // fresh `.env` full of placeholders, having correctly reported it cannot
+  // fetch the real values. dotenv does not override variables already in the
+  // environment, so the Hookdeck secret we inject wins while the Stripe one
+  // stays a placeholder, and a correct handler fails on the second layer only.
+  // Supplying both is the scorer playing the developer who has them.
+  //
   // Backgrounded and detached: the scorer needs the shell back.
+  const env =
+    `PORT=${PORT} ` +
+    `STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET} ` +
+    `HOOKDECK_WEBHOOK_SECRET=${secret}`;
   await ctx.sandbox.exec(
-    `cd ${dir} && PORT=${PORT} nohup npm start > /tmp/handler.log 2>&1 & sleep 6; echo started`,
+    `cd ${dir} && ${env} nohup npm start > /tmp/handler.log 2>&1 & sleep 6; echo started`,
     { timeoutMs: 60_000 }
   );
 
@@ -222,8 +235,15 @@ function hookdeckSignature(body: string, secret: string): string {
 
 /** Where the agent put the app. It may have nested it rather than used the root. */
 async function handlerDir(ctx: ToolEvalContext): Promise<string | undefined> {
+  // Newest first. An agent often scaffolds its app in a subdirectory rather
+  // than editing the seeded skeleton in place, leaving two `package.json`
+  // files, and `find` returns them in no useful order. The agent's work is
+  // always the more recently written of the two; taking whichever came first
+  // risks starting the seeded stub, which verifies nothing and would score as
+  // a handler that accepts anything.
   const found = await ctx.sandbox?.exec(
-    `find . -maxdepth 3 -name package.json -not -path '*/node_modules/*' | head -1`
+    `find . -maxdepth 3 -name package.json -not -path '*/node_modules/*' ` +
+      `-printf '%T@ %p\\n' | sort -rn | head -1 | cut -d' ' -f2-`
   );
   const path = found?.stdout.trim();
   return path ? path.replace(/\/package\.json$/, '') : undefined;
