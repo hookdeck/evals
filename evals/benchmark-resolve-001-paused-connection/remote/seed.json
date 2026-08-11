@@ -1,0 +1,28 @@
+{
+  "resources": [
+    {
+      "kind": "sources",
+      "ref": "checkout",
+      "body": { "name": "checkout" }
+    },
+    {
+      "kind": "destinations",
+      "ref": "orders",
+      "body": {
+        "name": "orders-api",
+        "type": "HTTP",
+        "config": { "url": "https://mock.hookdeck.com/api/v1/orders" }
+      }
+    },
+    {
+      "kind": "connections",
+      "ref": "checkout-to-orders",
+      "body": {
+        "name": "checkout-to-orders",
+        "source_id": "$ref:checkout",
+        "destination_id": "$ref:orders"
+      },
+      "then": [{ "path": "/connections/{id}/pause" }]
+    }
+  ]
+}
