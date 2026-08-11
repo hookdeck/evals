@@ -22,11 +22,16 @@ Benchmark: all three pass on Claude Code with skills.
 `benchmark-localdev-001-listen-locally` (BM6) 3/3, both scored by running the
 agent's code; `benchmark-filtering-001-enterprise-orders` passes on both agents.
 
-None of the three discriminates. BM1 and BM6 both pass on the `-no-skills`
-baseline with clean skill records, and BM6's baseline read no documentation at
-all. Skills changed no outcome and cost 39% and 56% more. A benchmark scenario
-needs at least one agent to fail or it carries no signal, so the benchmark suite
-currently has three scenarios and zero signal.
+The three build scenarios are flat across the frontier and discriminating below
+it. Every Sonnet 5 configuration passes all three, with or without skills, and
+skills changed no outcome while costing 39% and 56% more. GPT-5.4-mini
+(`codex-gpt-5.4-mini-no-skills`) fails two of the three. So they are a floor
+rather than dead weight: do not read "everyone passes" as "no signal" without
+testing the bottom of the range.
+
+BM7 (`benchmark-investigate-001-failing-deliveries`) is the first investigate
+scenario, written because supabase's published results show investigate is where
+their signal is. Not yet run.
 
 The regression suite is where the signal is:
 `regression-filtering-001-regex-capability` splits the two agents reliably. Asked

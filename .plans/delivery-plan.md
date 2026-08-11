@@ -669,6 +669,49 @@ scenarios, and the plan currently schedules them **last** because they are the h
 to seed. On this evidence they are the ones most likely to carry signal, and they
 should move up.
 
+### The scenarios are a floor, and the floor found two real failures
+
+GPT-5.4-mini, no skills, against the same three build scenarios that every frontier
+configuration passes:
+
+| Scenario | Sonnet 5 (either arm) | GPT-5.4-mini |
+|---|---|---|
+| filtering, enterprise orders | pass | pass |
+| local delivery | pass | **fail** |
+| Stripe into an Express handler | pass | **fail 4/5** |
+
+So they are not dead weight. They are flat across the frontier and discriminating below
+it, which is what a floor looks like, and it is the same shape as supabase/evals where
+GPT-5.4-mini trails by four to five scenarios. Keep them, and stop reading "everyone
+passes" as "no signal" without testing the bottom of the range.
+
+Both failures are worth more than the score.
+
+**It bypassed the project entirely and reported success.** Asked to get events arriving
+locally, it ran `hookdeck listen` without authenticating, which falls back to the
+no-account path and issues a guest Console URL. Traffic genuinely arrived at the local
+service, and its report ends "you can now point real traffic at that Hookdeck source
+URL and watch deliveries land on your machine". All true, and none of it in the
+project: no connection, no delivery history, no retries, and an ephemeral URL.
+
+`HOOKDECK_API_KEY` was in its environment throughout. `listen` does not use it for
+authentication; the documented non-interactive paths are `--cli-key` and `--api-key`,
+and the frontier model knew to run `hookdeck ci --api-key` first. So the difference
+between using your project and not using it is one unprompted step, and skipping it
+fails silently in the most convincing possible way, with a working tunnel and a working
+URL. A developer following that agent's instructions would believe they were set up.
+
+That is a better regression scenario than anything currently in the suite, and a
+product question before it is a scenario: should `listen` prefer an API key that is
+already in the environment, or say plainly that it is running unauthenticated.
+
+**It configured Stripe verification with the wrong secret.** The source rejects a
+request signed with the secret sitting in the developer's own `.env`, while correctly
+rejecting a forged one. The integration would never receive a real Stripe event, and
+nothing about the configuration looks wrong from the outside. This is exactly the
+silent-failure class the suite exists to catch, and the deterministic both-directions
+check is what caught it.
+
 ### How regression scenarios are written
 
 Regression scenarios are **tasks with verifiable end states**, exactly like benchmark
