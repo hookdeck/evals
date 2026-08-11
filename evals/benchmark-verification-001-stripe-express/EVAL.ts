@@ -25,7 +25,7 @@ import type {
  * The Hookdeck half signs a request the way Stripe would, using the secret in
  * `local/.env`, and checks the source accepts it and records an event. The
  * handler half starts what the agent wrote, signs with the project's signing
- * secret from `HOOKDECK_SIGNING_SECRET`, and posts straight at it.
+ * secret from `HOOKDECK_WEBHOOK_SECRET`, and posts straight at it.
  *
  * The first version scored the handler through the real delivery path, which
  * meant Hookdeck had to reach localhost, which meant a live `hookdeck listen`
@@ -142,10 +142,10 @@ async function checkHandler(ctx: ToolEvalContext): Promise<CheckResult[]> {
     names.map((name) => ({ name, passed: false, notes }));
 
   if (!ctx.sandbox) return failBoth('no sandbox to run the handler in');
-  const secret = process.env.HOOKDECK_SIGNING_SECRET;
+  const secret = process.env.HOOKDECK_WEBHOOK_SECRET;
   if (!secret) {
     return failBoth(
-      'HOOKDECK_SIGNING_SECRET is not set, so a genuine signature cannot be produced'
+      'HOOKDECK_WEBHOOK_SECRET is not set, so a genuine signature cannot be produced'
     );
   }
 

@@ -81,8 +81,8 @@ export function hookdeckRuntime(options: HookdeckRuntimeOptions): EvalRuntime {
             // BM1's first run. Passing it also lets a scorer sign a request
             // itself and check the handler directly, rather than needing a live
             // tunnel for Hookdeck to deliver through.
-            ...(process.env.HOOKDECK_SIGNING_SECRET
-              ? { HOOKDECK_SIGNING_SECRET: process.env.HOOKDECK_SIGNING_SECRET }
+            ...(process.env.HOOKDECK_WEBHOOK_SECRET
+              ? { HOOKDECK_WEBHOOK_SECRET: process.env.HOOKDECK_WEBHOOK_SECRET }
               : {}),
           },
           scoringContext,

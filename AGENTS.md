@@ -68,7 +68,7 @@ leftover, and a second copy of a credential is worse than none because the one
 you edit is not the one in use.
 
 `HOOKDECK_API_KEY` is a project key for a dedicated `evals-ci` project, in an
-organisation with no production data. `HOOKDECK_SIGNING_SECRET` is that
+organisation with no production data. `HOOKDECK_WEBHOOK_SECRET` is that
 project's signing secret from the dashboard, not available on the API, and
 scenarios that score a handler cannot pass without it. `OPENAI_API_KEY` is
 needed by the default LLM judge, so any judged scenario needs it whichever agent

@@ -14,9 +14,9 @@ const seedDir = (contents: Record<string, string>) => {
 
 describe('expandSeedPlaceholders', () => {
   it('fills a placeholder from the run environment', () => {
-    const dir = seedDir({ '.env': 'SECRET=${HOOKDECK_SIGNING_SECRET}\n' });
+    const dir = seedDir({ '.env': 'SECRET=${HOOKDECK_WEBHOOK_SECRET}\n' });
     const out = __testing.expandSeedPlaceholders(dir, {
-      HOOKDECK_SIGNING_SECRET: 'whsk_real',
+      HOOKDECK_WEBHOOK_SECRET: 'whsk_real',
     });
     expect(readFileSync(join(out.dir, '.env'), 'utf8')).toBe(
       'SECRET=whsk_real\n'
@@ -36,12 +36,12 @@ describe('expandSeedPlaceholders', () => {
   });
 
   it('does not modify the scenario directory', () => {
-    const dir = seedDir({ '.env': 'SECRET=${HOOKDECK_SIGNING_SECRET}\n' });
+    const dir = seedDir({ '.env': 'SECRET=${HOOKDECK_WEBHOOK_SECRET}\n' });
     const out = __testing.expandSeedPlaceholders(dir, {
-      HOOKDECK_SIGNING_SECRET: 'x',
+      HOOKDECK_WEBHOOK_SECRET: 'x',
     });
     expect(readFileSync(join(dir, '.env'), 'utf8')).toContain(
-      '${HOOKDECK_SIGNING_SECRET}'
+      '${HOOKDECK_WEBHOOK_SECRET}'
     );
     out.cleanup();
   });
