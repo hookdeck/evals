@@ -17,13 +17,15 @@ Regression: two pass on both primary agents.
 Codex, which is the June 2026 incident reproduced rather than a defect in the
 scenario.
 
-Benchmark: `benchmark-localdev-001-listen-locally` (BM6) passes 3/3 on Claude
-Code, and its scorer is the proven path for running an agent's code, starting a
-tunnel and observing a real delivery. `benchmark-filtering-001-enterprise-orders`
-passes on both agents, so it does not discriminate yet.
-`benchmark-verification-001-stripe-express` (BM1) has not yet passed; every run
-before the workspace-seeding fix ran against an empty workspace, so its earlier
-results say nothing about the scenario.
+Benchmark: all three pass on Claude Code with skills.
+`benchmark-verification-001-stripe-express` (BM1) 5/5 and
+`benchmark-localdev-001-listen-locally` (BM6) 3/3, both scored by running the
+agent's code; `benchmark-filtering-001-enterprise-orders` passes on both agents.
+
+None of the three has been shown to discriminate. A benchmark scenario needs at
+least one agent to fail or it carries no signal, and only Claude-with-skills has
+been run against BM1 and BM6. Running them against `-no-skills` is the open
+question, and it is the axis the scoreboard publishes.
 
 CI runs formatting and unit tests. `eval-refresh` is manual dispatch only.
 `HOOKDECK_API_KEY`, `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` are set as
