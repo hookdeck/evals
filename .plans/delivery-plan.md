@@ -502,6 +502,31 @@ do and also means the positive path cannot pass however the processes are manage
 seed has to supply it, the way it already supplies the Stripe secret, sourced from the
 environment rather than committed.
 
+### First product finding: `hookdeck listen` assumes a terminal
+
+Not a finding about an agent, and not about the harness. `hookdeck listen` defaults to
+`--output interactive`, a full-screen UI that opens `/dev/tty` and exits with
+`could not open a new TTY: open /dev/tty: no such device or address` wherever there
+is no terminal. `--output compact` and `--output quiet` both work.
+
+Every context an agent runs in is non-interactive. So is CI, a Docker entrypoint, and
+anything backgrounded. A default that assumes a terminal fails for agents first, and
+it fails as a crash on startup rather than a message naming the flag that would fix
+it. An agent that hits this sees its tunnel die with a Bubble Tea stack trace and has
+to infer both the cause and the remedy.
+
+Claude Code inferred both, unprompted, and used `--output compact` without being told.
+That is the good version of this result and it should be said plainly: the product
+tripped, and the agent recovered. The scenario still caught it, because the scorer
+made the same mistake the CLI invites and spent a run on it.
+
+Two candidate fixes, and this belongs to whoever owns the CLI rather than to this
+suite: detect a missing TTY and fall back to compact rather than crashing, or name the
+flag in the error. The first is better, because the failure is silent from the outside
+- the tunnel simply is not there - and silence is expensive to debug.
+
+This is what the benchmark is for, arriving before launch and about our own tooling.
+
 ### How regression scenarios are written
 
 Regression scenarios are **tasks with verifiable end states**, exactly like benchmark
