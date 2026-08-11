@@ -612,6 +612,63 @@ Worth re-testing on weaker models before concluding. A baseline that passes on S
 may still fail on Haiku or a smaller Codex model, which would make these scenarios
 useful as a floor rather than useless.
 
+### What supabase/evals actually scores, and why it changes the read
+
+Their published results shipped in our first commit, so this is their data rather than
+an impression of it. Ten experiments: Claude Code on Opus 5 and Sonnet 5, Codex on
+GPT-5.6 and GPT-5.4-mini, opencode on Kimi K3, each with a no-skills twin. Nineteen
+benchmark scenarios, 190 rows.
+
+**Pass rates run from 73.7% to 100%.** The weakest configuration is GPT-5.4-mini at
+14/19 without skills. Two configurations score a clean 19/19, and one of those is a
+*no-skills* arm.
+
+**Twelve of their nineteen scenarios are passed by every agent.** Only seven
+discriminate at all, and the hardest sits at 5/10:
+
+| Passed | Scenario |
+|---|---|
+| 5/10 | investigate-auth-001-deleted-user-access |
+| 7/10 | build-functions-005-dual-auth-user-secret |
+| 7/10 | deploy-database-001-prometheus-metrics |
+| 8/10 | build-cli-002-declarative-schema |
+| 8/10 | investigate-reliability-003-edge-function-5xx-correlation |
+| 8/10 | resolve-database-001-migration-history-mismatch |
+| 9/10 | build-functions-004-service-role-bypass |
+
+**Their aided delta is small and not consistently positive.**
+
+| Agent | no-skills | +skills | delta |
+|---|---|---|---|
+| Claude Code Sonnet 5 | 15/19 | 18/19 | +3 |
+| Codex GPT-5.6 | 18/19 | 19/19 | +1 |
+| Codex GPT-5.4-mini | 14/19 | 15/19 | +1 |
+| Claude Code Opus 5 | 18/19 | 18/19 | 0 |
+| opencode Kimi K3 | 19/19 | 18/19 | **-1** |
+
+Three things follow, and they change the reading of our own zero delta.
+
+**Our result is normal, not a defect in our scenarios.** A published benchmark from the
+project we are copying has 63% of its scenarios producing no signal and a skills delta
+that is zero or negative for two of five agents. We measured two scenarios and found
+zero. That is the same picture at a smaller sample size.
+
+**The scenarios that discriminate are not golden paths.** Two of their three hardest
+are investigate, one is deploy, and the build scenarios that bite involve subtle
+authorization combinations rather than the vendor happy path. Ours are all build, all
+golden path. That is the gap, and it was predictable from their data before we spent
+anything.
+
+**Weaker models are where the floor shows.** GPT-5.4-mini is 4-5 scenarios behind the
+frontier models on the same suite. A scenario that Sonnet 5 clears may still be worth
+keeping as a floor, which is the argument for running our three against a weaker model
+before judging them useless.
+
+The sequencing consequence is direct: BM7, BM8 and BM9 are our investigate and resolve
+scenarios, and the plan currently schedules them **last** because they are the hardest
+to seed. On this evidence they are the ones most likely to carry signal, and they
+should move up.
+
 ### How regression scenarios are written
 
 Regression scenarios are **tasks with verifiable end states**, exactly like benchmark
