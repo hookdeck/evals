@@ -527,6 +527,33 @@ flag in the error. The first is better, because the failure is silent from the o
 
 This is what the benchmark is for, arriving before launch and about our own tooling.
 
+### A claim worth checking: do events queue when `hookdeck listen` is down
+
+Found while debugging BM1, and flagged rather than asserted, because it is a claim
+about product behaviour that deserves confirmation from whoever owns delivery.
+
+The agent set up a CLI destination and told the user it had configured retries "so
+events queue and retry automatically if your local server or `hookdeck listen` session
+is briefly down while you're developing". That is a reasonable thing to believe and it
+is what a developer would want.
+
+What the request records show is different. A Stripe-signed request sent while no CLI
+session was connected came back `verified: true`, `rejection_cause: null`,
+`ignored_count: 1`, and produced no event. The same request sent while the agent's own
+`listen` session was live produced an event that delivered successfully. So on this
+evidence a CLI destination with nothing connected has its requests ignored rather than
+queued, and there is no event for a retry to apply to.
+
+If that is right, the agent stated a durability guarantee the product does not give,
+in the exact situation a developer is most likely to rely on it: closing a laptop lid
+mid-session. That is a regression scenario waiting to be written, and a docs gap
+before it is anything else. Retries genuinely do apply to delivery failures; the gap
+is between "my server returned 500" and "my tunnel was not running", which look alike
+from the outside and behave differently.
+
+Two things to settle before writing it: whether ignored-versus-queued is the intended
+behaviour, and whether it is documented anywhere an agent would find it.
+
 ### How regression scenarios are written
 
 Regression scenarios are **tasks with verifiable end states**, exactly like benchmark

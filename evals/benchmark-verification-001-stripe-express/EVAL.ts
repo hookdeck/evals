@@ -60,7 +60,7 @@ const scorer: ToolScorer = async (ctx) => {
 
   const checks: CheckResult[] = [
     { name: 'created a Stripe source', passed: true },
-    await checkSourceAcceptsStripe(ctx, String(source.url)),
+    ...(await checkSourceAcceptsStripe(ctx, String(source.url))),
     ...(await checkHandler(ctx)),
   ];
 
@@ -70,56 +70,81 @@ const scorer: ToolScorer = async (ctx) => {
 export default scorer;
 
 /**
- * The Hookdeck half: does a genuine Stripe request get in.
+ * The Hookdeck half: does the source verify Stripe's signature.
  *
- * Proves the agent configured the source's verification with the secret the
- * developer already had, rather than creating a source that accepts anything.
- * Nothing here depends on where the connection points.
+ * Both directions, against `/requests`, which records what arrived at the edge
+ * and whether it passed verification. A source that accepts anything passes the
+ * positive on its own, so the forged case is what proves verification is
+ * actually configured.
+ *
+ * Deliberately says nothing about routing. An earlier version waited for an
+ * `/events` row and failed a correct setup: the agent routed to a CLI
+ * destination, which is the right answer for local development, and a CLI
+ * destination with no connected session has its requests ignored rather than
+ * queued, so no event exists once the agent's `hookdeck listen` has stopped.
+ * Whether events reach a local process is `benchmark-localdev-001-listen-locally`,
+ * and asserting it here made this scenario fail for a reason it is not about.
  */
 async function checkSourceAcceptsStripe(
   ctx: ToolEvalContext,
   sourceUrl: string
-): Promise<CheckResult> {
+): Promise<CheckResult[]> {
+  const names = [
+    'the source accepts a genuine Stripe signature',
+    'the source rejects a forged Stripe signature',
+  ];
   const sentAt = new Date();
   const body = JSON.stringify({
     id: 'evt_test_checkout_completed',
+    object: 'event',
     type: 'checkout.session.completed',
     data: { object: { id: 'cs_test_a1b2c3', amount_total: 4200 } },
   });
 
-  const res = await fetch(sourceUrl, {
+  await postToSource(sourceUrl, body, stripeSignature(body));
+  await postToSource(sourceUrl, body, 't=1,v1=deadbeef');
+  await new Promise((resolve) => setTimeout(resolve, INGEST_WAIT_MS));
+
+  const { models } = await ctx.api<{
+    models?: { created_at?: string; verified?: boolean }[];
+  }>('GET', '/requests?limit=100');
+  const mine = (models ?? []).filter(
+    (r) => r.created_at && new Date(r.created_at) >= sentAt
+  );
+
+  return [
+    {
+      name: names[0],
+      passed: mine.some((r) => r.verified === true),
+      notes: mine.length
+        ? undefined
+        : 'no request recorded at the source at all',
+    },
+    {
+      name: names[1],
+      passed: mine.some((r) => r.verified === false),
+      notes: mine.some((r) => r.verified === false)
+        ? undefined
+        : 'a forged Stripe signature was accepted, so the source is not verifying',
+    },
+  ];
+}
+
+/** POST at the source's public URL, returning the status. */
+async function postToSource(
+  url: string,
+  body: string,
+  stripeSig: string
+): Promise<number> {
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Stripe-Signature': stripeSignature(body),
+      'Stripe-Signature': stripeSig,
     },
     body,
   });
-
-  if (!res.ok) {
-    return {
-      name: 'a genuine Stripe request is accepted at the source',
-      passed: false,
-      notes: `source returned ${res.status}; the verification secret is probably not the one in local/.env`,
-    };
-  }
-
-  await new Promise((resolve) => setTimeout(resolve, INGEST_WAIT_MS));
-  const { models } = await ctx.api<{ models?: { created_at?: string }[] }>(
-    'GET',
-    '/events?limit=100&order_by=created_at&dir=desc'
-  );
-  const arrived = (models ?? []).some(
-    (e) => e.created_at && new Date(e.created_at) >= sentAt
-  );
-
-  return {
-    name: 'a genuine Stripe request is accepted at the source',
-    passed: arrived,
-    notes: arrived
-      ? undefined
-      : 'accepted at the edge but no event was recorded',
-  };
+  return res.status;
 }
 
 /**
@@ -194,8 +219,16 @@ async function checkHandler(ctx: ToolEvalContext): Promise<CheckResult[]> {
         },
       },
     });
-    const valid = await post(ctx, body, hookdeckSignature(body, secret));
-    const forged = await post(ctx, body, 'bm90LWEtcmVhbC1zaWduYXR1cmU=');
+    const valid = await postToHandler(
+      ctx,
+      body,
+      hookdeckSignature(body, secret)
+    );
+    const forged = await postToHandler(
+      ctx,
+      body,
+      'bm90LWEtcmVhbC1zaWduYXR1cmU='
+    );
 
     // The handler's own output on failure. The sandbox is destroyed after
     // scoring, so a note pointing at a log inside it is a dead end by the time
@@ -244,7 +277,7 @@ async function checkHandler(ctx: ToolEvalContext): Promise<CheckResult[]> {
  * status codes gave it away: 401 for a forged Hookdeck signature, 400 for a
  * good one with no Stripe signature behind it.
  */
-async function post(
+async function postToHandler(
   ctx: ToolEvalContext,
   body: string,
   signature: string
