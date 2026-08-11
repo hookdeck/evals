@@ -119,6 +119,15 @@ async function checkEventArrivesLocally(
     `cd ${dir} && npm install --no-audit --no-fund 2>&1 | tail -2`,
     { timeoutMs: INSTALL_TIMEOUT_MS }
   );
+
+  // Stop anything the agent left running before starting our own pair. An agent
+  // that verifies its work end to end leaves a tunnel and a server up, on its
+  // own port and writing to its own log, and Hookdeck will happily deliver the
+  // probe to that session instead of ours. The result is a scenario that fails
+  // precisely because the agent did the job thoroughly, which is the worst
+  // possible thing for a scorer to reward.
+  await ctx.sandbox.exec(`pkill -f "hookdeck listen" || true`);
+  await ctx.sandbox.exec(`pkill -f "node .*server" || true`);
   await ctx.sandbox.exec(`rm -f ${RECEIVED_LOG}`);
   await ctx.sandbox.exec(
     `cd ${dir} && PORT=${PORT} RECEIVED_LOG=${RECEIVED_LOG} ` +
@@ -156,12 +165,18 @@ async function checkEventArrivesLocally(
     );
     const arrived = Number.parseInt(received.stdout.trim(), 10) > 0;
 
+    if (arrived) return { name, passed: true };
+
+    // Carry the tunnel's own output into the result. The sandbox is torn down
+    // after scoring, so a note pointing at a log file inside it is a dead end:
+    // by the time anyone reads the failure, the only copy is gone.
+    const tunnelLog = await ctx.sandbox.exec(
+      `tail -5 /tmp/bm6-listen.log 2>/dev/null || echo '(no tunnel log)'`
+    );
     return {
       name,
-      passed: arrived,
-      notes: arrived
-        ? undefined
-        : 'the probe event never reached the service; see /tmp/bm6-listen.log for whether the tunnel connected',
+      passed: false,
+      notes: `the probe never reached the service. tunnel said: ${tunnelLog.stdout.trim().replace(/\s+/g, ' ').slice(0, 300)}`,
     };
   } finally {
     await ctx.sandbox.exec(`pkill -f "hookdeck listen" || true`);
