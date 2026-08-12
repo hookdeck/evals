@@ -205,6 +205,21 @@ export interface ToolScoringContext {
     path: string,
     body?: unknown
   ) => Promise<T>;
+  /**
+   * Authenticated call against the Outpost API, present only when the run has
+   * an Outpost project.
+   *
+   * Separate from `api` because Outpost is a different service with its own
+   * key, base URL and resource model, and the Event Gateway scenarios never
+   * touch it. A scorer that needs it must check for it rather than assume it,
+   * so a missing `OUTPOST_API_KEY` reads as a skipped capability instead of a
+   * crash inside a check.
+   */
+  outpost?: <T = unknown>(
+    method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+    path: string,
+    body?: unknown
+  ) => Promise<T>;
 }
 
 export interface ToolEvalContext extends ToolScoringContext {

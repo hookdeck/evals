@@ -9,7 +9,7 @@ knowing before you change anything.
 Phase 0 (framework spike) and Phase 1 (the project provisioner) are done.
 Phase 2 is underway and parts of Phase 3 landed early.
 
-**Scenarios: seventeen.** Three regression, fourteen benchmark.
+**Scenarios: eighteen.** Three regression, fifteen benchmark.
 
 | Suite | Stage | Scenario | Where it stands |
 |---|---|---|---|
@@ -29,6 +29,7 @@ Phase 2 is underway and parts of Phase 3 landed early.
 | benchmark | build | delivery-001-slow-consumer | BM10. Unrun |
 | benchmark | build | delivery-002-rate-limited-endpoint | BM11. Unrun |
 | benchmark | build | dedupe-001-duplicate-events | BM14. Unrun |
+| benchmark | build | outpost-001-customer-subscriptions | BM12. Unrun. Needs `OUTPOST_API_KEY`; reports a skip without one |
 | benchmark | build | verification-002-elevenlabs-callbacks | Passes Claude Code; GPT-5.4-mini fails, never setting `webhook_secret_key`. Signal |
 
 **Experiments: five.** `claude-code-sonnet-5` and `codex-gpt-5.6` with

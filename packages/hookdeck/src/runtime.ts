@@ -16,6 +16,7 @@ import type {
   McpServerDefinition,
   ToolScoringContext,
 } from '@hookdeck-evals/core';
+import { OutpostClient } from './outpost-client.js';
 import type { ProjectSource } from './project-source.js';
 import { applySeed, readSeed } from './seed.js';
 
@@ -51,11 +52,28 @@ export function hookdeckRuntime(options: HookdeckRuntimeOptions): EvalRuntime {
           if (resolved.cleanup) cleanups.push(resolved.cleanup);
         }
 
+        // Present only when a key is configured, so an Outpost scenario reads
+        // as skipped rather than failing inside a check on a machine that has
+        // no Outpost project.
+        const outpostKey = process.env.OUTPOST_API_KEY;
+        const outpostClient = outpostKey
+          ? new OutpostClient({ apiKey: outpostKey })
+          : undefined;
+
         const scoringContext: ToolScoringContext = {
           projectId: project.projectId,
           acquiredAt: project.acquiredAt,
           api: (method, path, body) =>
             project.client.request(method, path, body),
+          ...(outpostClient
+            ? {
+                outpost: <T>(
+                  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+                  path: string,
+                  body?: unknown
+                ) => outpostClient.request<T>(method, path, body),
+              }
+            : {}),
         };
 
         return {
@@ -84,6 +102,10 @@ export function hookdeckRuntime(options: HookdeckRuntimeOptions): EvalRuntime {
             ...(process.env.HOOKDECK_WEBHOOK_SECRET
               ? { HOOKDECK_WEBHOOK_SECRET: process.env.HOOKDECK_WEBHOOK_SECRET }
               : {}),
+            // Outpost is a separate product with a separate key. An agent asked
+            // to build outbound delivery needs it the same way it needs
+            // HOOKDECK_API_KEY for the gateway.
+            ...(outpostKey ? { OUTPOST_API_KEY: outpostKey } : {}),
           },
           scoringContext,
           close: async () => {
