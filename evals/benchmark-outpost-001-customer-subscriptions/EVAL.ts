@@ -126,7 +126,15 @@ async function checkOrderEventDelivered(
   };
 }
 
-/** The first topic on any destination that looks like it covers orders. */
+/**
+ * The first topic on any destination that looks like it covers orders.
+ *
+ * Outpost's `Topics` schema (`reference` in `outpost/docs/apis/openapi.yaml`)
+ * is `oneOf` a bare `"*"` string or an array of topic strings, and the API's
+ * own example for listing destinations returns the wildcard as `["*"]` (an
+ * array containing the string), not the bare string. Both forms mean
+ * "subscribes to everything", so both must count as covering orders.
+ */
 function orderTopic(
   destinations: Record<string, unknown>[]
 ): string | undefined {
@@ -134,6 +142,7 @@ function orderTopic(
     const topics = destination.topics;
     if (topics === '*') return 'orders.created';
     if (!Array.isArray(topics)) continue;
+    if (topics.includes('*')) return 'orders.created';
     const match = topics.find((t) => /order/i.test(String(t)));
     if (match) return String(match);
   }
@@ -149,13 +158,17 @@ async function attemptCount(
   for (const destination of destinations) {
     const id = String(destination.id ?? '');
     if (!id) continue;
+    // `/tenants/{id}/destinations/{id}/attempts` is an
+    // `AttemptPaginatedResult`: `{ pagination, models }`, the same shape as
+    // Hookdeck's own list endpoints. Not `{ data }`, which never matches and
+    // silently counted every destination as having zero attempts.
     const body = await ctx.outpost?.<
-      Record<string, unknown>[] | { data?: unknown[] }
+      Record<string, unknown>[] | { models?: unknown[] }
     >(
       'GET',
       `/tenants/${encodeURIComponent(tenantId)}/destinations/${encodeURIComponent(id)}/attempts`
     );
-    total += Array.isArray(body) ? body.length : (body?.data?.length ?? 0);
+    total += Array.isArray(body) ? body.length : (body?.models?.length ?? 0);
   }
   return total;
 }
@@ -163,10 +176,14 @@ async function attemptCount(
 async function listTenants(
   ctx: ToolEvalContext
 ): Promise<Record<string, unknown>[]> {
+  // `/tenants` is a `TenantPaginatedResult`: `{ pagination, count, models }`.
+  // Not `{ data }` - that field never exists on this response, so this
+  // always returned an empty list and every run failed at "created a tenant
+  // for the customer" regardless of what the agent actually set up.
   const body = await ctx.outpost?.<
-    Record<string, unknown>[] | { data?: Record<string, unknown>[] }
+    Record<string, unknown>[] | { models?: Record<string, unknown>[] }
   >('GET', '/tenants');
-  return Array.isArray(body) ? body : (body?.data ?? []);
+  return Array.isArray(body) ? body : (body?.models ?? []);
 }
 
 async function listDestinations(
