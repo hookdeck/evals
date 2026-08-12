@@ -92,19 +92,23 @@ function describe(
 /**
  * Send one event in the old format and read back what the destination received.
  *
- * Scoped by a reference unique to this run, because the project is shared and
- * "the most recent event" would eventually be another run's.
+ * Scoped by time rather than by a marker in the body, which is the only thing
+ * that works here: the task is to replace the body, so any field the probe
+ * plants can legitimately be removed by a correct answer. The first version
+ * searched for a probe id and a correct transformation stripped it, so the
+ * scorer reported that nothing routed at all. Runs hold the project
+ * exclusively, so the newest event after the probe was sent is ours.
  */
 async function deliverProbe(
   ctx: ToolEvalContext,
   sourceUrl: string
 ): Promise<{ body: Record<string, unknown> } | undefined> {
-  const probeId = `ch_probe_${ctx.acquiredAt.getTime()}`;
+  const sentAt = new Date();
   await fetch(sourceUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      id: probeId,
+      id: `ch_probe_${sentAt.getTime()}`,
       amount_cents: 4200,
       currency_code: 'GBP',
       customer: { email: 'ana@example.com', id: 'cus_5512' },
@@ -114,13 +118,11 @@ async function deliverProbe(
   await new Promise((resolve) => setTimeout(resolve, INGEST_WAIT_MS));
 
   const { models } = await ctx.api<{
-    models?: { data?: { body?: unknown } }[];
-  }>(
-    'GET',
-    `/events?limit=20&include=data&order_by=created_at&dir=desc&search_term=${encodeURIComponent(probeId)}`
-  );
+    models?: { created_at?: string; data?: { body?: unknown } }[];
+  }>('GET', '/events?limit=20&include=data&order_by=created_at&dir=desc');
 
   for (const event of models ?? []) {
+    if (!event.created_at || new Date(event.created_at) < sentAt) continue;
     const body = event.data?.body;
     if (body && typeof body === 'object') {
       return { body: body as Record<string, unknown> };
