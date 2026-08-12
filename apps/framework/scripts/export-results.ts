@@ -227,6 +227,20 @@ async function loadEvalResults(): Promise<EvalResult[]> {
       continue;
     }
 
+    // Skip results whose experiment no longer exists. `results/` is a local
+    // scratch directory that outlives renames, so a rename leaves a full set of
+    // results under the old name and every one of them would otherwise be
+    // published: rows for an experiment nobody can run, carrying no display
+    // metadata, describing scenarios that may also have been renamed. Loud,
+    // because silently dropping results is how you lose a run you meant to keep.
+    if (!experimentMetadata.has(experiment)) {
+      console.warn(
+        `skipping results/${experiment}: no experiments/${experiment}.ts. ` +
+          'Delete the directory if it is left over from a rename.'
+      );
+      continue;
+    }
+
     for (const entry of await readdir(experimentDir)) {
       const entryPath = join(experimentDir, entry);
       const entryStat = await stat(entryPath);
