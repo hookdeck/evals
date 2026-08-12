@@ -973,6 +973,36 @@ project forces the matrix to run one job at a time. That is the constraint the
 org-level key removes, and it is what makes it worth asking about rather than waiting
 for.
 
+### The competence gap is authentication, not reasoning
+
+Ten benchmark scenarios, all passing on Claude Code, three failing on GPT-5.4-mini. The
+three are not spread across the suite.
+
+| Scenario | GPT-5.4-mini | What it got wrong |
+|---|---|---|
+| Stripe verification | fail | configured the source with the wrong secret |
+| ElevenLabs verification | fail | never set `webhook_secret_key` at all |
+| local delivery | fail | ran `hookdeck listen` unauthenticated, got a guest session |
+
+All three are credential handling: a wrong secret, a missing secret, an unauthenticated
+session. Everything else passes on the same model, including a transformation that has
+to lift a nested field, a filter with a boundary, an alert that has to be scoped to the
+right connection, and three diagnostic scenarios.
+
+Two earlier predictions died here. The transformation scenario was built on the theory
+that a nested field would be quietly dropped, and the weak model lifted it correctly.
+The alerting scenario was built on the theory that a trigger would be misscoped, and it
+was scoped correctly. Both were reasonable and both were wrong, and the pattern that
+survived was not one anybody predicted.
+
+**A weaker model can build with Hookdeck and reason about it, and cannot reliably wire
+up authentication.** That is a specific and useful claim, it is the kind of thing a
+benchmark exists to produce, and it points at where documentation and skills would pay
+off if the delta ever moves.
+
+It also means the suite's discriminating power sits in three scenarios that cost $6.26
+of the $14.44 full-suite total. They are 43% of the cost and all of the signal.
+
 ### Re-baselined again, and the median has moved
 
 The earlier re-baseline was three regression scenarios at a $0.40 median, which matched
@@ -982,10 +1012,10 @@ picture is different, because the scenarios got more demanding.
 | | Cost |
 |---|---|
 | Cheapest (filtering, config only) | $0.40 |
-| Median | $0.97 |
-| Mean | $1.32 |
+| Median | $1.01 |
+| Mean | $1.44 |
 | Dearest (ElevenLabs, runs a service) | $3.27 |
-| One pass of all eight, one experiment | $10.58 |
+| One pass of all ten, one experiment | $14.44 |
 
 The three most expensive all run the agent's code: install dependencies, start a
 service, probe it. That is also what makes them the scenarios worth having, so the cost
