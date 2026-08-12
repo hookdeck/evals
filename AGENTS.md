@@ -69,14 +69,20 @@ and locally.
 Nothing is published yet: the results files in `apps/web/src/data` are still
 empty in git. The web app itself is now Hookdeck-branded rather than Supabase's.
 
-**Next:** BM9, the scoped bulk retry, which needs a harness change first. Its
-scenario is "the endpoint is fixed now, redeliver the failed events from the
-last hour, but only for the checkout source", so events have to fail *before*
-the endpoint is repaired. `applySeed` runs every resource and its `then` steps,
-then all events, with no way to change state afterwards. A top-level `after`
-block of requests applied post-events, with `$ref:` resolution in the path,
-would unlock this and any other scenario where state changes after history
-exists.
+A scorer review pass over all eighteen scenarios ran on 12 August. It found
+three defects, all of which would have shown as agent failures rather than
+scorer bugs. `outpost-001` parsed Outpost list responses as `{ data }` when the
+shape is `{ pagination, models }`, so its tenant check could never pass and its
+delivery check was always `0 > 0`: two permanent false negatives that had never
+surfaced because BM12 has never run against live credentials.
+`alerting-001` missed a third silent-failure path, `channels: {}`, which passes
+the API's required-field validation and produces a trigger that is enabled,
+correctly scoped and completely silent. And `resolve-002` self-healed on a
+delivery race, now fixed in `applySeed`.
+
+**Next:** run BM9 through BM14, none of which have produced a valid result yet.
+BM12 additionally needs `OutpostClient.deleteTenant` wired into
+`FixedProjectSource.release`, or tenants leak between runs.
 
 Also unrun: BM7 and BM8 against `-no-skills` and the weak model, which is what
 tells us whether the investigate and resolve scenarios discriminate or are
@@ -331,6 +337,17 @@ looks configured. And `https://mock.hookdeck.com?status=<code>` returns that
 status on any path, which is how a scenario seeds failing deliveries: point a
 destination at `.../collect?status=422` and every attempt to it fails while
 another destination succeeds.
+
+**Ingestion is synchronous, delivery is not.** A POST to a source URL returns
+when ingestion accepts it; the event is then queued and delivered by a worker.
+Anything that depends on an event having *been delivered* has to wait for it,
+not for the POST. This produced a self-healing scenario: `resolve-002` seeds
+failing deliveries, repairs the endpoint in an `after` block, and asks the agent
+to redeliver, but the repair landed before the first attempt on some events, so
+they succeeded and there was nothing left to redeliver. `applySeed` now waits for
+seeded events to leave `QUEUED`/`SCHEDULED` before running `after`. The retry
+rules in that seed do not help: `count: 0` gates reattempts, and this is the
+first attempt.
 
 **Regression scenarios passing is correct.** They guard against a mistake
 already seen and fixed; all agents passing is the desired state. For benchmark
