@@ -66,8 +66,21 @@ gets cut because their delta has measured zero four times. It has completed end
 to end including publishing, and the regression suite scored identically in CI
 and locally.
 
-Nothing is published yet: the results files in `apps/web/src/data` are still
-empty in git. The web app itself is now Hookdeck-branded rather than Supabase's.
+**`apps/web/src/data/eval-results.json` holds 39 real rows, and has since 12
+August.** This file said "still empty in git" until the website build read it
+and found otherwise. It went in as a side effect of the CI commit, not as a
+decision to publish, and it is the file any consumer of this repo will render.
+
+**Thirteen of those 39 rows were scored by scorers that have since been
+fixed**, so they are not publishable as they stand. Two are worse than stale:
+`outpost-001` records a failure that was the scorer misreading Outpost's list
+shape, and `resolve-002` records one from the delivery race. Both attribute a
+harness bug to an agent, by name. `verification-001` shows 2 of 4 and its
+failures may be the probe rather than the agent.
+
+The next full run supersedes all of them. Until then, treat this file as
+diagnostic rather than as a scoreboard, and do not publish a page built on it.
+The web app itself is now Hookdeck-branded rather than Supabase's.
 
 A scorer review pass over all eighteen scenarios ran on 12 August. It found
 three defects, all of which would have shown as agent failures rather than
