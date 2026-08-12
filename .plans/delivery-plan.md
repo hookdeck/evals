@@ -985,6 +985,42 @@ project forces the matrix to run one job at a time. That is the constraint the
 org-level key removes, and it is what makes it worth asking about rather than waiting
 for.
 
+### The judge is a fixed cost on every pass, and a cheaper one agrees
+
+The OpenAI invoice for the whole project to date is $17.41, and unpicking one day of it
+found a cost nobody had counted. The judge is `gpt-5.5`, inherited from supabase/evals,
+called once per judged check on **every experiment**. That is roughly $2.85 per
+fourteen-scenario pass regardless of which agent ran, so across six experiments it is
+$17 a pass and around $74 a month, comparable to a whole extra agent.
+
+Supabase did choose it deliberately: they pair it with `reasoningEffort: 'low'` and
+`textVerbosity: 'low'`, so the intent is a capable model with its reasoning tokens
+suppressed, and their guidance is to prefer deterministic checks and use a judge only
+for semantic correctness. Changing it needed evidence rather than arithmetic, because
+most of our judged checks are negatives that exist to catch invented capabilities. A
+cheaper judge that misses one does not lose a little precision; it reports green while
+the thing the regression suite guards against recurs.
+
+So the verdicts we already have were replayed against a cheaper model rather than
+argued about. `scripts/replay-judge.ts` re-judges stored transcripts and compares,
+which costs pennies and is measured against known-correct answers.
+
+**`gpt-5.4-mini` at low effort agreed with `gpt-5.5` on 15 of 15, including both real
+catches.** Both are the June regex hallucination, which is the failure the project was
+built to prevent, and the cheaper model caught both.
+
+The first run of the replay disagreed once, and that was a bug in the replay rather
+than a difference between models. Two scenarios share a check name and have different
+rubrics: the benchmark one forgives an agent that tries a regex, finds it rejected and
+corrects itself, because there the agent is also being asked to build. Keying rubrics
+by check name alone applied the stricter rubric to the wrong scenario. Keyed by
+scenario and check, the disagreement disappeared.
+
+Fifteen cases is a small sample and only two of them are catches, so this is evidence
+rather than proof. What it supports is switching and watching, not switching and
+forgetting: if a hallucination ever reaches a customer that the suite scored green, the
+judge model is the first thing to re-examine.
+
 ### Findings raised, and where
 
 Every product finding from the suite has been filed against the repo that owns it, with
