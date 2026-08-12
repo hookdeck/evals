@@ -19,8 +19,8 @@ Phase 2 is underway and parts of Phase 3 landed early.
 | benchmark | build | filtering-001-enterprise-orders | Passes everything run against it |
 | benchmark | build | verification-001-stripe-express | Passes Sonnet 5 both arms; fails GPT-5.4-mini 4/5 |
 | benchmark | build | localdev-001-listen-locally | Passes Sonnet 5 both arms; fails GPT-5.4-mini |
-| benchmark | investigate | investigate-001-failing-deliveries | Passes Claude Code 3/3 |
-| benchmark | resolve | resolve-001-paused-connection | Passes Claude Code 2/2, first run, no scorer fixes. Fully deterministic |
+| benchmark | investigate | investigate-001-failing-deliveries | Passes every configuration including GPT-5.4-mini. No signal |
+| benchmark | resolve | resolve-001-paused-connection | Passes every configuration including GPT-5.4-mini. No signal. Fully deterministic |
 
 **Experiments: five.** `claude-code-sonnet-5` and `codex-gpt-5.6` with
 `['hookdeck', 'event-gateway']`, `-no-skills` twins of each, and
@@ -145,6 +145,14 @@ the TTY crash in four runs and about $2. BM1 had been failing on the first of
 those for four runs and about $10, and could not say which of its parts was
 broken. When a scenario fails in a way that could be any of three subsystems,
 the cheapest next move is a scenario that only has one of them.
+
+**Difficulty discriminates, not stage.** Investigate and resolve looked like the
+answer because supabase's hardest scenarios are mostly investigate. Ours are
+investigate and resolve and every configuration passes them, including the weak
+model that fails two build scenarios. Their hard ones need several signals held
+together (one has "correlation" in its name); ours need one lookup each. Write
+for correlation, make a plausible wrong answer available, and prefer a silent
+failure to an error: every scenario that has discriminated so far failed quietly.
 
 **Test the floor before concluding a scenario carries no signal.** All three
 build scenarios pass on every Sonnet 5 configuration, which read as no signal

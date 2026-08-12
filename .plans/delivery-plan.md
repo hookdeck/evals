@@ -714,6 +714,51 @@ nothing about the configuration looks wrong from the outside. This is exactly th
 silent-failure class the suite exists to catch, and the deterministic both-directions
 check is what caught it.
 
+### Stage was the wrong lever: it is difficulty, not category
+
+I read supabase's results as saying investigate and resolve discriminate, moved them up
+the plan on that basis, and wrote one of each. Both pass on every configuration,
+including GPT-5.4-mini, which fails two of the three build scenarios.
+
+| Scenario | Stage | +skills | baseline | GPT-5.4-mini |
+|---|---|---|---|---|
+| filtering, enterprise orders | build | pass | pass | pass |
+| Stripe into an Express handler | build | pass | pass | **fail** |
+| local delivery | build | pass | pass | **fail** |
+| failing deliveries | investigate | pass | pass | pass |
+| paused connection | resolve | pass | pass | pass |
+
+So our investigate and resolve scenarios are *easier* than our build ones, which is the
+opposite of the pattern I inferred. The category was a proxy for difficulty in their
+data, not the cause of it, and I treated the proxy as the mechanism.
+
+Look at what their hard ones actually ask. `investigate-auth-001-deleted-user-access`
+at 5/10 turns on what happens to access when a user is removed, which is a cascade
+across objects. `investigate-reliability-003-edge-function-5xx-correlation` at 8/10
+says correlation in its name. Both need several signals held together.
+
+Ours need one lookup each. BM7: list the attempts, one destination returns 422 and the
+other does not. BM8: read one boolean field. Neither rewards holding two facts at once,
+so neither separates a careful agent from a quick one, and a weaker model gets there as
+easily as a frontier one.
+
+**What discriminates is a question whose answer is not in any single response.** The two
+scenarios that do bite are the two where something is quietly wrong rather than plainly
+broken: a source configured with the wrong secret still looks configured, and a tunnel
+that never authenticated still reports success. Both are silent failures, and both need
+the agent to notice an absence rather than read an error.
+
+That is the design note for the next scenarios, and it replaces "write more
+investigate":
+
+- The evidence should require correlation. Which events are missing rather than which
+  failed; what changed around the time it started; which of several connections
+  explains a partial outage.
+- The wrong answer should be available and plausible. A scenario where the only visible
+  signal is the right one measures whether the agent can read a list.
+- Prefer silence to errors. Every scenario that has discriminated so far failed
+  quietly.
+
 ### How regression scenarios are written
 
 Regression scenarios are **tasks with verifiable end states**, exactly like benchmark
