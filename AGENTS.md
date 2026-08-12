@@ -21,7 +21,7 @@ Phase 2 is underway and parts of Phase 3 landed early.
 | benchmark | build | localdev-001-listen-locally | Passes Sonnet 5 both arms; fails GPT-5.4-mini |
 | benchmark | investigate | investigate-001-failing-deliveries | Passes every configuration including GPT-5.4-mini. No signal |
 | benchmark | resolve | resolve-001-paused-connection | Passes every configuration including GPT-5.4-mini. No signal. Fully deterministic |
-| benchmark | investigate | investigate-002-partial-outage | Correlation-shaped. Passes Claude Code 3/3; weak model pending |
+| benchmark | investigate | investigate-002-partial-outage | Correlation-shaped and still passes everything, including GPT-5.4-mini in 133s. No signal |
 
 **Experiments: five.** `claude-code-sonnet-5` and `codex-gpt-5.6` with
 `['hookdeck', 'event-gateway']`, `-no-skills` twins of each, and
@@ -146,6 +146,18 @@ the TTY crash in four runs and about $2. BM1 had been failing on the first of
 those for four runs and about $10, and could not say which of its parts was
 broken. When a scenario fails in a way that could be any of three subsystems,
 the cheapest next move is a scenario that only has one of them.
+
+**Signal comes from the agent being wrong about its own claim, not from task
+difficulty.** Three attempts at finding a lever failed: stage, then correlation
+versus single-lookup, then silent versus loud failure. Sorting every result by
+whether it produced signal gives the real line. The scenarios that discriminate
+are the ones where the agent produced something and was wrong about it: a source
+configured with the wrong secret, a tunnel pointed at a guest session, a
+capability answered from memory. The scenarios that produce nothing are the ones
+where all the evidence is present and the task is to read it: which destination
+is failing, whether a connection is paused, which orders a filter excludes.
+Agents are excellent at the second and unreliable at the first. Write scenarios
+where an agent can finish confidently and be wrong.
 
 **Difficulty discriminates, not stage.** Investigate and resolve looked like the
 answer because supabase's hardest scenarios are mostly investigate. Ours are

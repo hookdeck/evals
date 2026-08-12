@@ -759,6 +759,52 @@ investigate":
 - Prefer silence to errors. Every scenario that has discriminated so far failed
   quietly.
 
+### What actually discriminates: the agent being wrong about its own claim
+
+The correlation scenario was built to the design note and passes on everything,
+including GPT-5.4-mini in 133 seconds. So difficulty was not the lever either, and
+three attempts at finding one have now failed: stage, then single-lookup versus
+correlation, then silent-versus-loud failure.
+
+Sorting every result by whether it produced signal makes the actual line obvious.
+
+| Scenario | Discriminates | Shape |
+|---|---|---|
+| Stripe verification | yes, at the floor | agent configured a source with the wrong secret and believed it worked |
+| local delivery | yes, at the floor | agent set up a guest Console session and reported success |
+| regex capability | yes, at the frontier | agent answered a capability question from memory |
+| failing deliveries | no | read the attempts, report |
+| paused connection | no | read a field, change it |
+| partial outage | no | read the filter and the requests, report |
+
+The three that carry signal are all cases where **the agent's own output or claim was
+wrong and it did not know**. The three that carry none are all cases where the evidence
+was present and the task was to read it and reason. Agents are extremely good at the
+second and unreliable at the first, and that distinction cuts across build, investigate
+and resolve rather than following them.
+
+This is a better finding than a discriminating benchmark would have been, because it
+says something specific about where an agent is dangerous rather than which agent is
+better. An agent that misreads delivery history wastes an afternoon. An agent that
+configures verification with the wrong secret, or tunnels to a guest session, or
+promises queuing the product does not do, produces something that looks finished and
+fails in production.
+
+It also settles what the remaining build scenarios should be. BM2 to BM5 are all
+constructive tasks, and each has a version where the output can be silently wrong:
+
+- **BM3, transformations.** A transformation that runs and produces a plausible payload
+  with a field quietly dropped. Score by running it and comparing the delivered body.
+- **BM4, issue triggers.** An alert configured so that it never actually fires. Score by
+  causing the condition and checking whether the notification is created.
+- **BM2, filtering with retries.** A rule that looks correct and excludes valid orders,
+  which is the shape of the June incident.
+- **BM5, provider webhooks.** The same trap as BM1 against a provider whose signature
+  scheme is less familiar, so memory is less reliable.
+
+Write each so the agent can finish confidently and be wrong. That is the only shape that
+has produced signal, and it is also the shape that produced all three product findings.
+
 ### How regression scenarios are written
 
 Regression scenarios are **tasks with verifiable end states**, exactly like benchmark
