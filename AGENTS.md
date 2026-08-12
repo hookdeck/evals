@@ -9,7 +9,7 @@ knowing before you change anything.
 Phase 0 (framework spike) and Phase 1 (the project provisioner) are done.
 Phase 2 is underway and parts of Phase 3 landed early.
 
-**Scenarios: eight.** Three regression, five benchmark.
+**Scenarios: nine.** Three regression, six benchmark.
 
 | Suite | Stage | Scenario | Where it stands |
 |---|---|---|---|
@@ -21,6 +21,7 @@ Phase 2 is underway and parts of Phase 3 landed early.
 | benchmark | build | localdev-001-listen-locally | Passes Sonnet 5 both arms; fails GPT-5.4-mini |
 | benchmark | investigate | investigate-001-failing-deliveries | Passes every configuration including GPT-5.4-mini. No signal |
 | benchmark | resolve | resolve-001-paused-connection | Passes every configuration including GPT-5.4-mini. No signal. Fully deterministic |
+| benchmark | investigate | investigate-002-partial-outage | Correlation-shaped. Passes Claude Code 3/3; weak model pending |
 
 **Experiments: five.** `claude-code-sonnet-5` and `codex-gpt-5.6` with
 `['hookdeck', 'event-gateway']`, `-no-skills` twins of each, and
