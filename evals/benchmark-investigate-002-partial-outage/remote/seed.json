@@ -1,0 +1,49 @@
+{
+  "resources": [
+    {
+      "kind": "sources",
+      "ref": "orders",
+      "body": { "name": "orders" }
+    },
+    {
+      "kind": "destinations",
+      "ref": "warehouse",
+      "body": {
+        "name": "warehouse-api",
+        "type": "HTTP",
+        "config": { "url": "https://mock.hookdeck.com/api/v1/warehouse/orders" }
+      }
+    },
+    {
+      "kind": "connections",
+      "body": {
+        "name": "orders-to-warehouse",
+        "source_id": "$ref:orders",
+        "destination_id": "$ref:warehouse",
+        "rules": [{ "type": "filter", "body": { "channel": "web" } }]
+      }
+    }
+  ],
+  "events": [
+    {
+      "source": "orders",
+      "count": 3,
+      "body": { "reference": "ORD-8801", "channel": "web", "total": 240 }
+    },
+    {
+      "source": "orders",
+      "count": 4,
+      "body": { "reference": "ORD-8802", "channel": "mobile", "total": 180 }
+    },
+    {
+      "source": "orders",
+      "count": 2,
+      "body": { "reference": "ORD-8803", "channel": "web", "total": 990 }
+    },
+    {
+      "source": "orders",
+      "count": 3,
+      "body": { "reference": "ORD-8804", "channel": "pos", "total": 415 }
+    }
+  ]
+}
