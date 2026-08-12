@@ -64,6 +64,17 @@ and every change since.
   `textVerbosity: 'low'` are what make a judge affordable at all, and they were a
   deliberate choice rather than a default.
 
+- The results web app is retargeted to Hookdeck. Upstream's branding is gone: the
+  wordmark, the "Back to Supabase" link, the hero and footer copy, the four-stage
+  journey description (ours has three; there is no `deploy`), the `supabase.com`
+  hostname check that selects the base path, and the Supabase brand tokens and fonts.
+  Hookdeck's mark, blue, Figtree and JetBrains Mono replace them, taken from
+  `hookdeck/website` rather than invented.
+
+  The structure, layout and component design are upstream's and unchanged, and the
+  comments in `index.css` recording that remain. Removing their branding is correct;
+  erasing the derivation is not.
+
 ## Retained
 
 Substantially unchanged from upstream:

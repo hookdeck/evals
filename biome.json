@@ -13,6 +13,7 @@
       "results",
       "submodules",
       "skills",
+      ".claude",
       "**/.hookdeck-pristine.json",
       "reference"
     ]
