@@ -9,7 +9,7 @@ const OVERVIEW_CARDS = [
     step: "2.",
     title: "Work through a task",
     description:
-      "Agents take on a task from somewhere along the Supabase developer journey, from building and deploying to investigating and resolving issues.",
+      "Agents take on a task from somewhere along the Hookdeck developer journey: building, investigating, or resolving issues.",
   },
   {
     step: "3.",
