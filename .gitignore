@@ -2,6 +2,17 @@ node_modules/
 dist/
 .env
 .env*.local
+
+# A scenario's local/ directory is the workspace the agent finds, and some
+# scenarios need a .env in it: the developer in the story already holds the
+# provider's secret, and an agent that has to invent one is being measured on
+# the wrong thing. These are fixtures, not credentials. The real signing secret
+# is written as ${HOOKDECK_WEBHOOK_SECRET} and expanded on the way into the
+# sandbox; anything else in them is the scenario's own fiction.
+#
+# Un-ignored because the rule above silently excluded them for four runs of
+# BM1, which failed on a workspace the agent never received.
+!evals/*/local/.env
 .DS_Store
 results/*/
 .sync-tmp/

@@ -124,6 +124,36 @@ function testCollectEnvSecretValues(): void {
       );
     }
   );
+
+  // The signing secret has no distinctive prefix, so nothing pattern-based can
+  // find it on its own. It has to be collected by name or the export guard,
+  // which checks values rather than shapes, will publish it.
+  withEnv(
+    {
+      HOOKDECK_API_KEY: undefined,
+      ANTHROPIC_API_KEY: undefined,
+      HOOKDECK_WEBHOOK_SECRET: 'a1b2c3d4e5f6g7h8i9j0klmnop',
+    },
+    () => {
+      assert(
+        collectEnvSecretValues().includes('a1b2c3d4e5f6g7h8i9j0klmnop'),
+        'includes HOOKDECK_WEBHOOK_SECRET value'
+      );
+    }
+  );
+
+  // The form the real leak took: an agent printing its expanded .env. The
+  // value must not survive even where the variable name is not adjacent to it.
+  withEnv({ HOOKDECK_WEBHOOK_SECRET: 'a1b2c3d4e5f6g7h8i9j0klmnop' }, () => {
+    const artifact = redactSecretsForArtifact(
+      'HOOKDECK_WEBHOOK_SECRET=a1b2c3d4e5f6g7h8i9j0klmnop\n' +
+        'verify(body, "a1b2c3d4e5f6g7h8i9j0klmnop")'
+    );
+    assert(
+      !artifact.includes('a1b2c3d4e5f6g7h8i9j0klmnop'),
+      'redacts the signing secret both as an assignment and as a bare literal'
+    );
+  });
 }
 
 function testWebhookUrlLiteralRedaction(): void {

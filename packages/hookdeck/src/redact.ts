@@ -9,6 +9,13 @@
 
 const ENV_SECRET_KEYS = [
   'HOOKDECK_API_KEY',
+  // The project's signing secret. Missing from this list until 12 August, which
+  // mattered: an agent cat'd its expanded .env during a BM1 run and the live
+  // secret is sitting in that stored result in plaintext. The pattern pass
+  // catches the `NAME=value` form, but not the value on its own in a code
+  // snippet or a curl, and the export guard checks these values rather than
+  // patterns. A secret with no distinctive prefix has to be listed to be found.
+  'HOOKDECK_WEBHOOK_SECRET',
   'OUTPOST_API_KEY',
   'ANTHROPIC_API_KEY',
   'OPENAI_API_KEY',
