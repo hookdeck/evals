@@ -1029,12 +1029,35 @@ it predicted. It is also a better launch story than a lift would have been, beca
 is falsifiable and specific. We shipped a skill, measured it making an agent worse,
 found the sentence responsible, and fixed it.
 
-**One gap remains and it is the same one on both verification scenarios.** Stripe and
-ElevenLabs both still fail on "the source accepts a genuine signature", with skills and
-without: the agent creates the right source type and does not configure the provider
-secret correctly. `webhook_secret_key` appears in zero files across the skill, and the
-API route for source authentication is not documented in it at all. That is the second
-PR, and unlike the first it should produce a real lift rather than repairing one.
+**One gap remains, and reading the transcript changed what it is.** Both verification
+scenarios still fail on "the source accepts a genuine signature", with skills and
+without. The first diagnosis was that the skill fails to document configuring the
+provider secret. It does document it, the agent found it, and it ran the right command:
+
+```
+hookdeck gateway connection upsert ... --source-type ELEVENLABS \
+  --source-webhook-secret "$ELEVENLABS_WEBHOOK_SECRET"
+```
+
+The variable was never exported into its shell. The secret sits in the workspace `.env`,
+the agent read that file with dotenv inside a separate node script, and the shell it ran
+the CLI from had nothing. So the flag received an empty string.
+
+**The CLI accepted it.** It created a source configured to verify signatures against an
+empty secret, reported success, and the agent told the user the integration was ready.
+The source then rejects every genuinely signed request from the provider while
+correctly rejecting forged ones, so it looks configured from every angle and works for
+nothing.
+
+That is a product finding rather than a documentation one, and it is the sharpest of the
+four. An empty webhook secret has no legitimate use: it cannot verify anything. Refusing
+it at the CLI, or warning, converts a silent production failure into an error at the
+moment it is made. This is also the same failure as the Stripe scenario, which makes it
+the single cause of two of the three failures in the suite.
+
+The skill could still help by showing the secret being read from `.env` rather than
+assuming it is exported, since every example passes a literal. That is worth a line, but
+it is mitigation for a sharp edge rather than the fix.
 
 ### The competence gap is authentication, not reasoning
 
