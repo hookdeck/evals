@@ -52,15 +52,22 @@ an unauthenticated guest Console session even with `HOOKDECK_API_KEY` in the
 environment, which let a weaker model report success while bypassing the project
 entirely. The plan has the detail.
 
-CI runs formatting and unit tests on pull requests. `eval-refresh` is manual
-dispatch only, with `HOOKDECK_API_KEY`, `HOOKDECK_WEBHOOK_SECRET`,
-`ANTHROPIC_API_KEY` and `OPENAI_API_KEY` set as repository secrets, so a
-dispatch will spend. It has completed end to end including publishing, and the
-regression suite scored identically in CI and locally. No schedule is wired:
-that arrives with the scoreboard.
+CI runs formatting, typecheck, unit tests and build on pull requests. It ran
+only formatting until 12 August, and two defects reached main that any of the
+others would have caught.
 
-Nothing is published. Both results files are empty, and the results web app is
-still Supabase's shell (see Traps).
+`eval-refresh` runs on two schedules and on manual dispatch, with
+`HOOKDECK_API_KEY`, `HOOKDECK_WEBHOOK_SECRET`, `ANTHROPIC_API_KEY`,
+`OPENAI_API_KEY` and `OUTPOST_API_KEY` as repository secrets, so it spends.
+Weekly (Monday 06:00 UTC) runs the frontier agents and the weak pair, about $185
+a month. Monthly (1st, 08:00 UTC) adds the `-no-skills` twins for a full matrix.
+Everything weekly would be $279 against a $200 budget, and the twins are what
+gets cut because their delta has measured zero four times. It has completed end
+to end including publishing, and the regression suite scored identically in CI
+and locally.
+
+Nothing is published yet: the results files in `apps/web/src/data` are still
+empty in git. The web app itself is now Hookdeck-branded rather than Supabase's.
 
 **Next:** BM9, the scoped bulk retry, which needs a harness change first. Its
 scenario is "the endpoint is fixed now, redeliver the failed events from the
@@ -307,16 +314,10 @@ question and scores zero for behaving correctly.
 tool, a customer, or an internal ticket. Internal context belongs in
 a comment in `EVAL.ts`.
 
-**The results web app is still Supabase's, apart from the data.** It carries
-their logo, a "Back to Supabase" header, a "with a Supabase project" footer, a
-hero reading "across Supabase", and a `supabase.com` hostname check that decides
-the base path. `CHANGES.md` records the app as retained unchanged, which is
-true and easy to read as harmless; it is not, because the app is the published
-artefact. `JOURNEY_STAGES` has been retargeted because it is part of the data
-model and a stale `deploy` stage advertised a column no scenario can ever fill.
-The rest is Phase 3 work and has to happen before anything is shown to anyone,
-including before the page is designed: mocking a UI from the current app copies
-Supabase's branding and prose.
+**The results web app is Hookdeck-branded but structurally upstream's.** The
+wordmark, copy, fonts, brand tokens and hostname check were retargeted on 12
+August; the layout, components and design are still supabase/evals' and the
+attribution comments in `index.css` record that. `CHANGES.md` has the detail.
 
 ## Traps
 
