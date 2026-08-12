@@ -1,0 +1,22 @@
+{
+  "resources": [
+    { "kind": "sources", "ref": "orders", "body": { "name": "orders" } },
+    {
+      "kind": "destinations",
+      "ref": "fulfilment",
+      "body": {
+        "name": "fulfilment-api",
+        "type": "HTTP",
+        "config": { "url": "https://mock.hookdeck.com/api/v1/fulfilment" }
+      }
+    },
+    {
+      "kind": "connections",
+      "body": {
+        "name": "orders-to-fulfilment",
+        "source_id": "$ref:orders",
+        "destination_id": "$ref:fulfilment"
+      }
+    }
+  ]
+}

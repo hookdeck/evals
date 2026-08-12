@@ -1,0 +1,39 @@
+{
+  "resources": [
+    {
+      "kind": "sources",
+      "ref": "payments",
+      "body": { "name": "payments" }
+    },
+    {
+      "kind": "destinations",
+      "ref": "billing",
+      "body": {
+        "name": "billing-api",
+        "type": "HTTP",
+        "config": { "url": "https://mock.hookdeck.com/api/v1/billing/charges" }
+      }
+    },
+    {
+      "kind": "connections",
+      "body": {
+        "name": "payments-to-billing",
+        "source_id": "$ref:payments",
+        "destination_id": "$ref:billing"
+      }
+    }
+  ],
+  "events": [
+    {
+      "source": "payments",
+      "count": 2,
+      "body": {
+        "id": "ch_9f21",
+        "amount_cents": 4200,
+        "currency_code": "GBP",
+        "customer": { "email": "ana@example.com", "id": "cus_5512" },
+        "created": 1786000000
+      }
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "resources": [
+    { "kind": "sources", "ref": "orders", "body": { "name": "orders" } },
+    {
+      "kind": "destinations",
+      "ref": "review",
+      "body": {
+        "name": "manual-review-api",
+        "type": "HTTP",
+        "config": { "url": "https://mock.hookdeck.com/api/v1/review" }
+      }
+    },
+    {
+      "kind": "connections",
+      "body": {
+        "name": "orders-to-review",
+        "source_id": "$ref:orders",
+        "destination_id": "$ref:review"
+      }
+    }
+  ],
+  "events": [
+    { "source": "orders", "body": { "reference": "ORD-7001", "total": 240 } },
+    { "source": "orders", "body": { "reference": "ORD-7002", "total": 1450 } }
+  ]
+}
