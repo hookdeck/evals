@@ -546,18 +546,25 @@ carries `ignored_count: 1`. Ingestion has an explicit branch for it: a connectio
 destination has no URL, with zero CLI sessions, is ignored with cause
 `CLI_DISCONNECTED`.
 
-So it is intended behaviour, not a defect. But it means there is no event, and retries
-apply to events. If the local server is down while the tunnel is up, an event exists,
-delivery fails, and retries do exactly what the agent described. If the tunnel itself
-is down, nothing is created and nothing is retried. Those two cases are
-indistinguishable to a developer looking at their own machine, and only one of them is
-recoverable.
+So it is intended behaviour, not a defect. And it is less severe than the first reading
+of it: an `IgnoredEvent` is recorded with cause `CLI_DISCONNECTED`, listable at
+`/requests/{id}/ignored_events`, and replayable through `/bulk/ignored-events/retry`,
+which filters by cause. Nothing is lost.
+
+What is true is narrower and still worth fixing. **Recovery is manual, and the agent
+said it was automatic.** If the local server is down while the tunnel is up, an event
+exists, delivery fails, and retries do exactly what the agent described. If the tunnel
+itself is down, no event exists, no retry fires, and someone has to know that ignored
+events are a separate class with their own bulk-retry endpoint before anything comes
+back. Those two cases are indistinguishable from the developer's side and only one
+self-heals.
 
 Three things follow, in order of how cheaply they can be fixed:
 
 1. **`ignored_count` is hidden from the public API reference** (`x-docs-hide`), so the
    one field that says "accepted, and went nowhere" is not visible to anyone reading
-   the docs. An agent debugging this cannot find it.
+   the docs. An agent debugging this cannot find it, and the recovery path it would
+   lead to is `/bulk/ignored-events/retry`, which is the thing you actually need.
 2. **The distinction is a docs gap.** Nothing an agent is likely to read explains that
    `listen` being down loses events while the server being down does not.
 3. **This is a regression scenario**, once the docs say something for it to be scored
