@@ -297,11 +297,9 @@ async function checkHandler(
  * an agent following it builds. Scored a correct handler as broken until the
  * status codes gave it away: 401 for a forged Hookdeck signature, 400 for a
  * good one with no Stripe signature behind it.
- */
-/**
- * Carries every header a real delivery carries, not just the signature.
  *
- * Hookdeck forwards `x-hookdeck-eventid`, `x-hookdeck-source-name` and
+ * The same argument extends past the signature to every header a real delivery
+ * carries. Hookdeck forwards `x-hookdeck-eventid`, `x-hookdeck-source-name` and
  * `x-hookdeck-verified` alongside the signature, and a handler is entitled to
  * check them. gpt-5.6 wrote one that required the source name to match and an
  * event id to be present, which is defence in depth and correct, and a probe
