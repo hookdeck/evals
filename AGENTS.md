@@ -186,6 +186,15 @@ agent was right and the scorer was wrong, and each time it looked like an agent
 failure until someone read the transcript. A scorer that finds nothing is more
 likely broken than proof that nothing happened.
 
+**`hookdeck/core` answers questions the spec cannot.** The OpenAPI spec gives
+shapes; it does not say what a provider's signature header must look like, or
+what happens when a CLI destination has no session. Both were settled by reading
+`server/integrations/index.ts` (per-provider HMAC config: algorithm, header key,
+encoding, whether the timestamp prefixes the body) and
+`server/services/event/EventIngestion/createEventsFromRequest.ts` (the
+`CLI_DISCONNECTED` ignore branch). Read it before asserting product behaviour in
+a scenario or a finding.
+
 **Verify API shapes against the live spec, then against a real call.**
 `reference/hookdeck-openapi.json` is fetched from the live API; refresh it with
 the command in `reference/README.md`. Do not use `hookdeck/hookdeck-api-schema`,
