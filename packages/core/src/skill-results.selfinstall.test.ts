@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { findSelfInstalledSkills } from './skill-results.js';
 import type { ToolCallRecord } from './index.js';
@@ -58,17 +57,19 @@ describe('findSelfInstalledSkills', () => {
   });
 
   it('finds the install in the run that prompted this check', () => {
-    // Regression against the real transcript: BM1's first run installed a
-    // provider skill mid-run, which is how this was discovered at all.
-    const path = new URL(
-      '../../../results/claude-code-sonnet-5/benchmark-verification-001-stripe-express.json',
-      import.meta.url
-    );
-    const result = JSON.parse(readFileSync(path, 'utf8')) as {
-      toolCalls: ToolCallRecord[];
-    };
+    // The command verbatim from BM1's first run, which is how self-installation
+    // was discovered at all. Copied in rather than read from `results/`: that
+    // directory is gitignored, so a test reading it passes on the machine that
+    // produced the run and fails on a fresh clone and in CI.
     expect(
-      findSelfInstalledSkills(result.toolCalls, ['hookdeck', 'event-gateway'])
+      findSelfInstalledSkills(
+        [
+          call(
+            'npx skills add hookdeck/webhook-skills --skill stripe-webhooks -y -g 2>&1'
+          ),
+        ],
+        ['hookdeck', 'event-gateway']
+      )
     ).toContain('stripe-webhooks');
   });
 });
