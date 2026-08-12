@@ -183,6 +183,11 @@ range and discriminating below it is a floor, and a floor is worth publishing.
 supabase/evals is the same shape: twelve of their nineteen scenarios are passed
 by every agent.
 
+**`pnpm -r build` and `pnpm typecheck` are not the same check.** The build
+passed while `typecheck` reported a real error in `packages/hookdeck`, because
+they cover different project references. Run both before claiming green; CI now
+runs both, plus tests, which it did not until this was found.
+
 **Probe a scorer's own queries against a real project before trusting a red
 result.** This has bitten most times a scorer has gone red: source verification config is redacted on
 read, so it cannot be inspected; `/events` omits the payload unless you pass

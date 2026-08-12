@@ -38,7 +38,8 @@ export interface SeedResource {
 export interface SeedStep {
   path: string;
   method?: HttpMethod;
-  body?: unknown;
+  /** A JSON request body. `$ref:<name>` placeholders are resolved before sending. */
+  body?: Record<string, unknown>;
 }
 
 export interface SeedEvent {
@@ -154,7 +155,7 @@ export async function applySeed(
     await client.request(
       step.method ?? 'PUT',
       resolvePathRefs(step.path, refs),
-      resolveRefs(step.body, refs)
+      step.body ? resolveRefs(step.body, refs) : undefined
     );
   }
 

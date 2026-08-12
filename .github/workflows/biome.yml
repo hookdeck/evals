@@ -1,4 +1,4 @@
-name: Code Quality
+name: Checks
 
 on:
   pull_request:
@@ -29,3 +29,16 @@ jobs:
 
       - name: Check formatting
         run: pnpm format:check
+
+      # Added because none of these ran in CI. The workflow was inherited as
+      # formatting-only, and two defects reached `main` that any of them would
+      # have caught: a test reading a gitignored results file, and a type error
+      # that `pnpm -r build` does not surface but `pnpm typecheck` does.
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm -r test
+
+      - name: Build
+        run: pnpm -r build
