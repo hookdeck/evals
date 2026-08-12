@@ -36,6 +36,18 @@ import type {
  * the scorer runs the process itself, and the tunnel belongs to the local-dev
  * scenario that is actually about tunnels.
  */
+/**
+ * Also in `local/.env`, which is how the agent gets it: the developer in this
+ * scenario has their Stripe endpoint secret already, and without it no agent can
+ * set `webhook_secret_key` on the source, so "the source accepts a genuine
+ * Stripe signature" is unpassable however good the agent is.
+ *
+ * That file is force-added. The root `.gitignore` has a bare `.env`, which git
+ * matches at any depth, so `local/.env` was silently untracked: every run on the
+ * machine that wrote it passed, and a fresh checkout — CI — would have failed
+ * this scenario for every agent, with a red check that reads like the agent
+ * skipped verification. If it is ever recreated, `git add -f` it.
+ */
 const STRIPE_WEBHOOK_SECRET = 'whsec_51KzQmTestSecretForEvalsOnly0xA9';
 const PORT = 3100;
 /** Ingestion is not synchronous with the POST. */
@@ -105,9 +117,13 @@ async function checkSourceAcceptsStripe(
   await postToSource(sourceUrl, body, 't=1,v1=deadbeef');
   await new Promise((resolve) => setTimeout(resolve, INGEST_WAIT_MS));
 
+  // Newest first and explicitly so: this project accumulates requests across
+  // every run forever (they cannot be deleted), so an unordered or
+  // oldest-first `limit=100` risks never reaching the two just sent once the
+  // project's history passes a hundred rows. Same hazard BM3 hit on `/events`.
   const { models } = await ctx.api<{
     models?: { created_at?: string; verified?: boolean }[];
-  }>('GET', '/requests?limit=100');
+  }>('GET', '/requests?limit=100&order_by=created_at&dir=desc');
   const mine = (models ?? []).filter(
     (r) => r.created_at && new Date(r.created_at) >= sentAt
   );

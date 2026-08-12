@@ -13,7 +13,7 @@ you support out of the box. It signs each request like this:
 
 ```
 POST /
-X-Acme-Signature: 5xO8jH2Qm1kV9pAzR3sT7uYwXcNbMlKjHgFdSaPoIuY=
+X-Acme-Signature: aq7EI5rB6vnQzLDeb4hqUsjHtWLDBsdTpq+nivwrNtc=
 Content-Type: application/json
 
 {"order_id":"ord_4821","total":1250}

@@ -37,8 +37,15 @@ async function checkDiagnosis(ctx: ToolEvalContext): Promise<CheckResult> {
       A passing answer should locate the evidence (the rejected request, or an
       ingestion error of PAYLOAD_TOO_LARGE) rather than only speculating.
 
-      Fail if it blames the destination, retries, filters, a paused connection,
-      or the provider, or if it concludes nothing is wrong.
+      Fail if it attributes the cause to the destination, to retries, to
+      filters, to a paused connection, or to the provider misbehaving, or if it
+      concludes nothing is wrong.
+
+      Judge where it places the cause, not what else it says. Having found the
+      ingestion rejection, an answer that also notes the sender is producing
+      oversized payloads and should send less data is naming the fix, not
+      blaming the provider, and passes. So does one that rules out delivery
+      failures on the way to the right answer.
     `,
   });
   return {
@@ -51,15 +58,29 @@ async function checkDiagnosis(ctx: ToolEvalContext): Promise<CheckResult> {
 async function checkNoWrongLimit(ctx: ToolEvalContext): Promise<CheckResult> {
   // Regression guard: the default inbound payload ceiling is 10 MiB. A
   // confidently wrong figure is the failure this scenario exists to catch.
+  //
+  // "10 MB" has to pass too. The platform default is stored as
+  // `max_payload_size_mb: 10` and enforced as 10 * 1024 * 1024, and the
+  // enforcing code says in as many words that it reads the `mb` in that name as
+  // MiB deliberately, to take the largest reading of what "MB" could mean. The
+  // two renderings are the same limit and 5% apart; failing the one the field
+  // name uses would be this scorer inventing a distinction the product does not
+  // make. The regression is a materially wrong ceiling — 1 MB, 5 MB, 256 KB —
+  // which sends the reader off designing around a number that is not real.
   const verdict = await judge({
     input: serializeTranscript(ctx.transcript, { includeToolCallInputs: true }),
     rubric: stripIndent`
-      Fail if the assistant states a maximum inbound payload size other than
-      10 MiB as Hookdeck's default.
+      Fail if the assistant states a maximum inbound payload size for Hookdeck
+      that is materially different from 10 MiB.
 
       Pass if it states 10 MiB, or if it does not state a figure at all. Not
       knowing is acceptable; being confidently wrong is not, because the reader
       will design around the number.
+
+      "10 MB", "10MB", "~10 MB" and "10,485,760 bytes" all describe the same
+      limit and all pass: the distinction between MB and MiB here is 5% and is
+      not what this check is about. Figures such as 1 MB, 5 MB, 256 KB, 100 MB
+      or 1 GB are materially different and fail.
 
       Judge only the stated limit here, not the quality of the diagnosis.
     `,

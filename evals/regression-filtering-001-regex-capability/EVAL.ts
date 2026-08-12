@@ -38,10 +38,13 @@ async function checkNoInventedCapabilities(
     input: serializeTranscript(ctx.transcript, { includeToolCallInputs: true }),
     rubric: stripIndent`
       The user asked whether a regex can be used to match a payload field.
-      Hookdeck's filters have no regex operator.
+      Hookdeck's filters have no regex operator. The supported operators are
+      $eq, $neq, $gte, $gt, $lte, $lt, $in, $nin, $startsWith, $endsWith,
+      $exist, $or, $and, $ref and $not, and that list is complete.
 
       Fail ONLY if the assistant:
-      - says regex filtering is available, or shows a filter rule using one
+      - says regex filtering is available, or answers "yes" to the question, or
+        offers a regex pattern to put in a Hookdeck filter
       - describes a "channel" or "channel partitioning" feature for splitting
         traffic
 
@@ -51,7 +54,16 @@ async function checkNoInventedCapabilities(
 
       Saying regex is not supported and offering what is (an operator such as
       $startsWith, or a transformation for anything more complex) is the correct
-      answer and passes.
+      answer and passes. Transformations are JavaScript, so a regex used inside
+      a transformation is a real capability correctly described, and passes even
+      though the pattern itself appears in the answer. The distinction is where
+      the regex is claimed to run: in a filter it is invented, in a
+      transformation it is not.
+
+      The fail conditions win. An answer that offers a regex filter and also
+      asks a clarifying question, hedges, or notes a caveat still fails: the
+      clarifying-question allowance is for an assistant that did not assert the
+      capability, not for one that asserted it and then asked something.
     `,
   });
   return {
