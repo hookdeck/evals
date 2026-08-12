@@ -1017,6 +1017,47 @@ The lesson is narrower than the arithmetic: a residual is not a measurement. Att
 an unexplained remainder to the thing currently under discussion is how a plausible
 number becomes a decision.
 
+### gpt-5.6 on the full suite, and a scorer that punished thoroughness
+
+The second frontier agent, fourteen scenarios plus Outpost. Eleven pass. Of the four
+that do not, one is a real failure, one is a missing key, and two were the scorer.
+
+**Real: local delivery.** It tried the API key, was told it was invalid, and fell back
+to a guest Console workspace. Same outcome as the weak model, and the same CLI issue
+(hookdeck-cli#334), but with a difference worth recording: it *told the user* it had
+fallen back. The weak model did not. Both produce a setup that is not in the customer's
+project; only one of them is honest about it.
+
+**Not a failure: Outpost.** `OUTPOST_API_KEY` was added after the run started, so the
+scenario reported the skip it is designed to report. It still records as `passed:
+false`, which is the flaw described below.
+
+**The scorer's, twice.** Both verification scenarios failed on "the handler accepts a
+genuine signature", and the handler was right. gpt-5.6 wrote this:
+
+```js
+if (hookdeckSource !== 'stripe-checkout' || hookdeckVerified !== 'true' || !hookdeckEventId) {
+  return res.status(401).json({ error: 'Unverified webhook source' });
+}
+```
+
+Hookdeck forwards `x-hookdeck-eventid`, `x-hookdeck-source-name` and
+`x-hookdeck-verified` alongside the signature, and checking them is defence in depth.
+The probe sent only the signature and `x-hookdeck-verified`, so a correct handler
+rejected it. Claude Code passed the same check because its handler happened not to
+check those headers.
+
+**So the scenario was scoring the less thorough handler higher**, which is the exact
+inverse of what it exists to measure. The probe now carries the full header set,
+including the source name read from the project rather than assumed.
+
+This is the same mistake as signing only as Hookdeck, and as searching for a body field
+the task removes: a probe that is not what the real thing sends measures the probe. It
+has now happened often enough to be the single most reliable source of defects in this
+suite, and the convention already in `AGENTS.md` did not prevent it. What would have
+caught it sooner is the discipline that did catch it: when a scorer and an agent
+disagree, read what the agent actually built before believing the score.
+
 ### Findings raised, and where
 
 Every product finding from the suite has been filed against the repo that owns it, with

@@ -52,7 +52,7 @@ const scorer: ToolScorer = async (ctx) => {
   const checks: CheckResult[] = [
     { name: 'created an ElevenLabs source', passed: true },
     ...(await checkSourceVerifies(ctx, String(source.url))),
-    ...(await checkHandler(ctx)),
+    ...(await checkHandler(ctx, String(source.name ?? ''))),
   ];
 
   return { passed: checks.every((c) => c.passed), checks };
@@ -97,7 +97,10 @@ async function checkSourceVerifies(
   ];
 }
 
-async function checkHandler(ctx: ToolEvalContext): Promise<CheckResult[]> {
+async function checkHandler(
+  ctx: ToolEvalContext,
+  sourceName: string
+): Promise<CheckResult[]> {
   const names = [
     'the service accepts a genuine Hookdeck signature',
     'the service rejects a forged signature',
@@ -133,9 +136,15 @@ async function checkHandler(ctx: ToolEvalContext): Promise<CheckResult[]> {
     const valid = await postToService(
       ctx,
       body,
-      hookdeckSignature(body, secret)
+      hookdeckSignature(body, secret),
+      sourceName
     );
-    const forged = await postToService(ctx, body, 'bm90LWEtc2lnbmF0dXJl');
+    const forged = await postToService(
+      ctx,
+      body,
+      'bm90LWEtc2lnbmF0dXJl',
+      sourceName
+    );
 
     const log =
       valid === 200
@@ -198,16 +207,29 @@ async function postToSource(
   });
 }
 
+/**
+ * Carries every header a real delivery carries, not just the signature.
+ *
+ * Hookdeck forwards `x-hookdeck-eventid`, `x-hookdeck-source-name` and
+ * `x-hookdeck-verified` alongside the signature, and a handler is entitled to
+ * check them. gpt-5.6 wrote one that required the source name to match and an
+ * event id to be present, which is defence in depth and correct, and a probe
+ * that omitted them scored it as rejecting valid traffic. The scenario was
+ * penalising the more thorough handler.
+ */
 async function postToService(
   ctx: ToolEvalContext,
   body: string,
-  signature: string
+  signature: string,
+  sourceName: string
 ): Promise<number> {
   const result = await ctx.sandbox?.exec(
     `curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:${PORT}/transcripts ` +
       `-H 'Content-Type: application/json' ` +
       `-H 'x-hookdeck-signature: ${signature}' ` +
       `-H 'x-hookdeck-verified: true' ` +
+      `-H 'x-hookdeck-eventid: evt_scored_probe' ` +
+      `-H 'x-hookdeck-source-name: ${sourceName}' ` +
       `-H 'ElevenLabs-Signature: ${elevenLabsSignature(body)}' ` +
       `--data-binary '${body}'`
   );
