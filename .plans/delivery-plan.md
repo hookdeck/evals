@@ -883,6 +883,11 @@ Phase 1 overlap.
    `receive-webhooks`. First real use of the provisioner.
 3. **BM12, BM13 (Outpost).** Scored against managed Outpost, which means an Outpost
    project on the Hookdeck platform rather than a self-hosted open-source instance.
+   BM12 is built: an `OutpostClient`, an optional `ctx.outpost` on the scoring context,
+   and a scenario that asks for a customer subscription and one delivered event. BM13
+   is not, and should wait until BM12 has run: it seeds an existing Next.js app and
+   runs the agent's code, so it is worth building on how the Outpost API actually
+   behaves rather than on how the spec reads.
    BM13 is promoted from outpost/08. These move after the provisioner rather than
    alongside it; see below for why the ordering changed.
 4. **BM2, BM3, BM4, BM5 (build, event-gateway).** Config-heavy, all deterministic

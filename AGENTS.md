@@ -320,6 +320,14 @@ collide. Do not try to serialise via a GitHub Actions
 concurrency group: a group holds one running and one pending job and cancels the
 rest. Shard instead.
 
+**Outpost state is not reset between runs.** `FixedProjectSource` snapshots and
+restores the Hookdeck project, and knows nothing about Outpost. Tenants and
+destinations an Outpost run creates survive into the next one, so the second run
+of a scenario finds `acme` already there and may score a previous run's work.
+`OutpostClient.deleteTenant` exists for this and is not yet wired into release.
+Until it is, treat Outpost results after the first run of a scenario as
+unreliable, and delete tenants by hand between runs.
+
 **Reset is to pristine, not to empty.** A new Hookdeck project ships with
 default issue triggers. The first acquire snapshots what the project contains,
 and every reset deletes only what a run added.

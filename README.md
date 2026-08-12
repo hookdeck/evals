@@ -161,6 +161,22 @@ run added.
 through the API, so a shared project accumulates history, and a scorer that just asks
 "did an event arrive?" will eventually say yes because of an earlier run.
 
+## Outpost
+
+Outpost is a separate product with a separate API, and scenarios that use it need
+`OUTPOST_API_KEY` in `.env`: a managed Outpost project on the Hookdeck platform, not a
+self-hosted instance. Without it those scenarios report a skip rather than failing, so
+the rest of the suite runs normally on a machine that has no Outpost project.
+
+Scorers reach it through `ctx.outpost`, which is present only when the key is set. It
+is deliberately separate from `ctx.api`: Outpost inverts the gateway's model, in that a
+tenant is your customer, the tenant owns destinations, and events are published to
+topics rather than routed from sources.
+
+**Outpost state is not reset between runs yet.** The provisioner restores the Hookdeck
+project and does not touch Outpost, so tenants an Outpost run creates persist. See
+`AGENTS.md`.
+
 ## Skills
 
 Skills come from [`hookdeck/agent-skills`](https://github.com/hookdeck/agent-skills), pinned as a git submodule at `submodules/agent-skills`. A `skills/` directory of symlinks into the submodule exposes them to experiments: `hookdeck` (routes to the right product skill), `event-gateway`, and `outpost`.
