@@ -150,6 +150,20 @@ function discoverEvals(): EvalManifest[] {
   return out;
 }
 
+/**
+ * Requirements a scenario declares that this machine cannot satisfy.
+ *
+ * Keyed off the same environment variables the runtime uses, so a scenario is
+ * skipped for exactly the reason its scorer would otherwise have had to detect
+ * and report.
+ */
+function unmetRequirements(ev: EvalManifest): string[] {
+  const available: Record<string, boolean> = {
+    outpost: Boolean(process.env.OUTPOST_API_KEY),
+  };
+  return (ev.metadata.requires ?? []).filter((r) => !available[r]);
+}
+
 type ToolsSkill = { name: string; description: string; body: string };
 
 /**
@@ -640,6 +654,17 @@ async function main() {
       }
       if (config.skipEval?.(ev)) {
         console.log(`SKIP ${name} x ${ev.id} (skipEval)`);
+        continue;
+      }
+      // A scenario whose declared capability is unavailable is not run at all.
+      // Scoring it would put an absent API key on the scoreboard as though an
+      // agent had failed something, which on a page comparing named agents is a
+      // misrepresentation rather than a rough edge.
+      const unmet = unmetRequirements(ev);
+      if (unmet.length > 0) {
+        console.log(
+          `SKIP ${name} x ${ev.id} (requires ${unmet.join(', ')}; not configured)`
+        );
         continue;
       }
       if (DRY) {

@@ -5,6 +5,8 @@ product:
   - outpost
 topic:
   - sdk
+requires:
+  - outpost
 motivation: The reason people adopt Outpost. Sending webhooks to your own customers is a product feature, and every team that builds it by hand rebuilds retries, verification and a subscription model badly.
 ---
 

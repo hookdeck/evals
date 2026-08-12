@@ -4,6 +4,15 @@ import { z } from 'zod';
 // It becomes real if we cover config promotion between environments or
 // self-hosting Outpost.
 export const evalStageSchema = z.enum(['build', 'investigate', 'resolve']);
+
+/**
+ * Capabilities a scenario can declare a dependency on. Kept to things whose
+ * absence is an environment fact rather than a result, so an unmet requirement
+ * means "not run here" rather than "the agent could not do it".
+ */
+export const evalRequirementSchema = z.enum(['outpost']);
+export const EVAL_REQUIREMENTS = evalRequirementSchema.options;
+export type EvalRequirement = z.infer<typeof evalRequirementSchema>;
 export const EVAL_STAGES = evalStageSchema.options;
 export type EvalStage = z.infer<typeof evalStageSchema>;
 
@@ -130,6 +139,16 @@ export type EvalMetadata = {
    */
   hostedProject?: boolean;
   /**
+   * Capabilities this scenario cannot run without, e.g. `['outpost']`.
+   *
+   * A scenario whose requirement is unmet is skipped rather than scored. It was
+   * previously the scorer's job to notice and return `passed: false`, which put
+   * a missing API key on the scoreboard as though an agent had failed a
+   * capability. On a published page comparing named agents that is a
+   * misrepresentation, not a rough edge.
+   */
+  requires?: EvalRequirement[];
+  /**
    * Overrides the experiment's `skills` list for this eval only. An empty
    * list (`skills: []`) tests an agent with no pre-installed Hookdeck
    * skills, regardless of which experiment runs it — for a scenario where
@@ -165,6 +184,7 @@ export const evalMetadataSchema = z.object({
   // non-empty string as true.
   projectRunning: z.union([z.boolean(), z.stringbool()]).optional(),
   hostedProject: z.union([z.boolean(), z.stringbool()]).optional(),
+  requires: z.array(evalRequirementSchema).optional(),
   skills: z.array(z.string().min(1)).optional(),
   skipCliInstall: z.union([z.boolean(), z.stringbool()]).optional(),
 });
