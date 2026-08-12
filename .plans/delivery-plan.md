@@ -973,6 +973,36 @@ project forces the matrix to run one job at a time. That is the constraint the
 org-level key removes, and it is what makes it worth asking about rather than waiting
 for.
 
+### Re-baselined again, and the median has moved
+
+The earlier re-baseline was three regression scenarios at a $0.40 median, which matched
+the estimate borrowed from Outpost transcripts. Eight benchmark scenarios later the
+picture is different, because the scenarios got more demanding.
+
+| | Cost |
+|---|---|
+| Cheapest (filtering, config only) | $0.40 |
+| Median | $0.97 |
+| Mean | $1.32 |
+| Dearest (ElevenLabs, runs a service) | $3.27 |
+| One pass of all eight, one experiment | $10.58 |
+
+The three most expensive all run the agent's code: install dependencies, start a
+service, probe it. That is also what makes them the scenarios worth having, so the cost
+is buying something rather than leaking.
+
+Scale it honestly before scheduling anything. Ten benchmark scenarios across four
+experiments is roughly $50 a pass at the current mean, and the plan's weekly figure of
+about $50 assumed three models against a cheaper suite. A weekly full run is therefore
+nearer $50 than the $50 it was estimated at only by coincidence: the scenario count
+went up as the per-scenario cost went up.
+
+Two levers if that is too much, neither of which needs deciding yet. Run the expensive
+scenarios on fewer experiments, since a scenario that runs a service is exactly the one
+least likely to differ between two frontier models. Or run the full suite fortnightly
+and the cheap half weekly. Both are better than dropping the code-running scenarios,
+which are the ones that have produced every product finding.
+
 ### What a weekly full run costs
 
 12 benchmark scenarios, 6 experiments (docs-only, +MCP, +skills, on Claude Code and
