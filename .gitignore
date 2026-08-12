@@ -12,3 +12,6 @@ results/*/
 # Runtime artefact: the provisioner writes this on first acquire.
 .hookdeck-pristine.json
 **/.hookdeck-pristine.json
+
+# Agent worktrees. Real git repos; never part of this one.
+.claude/worktrees/

@@ -1364,7 +1364,7 @@ for a docs change to land and deploy.
 | G4 | The reproduce-this command | Before page copy freezes | One command on the page. Depends on the plugin decision (Q5) |
 | G5 | Launch date, footer link copy, changelog entry | After Phase 4 | Social, changelog, community Slack, AEO |
 
-**Tell product marketing now:** the published page is an Astro page he builds, consuming the
+**Tell product marketing now:** the published page is an Astro page product marketing builds, consuming the
 exported `eval-results.json`. hookdeck.com is Astro; supabase/evals' results app is
 Vite plus React (`apps/web`, 3,670 lines) and serves us as a local preview for the
 scenario-authoring loop. G1 exists to unblock him early, since this is real scope the
