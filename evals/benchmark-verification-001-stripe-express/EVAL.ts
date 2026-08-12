@@ -36,6 +36,18 @@ import type {
  * the scorer runs the process itself, and the tunnel belongs to the local-dev
  * scenario that is actually about tunnels.
  */
+/**
+ * Also in `local/.env`, which is how the agent gets it: the developer in this
+ * scenario has their Stripe endpoint secret already, and without it no agent can
+ * set `webhook_secret_key` on the source, so "the source accepts a genuine
+ * Stripe signature" is unpassable however good the agent is.
+ *
+ * That file is force-added. The root `.gitignore` has a bare `.env`, which git
+ * matches at any depth, so `local/.env` was silently untracked: every run on the
+ * machine that wrote it passed, and a fresh checkout — CI — would have failed
+ * this scenario for every agent, with a red check that reads like the agent
+ * skipped verification. If it is ever recreated, `git add -f` it.
+ */
 const STRIPE_WEBHOOK_SECRET = 'whsec_51KzQmTestSecretForEvalsOnly0xA9';
 const PORT = 3100;
 /** Ingestion is not synchronous with the POST. */
@@ -105,9 +117,13 @@ async function checkSourceAcceptsStripe(
   await postToSource(sourceUrl, body, 't=1,v1=deadbeef');
   await new Promise((resolve) => setTimeout(resolve, INGEST_WAIT_MS));
 
+  // Newest first and explicitly so: this project accumulates requests across
+  // every run forever (they cannot be deleted), so an unordered or
+  // oldest-first `limit=100` risks never reaching the two just sent once the
+  // project's history passes a hundred rows. Same hazard BM3 hit on `/events`.
   const { models } = await ctx.api<{
     models?: { created_at?: string; verified?: boolean }[];
-  }>('GET', '/requests?limit=100');
+  }>('GET', '/requests?limit=100&order_by=created_at&dir=desc');
   const mine = (models ?? []).filter(
     (r) => r.created_at && new Date(r.created_at) >= sentAt
   );
@@ -281,11 +297,9 @@ async function checkHandler(
  * an agent following it builds. Scored a correct handler as broken until the
  * status codes gave it away: 401 for a forged Hookdeck signature, 400 for a
  * good one with no Stripe signature behind it.
- */
-/**
- * Carries every header a real delivery carries, not just the signature.
  *
- * Hookdeck forwards `x-hookdeck-eventid`, `x-hookdeck-source-name` and
+ * The same argument extends past the signature to every header a real delivery
+ * carries. Hookdeck forwards `x-hookdeck-eventid`, `x-hookdeck-source-name` and
  * `x-hookdeck-verified` alongside the signature, and a handler is entitled to
  * check them. gpt-5.6 wrote one that required the source name to match and an
  * event id to be present, which is defence in depth and correct, and a probe

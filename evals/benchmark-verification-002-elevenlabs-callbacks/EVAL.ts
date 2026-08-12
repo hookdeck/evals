@@ -29,6 +29,14 @@ import type {
  * routing: a CLI destination with no session ignores requests rather than
  * queueing them, which failed BM1 for a reason that had nothing to do with it.
  */
+/**
+ * Also in `local/.env`, which is how the agent gets it, and which is force-added
+ * because the root `.gitignore` has a bare `.env` that git matches at any depth.
+ * Untracked, it exists only on the machine that wrote it: local runs pass and a
+ * fresh checkout fails "the source accepts a genuine ElevenLabs signature" for
+ * every agent, because none of them can set `webhook_secret_key` without it.
+ * See the same note in BM1. If it is ever recreated, `git add -f` it.
+ */
 const ELEVENLABS_SECRET = 'wsec_e11_7Qm2vB9xLpTestOnly';
 const PORT = 5100;
 const INGEST_WAIT_MS = 8_000;
@@ -74,9 +82,13 @@ async function checkSourceVerifies(
   await postToSource(sourceUrl, body, 't=1,v0=deadbeef');
   await new Promise((resolve) => setTimeout(resolve, INGEST_WAIT_MS));
 
+  // Newest first and explicitly so: this project accumulates requests across
+  // every run forever (they cannot be deleted), so an unordered or
+  // oldest-first `limit=100` risks never reaching the two just sent once the
+  // project's history passes a hundred rows. Same hazard BM3 hit on `/events`.
   const { models } = await ctx.api<{
     models?: { created_at?: string; verified?: boolean }[];
-  }>('GET', '/requests?limit=100');
+  }>('GET', '/requests?limit=100&order_by=created_at&dir=desc');
   const mine = (models ?? []).filter(
     (r) => r.created_at && new Date(r.created_at) >= sentAt
   );

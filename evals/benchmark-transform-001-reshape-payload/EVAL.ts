@@ -27,7 +27,12 @@ import type {
  * deliberately: cents-to-units would be ambiguous and this scenario is about
  * completeness, not arithmetic.
  */
-const INGEST_WAIT_MS = 12_000;
+/** The source the seed creates. The probe has to go to this one, not whichever
+ * source happens to sort first. */
+const SOURCE_NAME = 'payments';
+/** Ingestion is not synchronous with the POST, so the probe polls for its event. */
+const POLL_INTERVAL_MS = 2_000;
+const POLL_TIMEOUT_MS = 20_000;
 
 const scorer: ToolScorer = async (ctx) => {
   const source = await findSource(ctx);
@@ -92,19 +97,30 @@ function describe(
 /**
  * Send one event in the old format and read back what the destination received.
  *
- * Scoped by time rather than by a marker in the body, which is the only thing
- * that works here: the task is to replace the body, so any field the probe
- * plants can legitimately be removed by a correct answer. The first version
- * searched for a probe id and a correct transformation stripped it, so the
- * scorer reported that nothing routed at all. Runs hold the project
- * exclusively, so the newest event after the probe was sent is ours.
+ * Scoped by the request the probe itself created, not by a marker in the body
+ * and not by wall-clock time. A marker cannot work here: the task is to replace
+ * the body, so any field the probe plants can legitimately be removed by a
+ * correct answer, and the first version searched for a probe id that a correct
+ * transformation stripped, reporting that nothing routed at all.
+ *
+ * Time-scoping replaced it and has its own hazard. `sentAt` is the scorer's
+ * clock and `created_at` is Hookdeck's, so a second of skew in the wrong
+ * direction discards the probe's own event and the scenario fails with "nothing
+ * routed" against a correct transformation. Events cannot be deleted from a
+ * shared project either, so the window cannot simply be widened: the seeded
+ * events carry the pre-transformation shape and would score as a failure.
+ *
+ * The ingest response carries the `request_id`, and `/requests/{id}/events`
+ * returns exactly the events that request produced. That is exact rather than
+ * approximate, immune to skew and to accumulated history. Time-scoping stays as
+ * a fallback for the case where the ingest response is not the shape we expect.
  */
 async function deliverProbe(
   ctx: ToolEvalContext,
   sourceUrl: string
 ): Promise<{ body: Record<string, unknown> } | undefined> {
   const sentAt = new Date();
-  await fetch(sourceUrl, {
+  const res = await fetch(sourceUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -115,22 +131,75 @@ async function deliverProbe(
       created: 1786000000,
     }),
   });
-  await new Promise((resolve) => setTimeout(resolve, INGEST_WAIT_MS));
+  const requestId = await ingestedRequestId(res);
 
+  const deadline = Date.now() + POLL_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+    const body = requestId
+      ? await bodyForRequest(ctx, requestId)
+      : await bodyAfter(ctx, sentAt);
+    if (body) return { body };
+  }
+  return undefined;
+}
+
+/** The ingest endpoint answers with the id of the request it recorded. */
+async function ingestedRequestId(res: Response): Promise<string | undefined> {
+  try {
+    const json = (await res.json()) as { request_id?: unknown };
+    return typeof json.request_id === 'string' ? json.request_id : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Exactly the events this request produced, whatever else the project holds. */
+async function bodyForRequest(
+  ctx: ToolEvalContext,
+  requestId: string
+): Promise<Record<string, unknown> | undefined> {
+  const { models } = await ctx.api<{
+    models?: { data?: { body?: unknown } }[];
+  }>('GET', `/requests/${requestId}/events?limit=10&include=data`);
+  return firstObjectBody(models);
+}
+
+/** Fallback: the newest event recorded since the probe was sent. */
+async function bodyAfter(
+  ctx: ToolEvalContext,
+  sentAt: Date
+): Promise<Record<string, unknown> | undefined> {
   const { models } = await ctx.api<{
     models?: { created_at?: string; data?: { body?: unknown } }[];
   }>('GET', '/events?limit=20&include=data&order_by=created_at&dir=desc');
+  const since = (models ?? []).filter(
+    (e) => e.created_at && new Date(e.created_at) >= sentAt
+  );
+  return firstObjectBody(since);
+}
 
-  for (const event of models ?? []) {
-    if (!event.created_at || new Date(event.created_at) < sentAt) continue;
+function firstObjectBody(
+  events: { data?: { body?: unknown } }[] | undefined
+): Record<string, unknown> | undefined {
+  for (const event of events ?? []) {
     const body = event.data?.body;
     if (body && typeof body === 'object') {
-      return { body: body as Record<string, unknown> };
+      return body as Record<string, unknown>;
     }
   }
   return undefined;
 }
 
+/**
+ * The seeded source by name.
+ *
+ * Taking the first source the API returns was wrong: `/sources` is newest-first,
+ * so any source the agent created while working — a scratch source, a second
+ * one it decided it wanted — would be probed instead of the one the connection
+ * and the transformation hang off, and the scenario would report that nothing
+ * routed. Falling back to the first keeps a renamed source scoreable.
+ */
 async function findSource(
   ctx: ToolEvalContext
 ): Promise<Record<string, unknown> | undefined> {
@@ -138,5 +207,6 @@ async function findSource(
     'GET',
     '/sources?limit=100'
   );
-  return (models ?? [])[0];
+  const sources = models ?? [];
+  return sources.find((s) => s.name === SOURCE_NAME) ?? sources[0];
 }

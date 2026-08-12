@@ -7,6 +7,18 @@ import type {
 
 const SECRET = 'acme_whsec_5f2b91';
 const HEADER = 'X-Acme-Signature';
+/**
+ * The example request in PROMPT.md carries a real signature: base64 HMAC-SHA256
+ * of exactly the body shown, under exactly the secret shown. Keep it that way if
+ * either changes.
+ *
+ * It was invented before, and an agent that checked the example against the
+ * sentence describing it would have found them contradicting each other, with
+ * nothing to say which was authoritative — and a wrong reading of the scheme is
+ * the failure this scenario exists to catch. The prose was right and the example
+ * was noise; a scenario should not make thoroughness a liability.
+ */
+const EXAMPLE_BODY = JSON.stringify({ order_id: 'ord_4821', total: 1250 });
 
 /**
  * Scored functionally, by signing a request the way the provider would and
@@ -35,7 +47,7 @@ const scorer: ToolScorer = async (ctx) => {
   }
 
   const url = String(source.url ?? '');
-  const body = JSON.stringify({ order_id: 'ord_4821', total: 1250 });
+  const body = EXAMPLE_BODY;
   const signature = createHmac('sha256', SECRET).update(body).digest('base64');
 
   const accepted = await post(url, body, { [HEADER]: signature });
