@@ -13,18 +13,25 @@ import type {
  * next outage runs for a day. Every way of getting it wrong looks identical to
  * getting it right from the outside.
  *
- * Two ways to get it wrong, and both are checked: creating the trigger disabled,
- * and scoping it to connections it does not match. `IssueTriggerDeliveryConfigs`
- * takes either a name pattern with `*` as wildcard or an array of connection
- * ids, so a trigger scoped to the wrong pattern is configured, enabled, visible,
- * and silent.
+ * Three ways to get it wrong, and all three are checked: creating the trigger
+ * disabled, scoping it to connections it does not match, and giving it no
+ * notification channel. `IssueTriggerDeliveryConfigs` takes either a name
+ * pattern with `*` as wildcard or an array of connection ids, so a trigger
+ * scoped to the wrong pattern is configured, enabled, visible, and silent. And
+ * `channels` is a required field on create but every key inside it is
+ * optional, so `channels: {}` satisfies the API and produces a trigger that is
+ * enabled and correctly scoped but never notifies anyone:
+ * `NotificationService.send` in `hookdeck/core` (`server/services/Notification.ts`)
+ * loops `for (const provider in trigger.channels)`, which is a no-op on an
+ * empty object. The console's own create form defaults to `email: {selected:
+ * true}` for exactly this reason.
  *
  * Scored on configuration rather than by causing a real alert, which is a
  * compromise worth naming. The honest test is to break the destination, send
  * traffic, and wait for an issue to appear, but that depends on the retry cycle
  * completing and would take longer than a run and fail intermittently. So this
- * asks the two questions that decide whether an alert can fire at all, and
- * leaves observing one to a scenario built around the timing.
+ * asks the three questions that decide whether an alert can fire and reach
+ * someone, and leaves observing one to a scenario built around the timing.
  */
 const scorer: ToolScorer = async (ctx) => {
   const connection = await findConnection(ctx);
@@ -58,9 +65,10 @@ const scorer: ToolScorer = async (ctx) => {
       String(connection?.id ?? '')
     )
   );
+  const notifying = covering.filter((t) => hasNotificationChannel(t));
 
   return {
-    passed: covering.length > 0,
+    passed: notifying.length > 0,
     checks: [
       { name: 'created an alert for delivery failures', passed: true },
       {
@@ -78,6 +86,14 @@ const scorer: ToolScorer = async (ctx) => {
           covering.length > 0
             ? undefined
             : `scoped to connections that do not include ${String(connection?.name)}, so it will never fire`,
+      },
+      {
+        name: 'the alert has a notification channel configured',
+        passed: notifying.length > 0,
+        notes:
+          notifying.length > 0
+            ? undefined
+            : 'channels is missing or empty, so an opened issue notifies no one even though the trigger fires',
       },
     ],
   };
@@ -117,6 +133,22 @@ function coversConnection(
 
 function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * `channels` is required on create, but every key inside it is optional, so
+ * `channels: {}` (or a channel object whose only keys are themselves empty)
+ * satisfies the API and validates as configured while notifying no one.
+ * `NotificationService.send` iterates `trigger.channels` with a plain
+ * `for...in`, which is a no-op on an empty object, so this mirrors that check
+ * rather than trusting the key's mere presence.
+ */
+function hasNotificationChannel(trigger: Record<string, unknown>): boolean {
+  const channels = trigger.channels as
+    | Record<string, unknown>
+    | null
+    | undefined;
+  return !!channels && Object.keys(channels).length > 0;
 }
 
 async function deliveryTriggers(
