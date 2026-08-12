@@ -350,7 +350,29 @@ const judgeOutputSchema = z.object({
   notes: z.string(),
 });
 
-const DEFAULT_JUDGE_MODEL = openai('gpt-5.5');
+/**
+ * Upstream used `gpt-5.5` here. The judge runs once per judged check on every
+ * experiment, so it is a fixed cost on every pass whichever agent produced the
+ * run: measured at about $2.85 per fourteen-scenario pass, which across six
+ * experiments is comparable to adding a whole extra agent.
+ *
+ * Changed on evidence rather than arithmetic, because most of our judged checks
+ * are negatives that exist to catch invented capabilities, and a judge that
+ * misses one reports green while the thing the regression suite guards against
+ * recurs. `scripts/replay-judge.ts` re-judged every stored verdict with this
+ * model: 15 of 15 agreed with `gpt-5.5`, including both real catches, which are
+ * both the June regex hallucination.
+ *
+ * Fifteen cases with two catches is evidence, not proof. If a hallucination
+ * ever reaches a customer on a run the suite scored green, this line is the
+ * first thing to re-examine, and the replay script makes that cheap to redo as
+ * the judged set grows.
+ *
+ * The provider options are upstream's and deliberately kept: low reasoning
+ * effort and low verbosity are what make a judge affordable, and they matter
+ * more than the model choice.
+ */
+const DEFAULT_JUDGE_MODEL = openai('gpt-5.4-mini');
 const DEFAULT_JUDGE_PROVIDER_OPTIONS: AiSdkProviderOptions = {
   openai: {
     reasoningEffort: 'low',

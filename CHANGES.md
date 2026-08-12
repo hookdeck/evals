@@ -49,6 +49,21 @@ and every change since.
   takes a queueing concurrency group; results are committed to the dispatched
   branch rather than opened as a self-merging PR.
 
+- The default LLM judge is `gpt-5.4-mini` rather than upstream's `gpt-5.5`. The judge
+  runs once per judged check on every experiment, so it is a fixed cost on every pass
+  whichever agent produced the run: about $2.85 per fourteen-scenario pass, which across
+  six experiments is comparable to adding another agent.
+
+  Changed on measurement rather than arithmetic. Most judged checks here are negatives
+  guarding against invented capabilities, and a judge that misses one is worse than no
+  judge, because it reports green while the failure recurs. `apps/framework/scripts/
+  replay-judge.ts` re-judges stored transcripts and compares verdicts; `gpt-5.4-mini` at
+  low effort agreed with `gpt-5.5` on 15 of 15, including both real catches.
+
+  Upstream's provider options are kept unchanged: `reasoningEffort: 'low'` and
+  `textVerbosity: 'low'` are what make a judge affordable at all, and they were a
+  deliberate choice rather than a default.
+
 ## Retained
 
 Substantially unchanged from upstream:
