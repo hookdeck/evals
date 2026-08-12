@@ -91,14 +91,34 @@ Benchmark and regression never share a table or an aggregate number; regression 
 as its own quieter block. That matches the suite design, where the regression suite is
 deliberately excluded from the published scoreboard.
 
-## One mismatch to resolve
+## What this document is authoritative for
 
-The design proposes a three-rung ladder rendered as escalating blue: **baseline → +MCP →
-+skills**. There is no `+MCP` rung. The Event Gateway MCP server is read-only, eleven
-analysis tools that cannot create or mutate, so it should lift investigate and resolve
-while leaving build flat, and it was deliberately excluded as a launch row. The
-published axis is two rungs: `-no-skills` and `+skills`.
+The styling vocabulary above: colour, type, spacing, radius, the table pattern, and the
+four result states. Those derive from the website's own SCSS and do not go stale.
 
-Either the ladder becomes two rungs, or `+MCP` gets measured first and earns a third.
-The second is a real option but it is not the current plan, and a three-rung visual
-would imply data that does not exist.
+It is **not** authoritative on what the page should say or how it should be structured.
+The design project was drawn before most of the measurement work, against assumptions
+about what the benchmark would find, and several of those turned out wrong. Where its
+structure and the run data disagree, the run data wins. `AGENTS.md` carries current
+status and is more current than `.plans/evals-page-brief.md` on every number.
+
+Three known divergences:
+
+**The ladder is two rungs: `-no-skills` and `+skills`.** The design proposes three,
+rendered as escalating blue: baseline → +MCP → +skills. There is no `+MCP` rung to
+render. The Event Gateway MCP server is read-only, eleven analysis tools that cannot
+create or mutate, and it ships inside the CLI both arms already get. A third rung
+becomes real if a public read/write MCP ships, and not before. That is a product
+trigger, not a measurement we are choosing to defer.
+
+**The skills delta is not the headline.** The page brief says to make `-no-skills` vs
+`+skills` the easiest comparison on the page, because it was assumed to be the finding.
+Measured, it is zero on the build scenarios, at 39% and 56% more tokens. Publish it,
+because a flat delta honestly reported is worth more than an implied one, but do not
+build the hierarchy around it. The spread that carries signal is model capability: the
+frontier agents pass nearly everything and a deliberately weaker model fails several.
+
+**Cells in one grid are not the same age.** Frontier agents and the weak pair run
+weekly; the `-no-skills` twins run monthly. A single "last updated" stamp for the table
+would be wrong by up to four weeks on half the columns. Freshness is per experiment.
+The design has no treatment for this because the cadence was set after it was drawn.

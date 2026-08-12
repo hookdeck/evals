@@ -20,22 +20,42 @@ table we do not keep. A cost column would be populated for one agent and empty f
 the other, which is worse than absent.
 
 **Scale is smaller than the placeholder suggests.** The questionnaire's example reads
-"6 experiments x 40 evals". Today: 4 experiments x 6 scenarios, and only the
-benchmark suite is published, so the public grid is **4 x 3**. The regression suite
-(3 scenarios) is deliberately excluded from the scoreboard so narrow failure cases
-cannot drag or inflate the published numbers. Expect roughly 6 x 14 at launch. Design
-for tens of cells, not hundreds; a layout that needs density to look intentional will
-look empty for months.
+"6 experiments x 40 evals". Today: eighteen scenarios, fifteen benchmark and three
+regression, against five published experiments, so the public grid is at most
+**5 x 15**. The regression suite is deliberately excluded from the scoreboard so
+narrow failure cases cannot drag or inflate the published numbers. Design for tens of
+cells, not hundreds; a layout that needs density to look intentional will look empty
+for months.
 
-## The four experiments, and why the pairing matters
+**The grid is sparse, and it stays sparse.** Several scenarios have never run against
+several experiments, and one is capability-gated behind Outpost credentials so it
+deliberately reports a skip. "Not run" is a normal state here, not an edge case, and
+it has to read as distinct from a failure.
 
-`claude-code-sonnet-5` and `codex-gpt-5.6`, each with a `-no-skills` twin. A pair is
-identical apart from the skills list, so the gap between them is attributable to the
-skills and nothing else. That comparison is the headline: what skills measurably add
-over documentation alone. If the design makes one comparison easy, make it that one.
+**Cells in the same grid are not the same age.** Frontier agents and the weak pair run
+weekly; the `-no-skills` twins run monthly, because their measured delta is what got
+cut to fit the budget. Half the columns can therefore be up to four weeks staler than
+the other half. One "last updated" stamp for the table would be a false claim.
+Freshness is per experiment.
 
-Both arms get the Hookdeck CLI and a live API key. Neither is "documentation only",
-and the page should not imply it.
+## The experiments, and what the pairing actually showed
+
+`claude-code-sonnet-5` and `codex-gpt-5.6`, each with a `-no-skills` twin, plus
+`codex-gpt-5.4-mini-no-skills` as a deliberately weaker model. A pair is identical
+apart from the skills list, so the gap between them is attributable to the skills and
+nothing else.
+
+That comparison was assumed to be the headline. It isn't. Skills changed no outcome on
+either build scenario and cost 39% and 56% more. Publish the comparison, because a
+flat delta honestly reported is worth more than an implied one, but do not build the
+page's hierarchy around it.
+
+The spread that carries signal is model capability. The frontier agents pass nearly
+everything; the weak model fails several of the same scenarios. Flat at the top of the
+range and discriminating below it is a floor, and a floor is worth publishing.
+
+Every arm gets the Hookdeck CLI and a live API key. Nothing here is "documentation
+only", and the page should not imply it.
 
 ## Scoring shape, which constrains the layout
 
