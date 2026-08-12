@@ -1,20 +1,19 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/inter";
-@import "@fontsource-variable/manrope";
-@import "@fontsource-variable/source-code-pro";
+@import "@fontsource-variable/figtree";
+@import "@fontsource-variable/jetbrains-mono";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --font-heading:
-    "Manrope Variable", "Manrope", ui-sans-serif, system-ui, sans-serif;
+    "Figtree Variable", "Figtree", ui-sans-serif, system-ui, sans-serif;
   --font-sans:
-    "Inter Variable", "Inter", "Helvetica Neue", Helvetica, ui-sans-serif,
+    "Figtree Variable", "Figtree", "Helvetica Neue", Helvetica, ui-sans-serif,
     system-ui, sans-serif;
   --font-mono:
-    "Source Code Pro Variable", "Source Code Pro", ui-monospace, Menlo,
+    "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, Menlo,
     monospace;
   --text-base: 0.9375rem;
   --text-lg: 1rem;
@@ -68,13 +67,13 @@
 }
 
 /*
- * Semantic tokens, copied from the Supabase monorepo
- * (packages/ui/build/css/source/semantic.css) so the two stay in sync. Keep
- * edits here to a minimum and prefer re-copying when upstream changes.
+ * Semantic tokens. The structure (surface/elevation/contrast math) is kept
+ * from upstream supabase/evals' copy of the Supabase design system; the hue
+ * and brand values below are Hookdeck's, not Supabase's.
  * ThemeProvider selects a theme by putting `.light`/`.dark` on <html>.
  */
 :root {
-  --hue: 159;
+  --hue: 262;
   --surface-hue: var(--hue);
   --primary-hue: var(--hue);
   --chroma: 0.016;
@@ -108,7 +107,7 @@
   --muted-alpha: calc(var(--surface-overlay-unit) * var(--elevation-1));
   --accent-alpha: calc(var(--surface-overlay-unit) * var(--elevation-2));
   --tertiary-alpha: calc(var(--surface-overlay-unit) * var(--elevation-3));
-  --brand-hue-reference: 159;
+  --brand-hue-reference: 262;
   --status-hue-pull: 0.15;
   --warning-hue: clamp(
     65,
@@ -219,17 +218,17 @@
       calc(3% + 38% * var(--contrast-border))
   );
   --ring: oklch(from var(--primary) l c h / 55%);
-  /* Supabase brand green. Defined here as well as per theme so the utilities
-     built from it stay valid on the first paint, before ThemeProvider has put
-     a .light/.dark class on <html>. */
-  --brand-default: 153.1deg 60.2% 52.7%;
-  --brand-600: 154.9deg 59.5% 70%;
-  --brand-500: 154.9deg 100% 19.2%;
-  --brand-400: 155.5deg 100% 9.6%;
+  /* Hookdeck brand blue (#0044CC, hue 220 in sRGB/HSL space). Defined here as
+     well as per theme so the utilities built from it stay valid on the first
+     paint, before ThemeProvider has put a .light/.dark class on <html>. */
+  --brand-default: 220deg 60.2% 52.7%;
+  --brand-600: 220deg 59.5% 70%;
+  --brand-500: 220deg 100% 19.2%;
+  --brand-400: 220deg 100% 9.6%;
 }
 
 .light {
-  --hue: 159;
+  --hue: 262;
   --surface-hue: 34;
   --chroma: 0;
   --surface: 0.995;
@@ -241,14 +240,14 @@
   --warning-lightness: 0.68;
   --destructive-lightness: 0.52;
   --info-lightness: 0.54;
-  --brand-default: 152.9deg 60% 52.9%;
-  --brand-600: 156.5deg 86.5% 26.1%;
-  --brand-500: 155.3deg 78.4% 40%;
-  --brand-400: 151.3deg 66.9% 66.9%;
+  --brand-default: 220deg 60% 52.9%;
+  --brand-600: 220deg 86.5% 26.1%;
+  --brand-500: 220deg 78.4% 40%;
+  --brand-400: 220deg 66.9% 66.9%;
 }
 
 .dark {
-  --hue: 159;
+  --hue: 262;
   --chroma: 0.005;
   --surface: 0.19;
   --elevation-step: 0.025;
@@ -256,10 +255,10 @@
   --foreground-lightness: 0.95;
   --muted-foreground-level: 0.8;
   --tertiary-foreground-level: 0.65;
-  --brand-default: 153.1deg 60.2% 52.7%;
-  --brand-600: 154.9deg 59.5% 70%;
-  --brand-500: 154.9deg 100% 19.2%;
-  --brand-400: 155.5deg 100% 9.6%;
+  --brand-default: 220deg 60.2% 52.7%;
+  --brand-600: 220deg 59.5% 70%;
+  --brand-500: 220deg 100% 19.2%;
+  --brand-400: 220deg 100% 9.6%;
 }
 
 @layer base {

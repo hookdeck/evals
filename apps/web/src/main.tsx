@@ -8,7 +8,7 @@ import App from "./App.tsx"
 import { ThemeProvider } from "@/components/theme-provider.tsx"
 
 const analyticsPrefix =
-  window.location.hostname === "supabase.com" ? "/evals" : ""
+  window.location.hostname === "hookdeck.com" ? "/evals" : ""
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -16,7 +16,7 @@ createRoot(document.getElementById("root")!).render(
       <ThemeProvider>
         <App />
         {/*
-         * On supabase.com, the /_vercel/insights/* routes only exist behind the /evals/* rewrite.
+         * On hookdeck.com, the /_vercel/insights/* routes only exist behind the /evals/* rewrite.
          * On the raw *.vercel.app deployments, only the unprefixed routes resolve.
          * https://vercel.com/docs/analytics/troubleshooting#web-analytics-is-not-working-with-a-proxy-e.g.-cloudflare
          */}

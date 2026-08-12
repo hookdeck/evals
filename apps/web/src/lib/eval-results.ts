@@ -10,7 +10,7 @@ import rawResults from "@/data/eval-results.json"
  * here is plain data: no React, no formatting, no class names.
  */
 
-/** The Supabase developer journey. Every eval is filed under one stage. */
+/** The Hookdeck developer journey. Every eval is filed under one stage. */
 // Must stay in step with `evalStageSchema` in @hookdeck-evals/core, which is
 // the enum a scenario's frontmatter is validated against. Upstream's `deploy`
 // stage is deliberately absent: Event Gateway is SaaS with no deploy step, so

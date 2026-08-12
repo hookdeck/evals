@@ -7,53 +7,20 @@ import { CLI_COMMAND, DOCS_URL, WEBSITE_URL } from "@/lib/links"
 
 const COPY_FEEDBACK_MS = 2000
 
-function SupabaseLogo() {
+function HookdeckLogo() {
   return (
     <svg
-      className="h-6 w-auto"
-      viewBox="0 0 109 113"
+      className="h-4 w-auto"
+      viewBox="0 0 26 18"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      aria-label="Supabase"
+      aria-label="Hookdeck"
       role="img"
     >
       <path
-        d="M63.7076 110.284C60.8481 113.885 55.0502 111.912 54.9813 107.314L53.9738 40.0627L99.1935 40.0627C107.384 40.0627 111.952 49.5228 106.859 55.9374L63.7076 110.284Z"
-        fill="url(#supabase-logo-paint0)"
+        d="M19.686 6.45611C19.8249 6.45611 19.9638 6.56138 20.0333 6.70173C20.1027 6.84208 20.068 7.01751 19.9638 7.12278L11.2817 15.8947C8.88539 18.3158 4.96106 18.3158 2.56478 15.8947C0.16851 13.4737 0.16851 9.50874 2.56478 7.08769L7.5657 2.03506C8.98957 0.596462 10.9344 0.0350587 12.775 0.280673C12.9139 0.31576 13.0181 0.385935 13.0875 0.526286C13.1223 0.666637 13.0875 0.80699 12.9834 0.912253L11.872 2.03506C11.6984 2.2105 11.49 2.31576 11.2817 2.35085C10.4482 2.4912 9.64942 2.87716 9.0243 3.50874L4.02338 8.56138C2.42587 10.1754 2.42587 12.807 4.02338 14.421C5.6209 16.0351 8.22554 16.0351 9.82306 14.421L16.0395 8.14032L15.0323 7.12278C14.9282 7.01751 14.8934 6.84208 14.9629 6.70173C15.0324 6.56138 15.1713 6.45611 15.3102 6.45611H19.686ZM10.726 11.5438C10.8649 11.5438 11.0038 11.4386 11.0733 11.2982C11.1427 11.1579 11.108 10.9824 11.0038 10.8772L9.9967 9.85962L16.2131 3.57892C17.8106 1.96488 20.4153 1.96488 22.0128 3.57892C23.6103 5.19295 23.6103 7.82453 22.0128 9.43857L16.9771 14.4912C16.352 15.1228 15.5533 15.5087 14.7198 15.6491C14.4767 15.6842 14.2683 15.7894 14.1294 15.9649L13.0181 17.0877C12.9139 17.193 12.8792 17.3333 12.9139 17.4737C12.9486 17.614 13.0876 17.7193 13.2265 17.7193C15.0671 17.9649 17.0119 17.4035 18.4358 15.9649L23.4367 10.9123C25.8329 8.4912 25.8329 4.52629 23.4367 2.10523C21.0404 -0.31582 17.1161 -0.31582 14.7198 2.10523L6.03764 10.8772C5.93346 10.9824 5.89873 11.1579 5.96819 11.2982C6.03764 11.4386 6.17656 11.5438 6.31547 11.5438H10.726Z"
+        fill="#0044CC"
       />
-      <path
-        d="M63.7076 110.284C60.8481 113.885 55.0502 111.912 54.9813 107.314L53.9738 40.0627L99.1935 40.0627C107.384 40.0627 111.952 49.5228 106.859 55.9374L63.7076 110.284Z"
-        fill="url(#supabase-logo-paint1)"
-        fillOpacity="0.2"
-      />
-      <path
-        d="M45.317 2.07103C48.1765 -1.53037 53.9745 0.442937 54.0434 5.041L54.4849 72.2922H9.83113C1.64038 72.2922 -2.92775 62.8321 2.1655 56.4175L45.317 2.07103Z"
-        fill="#3ECF8E"
-      />
-      <defs>
-        <linearGradient
-          id="supabase-logo-paint0"
-          x1="53.9738"
-          y1="54.974"
-          x2="94.1635"
-          y2="71.8295"
-          gradientUnits="userSpaceOnUse"
-        >
-          <stop stopColor="#249361" />
-          <stop offset="1" stopColor="#3ECF8E" />
-        </linearGradient>
-        <linearGradient
-          id="supabase-logo-paint1"
-          x1="36.1558"
-          y1="30.578"
-          x2="54.4844"
-          y2="65.0806"
-          gradientUnits="userSpaceOnUse"
-        >
-          <stop />
-          <stop offset="1" stopOpacity="0" />
-        </linearGradient>
-      </defs>
     </svg>
   )
 }
@@ -109,9 +76,9 @@ export function SiteHeader() {
           href={WEBSITE_URL}
           className="group/logo flex w-fit items-center gap-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <SupabaseLogo />
+          <HookdeckLogo />
           <span className="-translate-x-2 text-sm text-muted-foreground opacity-0 transition-all duration-200 group-hover/logo:translate-x-0 group-hover/logo:opacity-100 group-focus-visible/logo:translate-x-0 group-focus-visible/logo:opacity-100">
-            Back to Supabase
+            Back to Hookdeck
           </span>
         </a>
         <div className="hidden items-center gap-2 sm:flex">

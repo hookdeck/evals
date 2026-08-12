@@ -18,7 +18,7 @@ export function SiteFooter() {
           <h2 className="font-heading text-4xl leading-[1.2] font-medium tracking-normal">
             <span className="block text-foreground">Set your agent free</span>
             <span className="block text-muted-foreground">
-              with a Supabase project
+              with a Hookdeck project
             </span>
           </h2>
           <div className="flex flex-col items-center gap-2 sm:flex-row">
