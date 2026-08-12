@@ -191,8 +191,78 @@ describe('after steps', () => {
       method: 'PUT',
       path: '/destinations/dst_1',
     });
-    // and it really is last: the event POST came before it
-    expect(calls.at(-2)?.path).toBe('https://hkdk.events/abc');
+    // and it really is after: the event POST came first. Asserted by position in
+    // the call list rather than by index, because the settle poll sits between
+    // them and an index would break every time that changes.
+    const eventPost = calls.findIndex(
+      (call) => call.path === 'https://hkdk.events/abc'
+    );
+    const afterStep = calls.findIndex(
+      (call) => call.path === '/destinations/dst_1' && call.method === 'PUT'
+    );
+    expect(eventPost).toBeGreaterThanOrEqual(0);
+    expect(afterStep).toBeGreaterThan(eventPost);
+  });
+
+  it('waits for seeded events to be delivered before applying after steps', async () => {
+    // The race this guards: a POST to a source URL returns when ingestion
+    // accepts it, but delivery is queued. An `after` step that repairs a broken
+    // destination can land before the first attempt, so an event seeded to fail
+    // succeeds instead and the scenario self-heals with the agent doing nothing.
+    const { impl, calls } = recordingFetch({
+      'POST /sources': { id: 'src_1', url: 'https://hkdk.events/abc' },
+      'POST /destinations': { id: 'dst_1' },
+    });
+    // Pending on the first poll, delivered on the second.
+    let polls = 0;
+    const withPending = vi.fn(async (url: string | URL, init?: RequestInit) => {
+      if (String(url).includes('/events?')) {
+        calls.push({ method: 'GET', path: '/events' });
+        polls += 1;
+        return new Response(
+          JSON.stringify({
+            models: [
+              {
+                created_at: new Date(Date.now() + 1000).toISOString(),
+                status: polls === 1 ? 'QUEUED' : 'FAILED',
+              },
+            ],
+          }),
+          { status: 200 }
+        );
+      }
+      return impl(url, init);
+    });
+    vi.stubGlobal('fetch', withPending);
+
+    await applySeed(client(), {
+      resources: [
+        { kind: 'sources', ref: 'src', body: { name: 's' } },
+        { kind: 'destinations', ref: 'dst', body: { name: 'd' } },
+      ],
+      events: [{ source: 'src', body: { a: 1 } }],
+      after: [{ path: '/destinations/$ref:dst', body: { config: {} } }],
+    });
+
+    expect(polls).toBe(2);
+    // The repair still ran, and only once the event had left QUEUED.
+    expect(calls.at(-1)).toMatchObject({ path: '/destinations/dst_1' });
+  });
+
+  it('does not wait when a seed has no after steps', async () => {
+    // The poll costs seconds and only matters when state changes after events,
+    // so every other scenario should not pay for it.
+    const { impl, calls } = recordingFetch({
+      'POST /sources': { id: 'src_1', url: 'https://hkdk.events/abc' },
+    });
+    vi.stubGlobal('fetch', impl);
+
+    await applySeed(client(), {
+      resources: [{ kind: 'sources', ref: 'src', body: { name: 's' } }],
+      events: [{ source: 'src', body: { a: 1 } }],
+    });
+
+    expect(calls.some((call) => call.path.startsWith('/events'))).toBe(false);
   });
 
   it('rejects a path referencing an unknown ref', async () => {

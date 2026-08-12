@@ -130,6 +130,8 @@ export async function applySeed(
     }
   }
 
+  const eventsStartedAt = new Date();
+
   for (const event of seed.events ?? []) {
     const target = refs[event.source];
     if (!target?.url) {
@@ -151,6 +153,10 @@ export async function applySeed(
     }
   }
 
+  if (seed.after?.length) {
+    await waitForEventsToSettle(client, eventsStartedAt);
+  }
+
   for (const step of seed.after ?? []) {
     await client.request(
       step.method ?? 'PUT',
@@ -160,6 +166,69 @@ export async function applySeed(
   }
 
   return { refs };
+}
+
+/** Event states that mean delivery has not been attempted yet, or not finished. */
+const PENDING_EVENT_STATUSES = new Set(['QUEUED', 'SCHEDULED']);
+
+/**
+ * Block until every event seeded since `since` has been delivered at least once.
+ *
+ * Only called when a seed has an `after` block, because that is the only time it
+ * matters, and it costs a scenario several seconds.
+ *
+ * A POST to a source URL returns as soon as ingestion accepts it; delivery is
+ * queued and happens on a worker. So an `after` step that repairs a destination
+ * can land *before* the first attempt on an event that was meant to fail against
+ * the broken one. That event then succeeds, the scenario self-heals, and the
+ * agent is scored on work it never had to do. resolve-002 is the case: it seeds
+ * failing checkout deliveries, then repairs the endpoint, and asks the agent to
+ * redeliver. Every seeded event has to have failed before the repair or there is
+ * nothing to redeliver.
+ *
+ * Waiting on state rather than sleeping a fixed interval: the settle time varies
+ * with how many events a scenario seeds, and a sleep long enough for the worst
+ * case is dead time in every other scenario.
+ */
+async function waitForEventsToSettle(
+  client: HookdeckClient,
+  since: Date,
+  timeoutMs = 30_000,
+  pollMs = 500
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+
+  for (;;) {
+    const page = await client.request<{
+      models?: { created_at?: string; status?: string }[];
+    }>('GET', '/events?limit=100&order_by=created_at&dir=desc');
+
+    // List endpoints take no created_at filter, so scope client-side. Events
+    // rejected at ingestion (an oversized payload, a filter) never appear here
+    // at all, which is correct: there is nothing to wait for.
+    const pending = (page.models ?? []).filter(
+      (event) =>
+        event.created_at &&
+        new Date(event.created_at) >= since &&
+        PENDING_EVENT_STATUSES.has(event.status ?? '')
+    );
+
+    if (pending.length === 0) return;
+
+    if (Date.now() >= deadline) {
+      // Proceeding is better than throwing: the seed is otherwise valid and the
+      // scenario may still score. Say so loudly, because a silent timeout puts
+      // the race back and the resulting pass looks legitimate.
+      console.warn(
+        `[seed] ${pending.length} event(s) still pending after ${timeoutMs}ms; ` +
+          'applying `after` steps anyway. A seeded event may be delivered ' +
+          'against post-`after` state, which can self-heal the scenario.'
+      );
+      return;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, pollMs));
+  }
 }
 
 /** Replace `$ref:name` in a path with the created resource's id. */
