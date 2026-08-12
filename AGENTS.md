@@ -22,10 +22,10 @@ Phase 2 is underway and parts of Phase 3 landed early.
 | benchmark | investigate | investigate-001-failing-deliveries | Passes every configuration including GPT-5.4-mini. No signal |
 | benchmark | resolve | resolve-001-paused-connection | Passes every configuration including GPT-5.4-mini. No signal. Fully deterministic |
 | benchmark | investigate | investigate-002-partial-outage | Correlation-shaped and still passes everything, including GPT-5.4-mini in 133s. No signal |
-| benchmark | build | transform-001-reshape-payload | BM3. Unrun |
+| benchmark | build | transform-001-reshape-payload | Passes Claude Code 3/3, first run. Floor untested |
 | benchmark | build | filtering-002-high-value-retries | BM2. Unrun |
 | benchmark | build | alerting-001-delivery-alerts | BM4. Unrun |
-| benchmark | build | verification-002-elevenlabs-callbacks | BM5. Unrun |
+| benchmark | build | verification-002-elevenlabs-callbacks | Passes Claude Code 5/5, first run. Floor untested. Most expensive scenario: $3.27, 608s |
 
 **Experiments: five.** `claude-code-sonnet-5` and `codex-gpt-5.6` with
 `['hookdeck', 'event-gateway']`, `-no-skills` twins of each, and
