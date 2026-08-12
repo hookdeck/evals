@@ -24,6 +24,13 @@ import type {
  * Scored on event status rather than on which endpoint was called. Bulk retry,
  * per-event retry, and anything else that gets checkout delivered are all
  * legitimate; what matters is which events moved.
+ *
+ * The seeded connections carry a retry rule with `count: 0`, and without it the
+ * scenario measures nothing. The `after` block repairs both destinations, and
+ * Hookdeck's automatic retry then redelivers everything that failed, for both
+ * sources, with no agent involved. The first run showed exactly that: the agent
+ * asked a clarifying question and did nothing, and two inventory events were
+ * delivered anyway.
  */
 const RETRY_SETTLE_MS = 20_000;
 

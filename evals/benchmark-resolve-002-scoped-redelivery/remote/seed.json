@@ -1,7 +1,19 @@
 {
   "resources": [
-    { "kind": "sources", "ref": "checkout", "body": { "name": "checkout" } },
-    { "kind": "sources", "ref": "inventory", "body": { "name": "inventory" } },
+    {
+      "kind": "sources",
+      "ref": "checkout",
+      "body": {
+        "name": "checkout"
+      }
+    },
+    {
+      "kind": "sources",
+      "ref": "inventory",
+      "body": {
+        "name": "inventory"
+      }
+    },
     {
       "kind": "destinations",
       "ref": "orders",
@@ -19,7 +31,9 @@
       "body": {
         "name": "stock-api",
         "type": "HTTP",
-        "config": { "url": "https://mock.hookdeck.com/api/v1/stock?status=503" }
+        "config": {
+          "url": "https://mock.hookdeck.com/api/v1/stock?status=503"
+        }
       }
     },
     {
@@ -27,7 +41,15 @@
       "body": {
         "name": "checkout-to-orders",
         "source_id": "$ref:checkout",
-        "destination_id": "$ref:orders"
+        "destination_id": "$ref:orders",
+        "rules": [
+          {
+            "type": "retry",
+            "strategy": "linear",
+            "interval": 60000,
+            "count": 0
+          }
+        ]
       }
     },
     {
@@ -35,7 +57,15 @@
       "body": {
         "name": "inventory-to-stock",
         "source_id": "$ref:inventory",
-        "destination_id": "$ref:stock"
+        "destination_id": "$ref:stock",
+        "rules": [
+          {
+            "type": "retry",
+            "strategy": "linear",
+            "interval": 60000,
+            "count": 0
+          }
+        ]
       }
     }
   ],
@@ -43,22 +73,36 @@
     {
       "source": "checkout",
       "count": 3,
-      "body": { "reference": "CHK-4401", "total": 120 }
+      "body": {
+        "reference": "CHK-4401",
+        "total": 120
+      }
     },
     {
       "source": "inventory",
       "count": 2,
-      "body": { "sku": "SKU-9901", "delta": -3 }
+      "body": {
+        "sku": "SKU-9901",
+        "delta": -3
+      }
     }
   ],
   "after": [
     {
       "path": "/destinations/$ref:orders",
-      "body": { "config": { "url": "https://mock.hookdeck.com/api/v1/orders" } }
+      "body": {
+        "config": {
+          "url": "https://mock.hookdeck.com/api/v1/orders"
+        }
+      }
     },
     {
       "path": "/destinations/$ref:stock",
-      "body": { "config": { "url": "https://mock.hookdeck.com/api/v1/stock" } }
+      "body": {
+        "config": {
+          "url": "https://mock.hookdeck.com/api/v1/stock"
+        }
+      }
     }
   ]
 }
