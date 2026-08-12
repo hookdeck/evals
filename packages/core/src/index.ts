@@ -351,28 +351,24 @@ const judgeOutputSchema = z.object({
 });
 
 /**
- * Upstream used `gpt-5.5` here. The judge runs once per judged check on every
- * experiment, so it is a fixed cost on every pass whichever agent produced the
- * run: measured at about $2.85 per fourteen-scenario pass, which across six
- * experiments is comparable to adding a whole extra agent.
+ * Upstream's choice, kept.
  *
- * Changed on evidence rather than arithmetic, because most of our judged checks
- * are negatives that exist to catch invented capabilities, and a judge that
- * misses one reports green while the thing the regression suite guards against
- * recurs. `scripts/replay-judge.ts` re-judged every stored verdict with this
- * model: 15 of 15 agreed with `gpt-5.5`, including both real catches, which are
- * both the June regex hallucination.
+ * Briefly changed to `gpt-5.4-mini` on the belief that the judge cost about
+ * $2.85 per fourteen-scenario pass. That number was a residual - one day's
+ * invoice minus the runs identifiable that day - and a per-model usage export
+ * later put the real figure at roughly two pence a call, $0.93 for every judge
+ * call ever made. The saving was about £2 a month.
  *
- * Fifteen cases with two catches is evidence, not proof. If a hallucination
- * ever reaches a customer on a run the suite scored green, this line is the
- * first thing to re-examine, and the replay script makes that cheap to redo as
- * the judged set grows.
+ * `scripts/replay-judge.ts` found `gpt-5.4-mini` agreed on 15 of 15 stored
+ * verdicts including both real catches, so the switch was safe. It was not
+ * worthwhile: these checks are mostly negatives guarding against invented
+ * capabilities, and a judge that misses one reports green while the failure
+ * recurs. That is not a risk to take for £2, and upstream picked this model
+ * deliberately.
  *
- * The provider options are upstream's and deliberately kept: low reasoning
- * effort and low verbosity are what make a judge affordable, and they matter
- * more than the model choice.
+ * The provider options below are what actually make a judge affordable.
  */
-const DEFAULT_JUDGE_MODEL = openai('gpt-5.4-mini');
+const DEFAULT_JUDGE_MODEL = openai('gpt-5.5');
 const DEFAULT_JUDGE_PROVIDER_OPTIONS: AiSdkProviderOptions = {
   openai: {
     reasoningEffort: 'low',

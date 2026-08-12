@@ -250,14 +250,22 @@ and resolve scenarios and publish that as a finding about the product. The
 baseline is named `-no-skills` rather than docs-only for that reason: it still
 has the CLI and a key.
 
-**The judge is a cost on every experiment, not just judged scenarios' own.**
-It runs once per judged check on every pass, whichever agent produced the run:
-about $2.85 per fourteen-scenario pass. Adding a judged check adds that cost to
-every experiment forever, which is a second reason to prefer deterministic
-checks beyond stability. `scripts/replay-judge.ts` re-judges stored transcripts
-against a different model and compares verdicts, so changing the judge is a
-measurement rather than a guess. Re-run it as the judged set grows: the current
-evidence is 15 cases with 2 real catches.
+**A residual is not a measurement.** The judge was reported as costing $2.85 a
+pass and $74 a month, and that drove a decision to move off upstream's model.
+The figure came from subtracting identifiable runs from one day's invoice and
+attributing the remainder to judging. A per-model usage export put the real cost
+at roughly two pence a call: $0.93 for every judge call ever made, ten pence per
+fourteen-scenario pass. Wrong by about twenty-eight times, and the decision was
+reverted. When an unexplained remainder lands on whatever is currently under
+discussion, that is a hypothesis, not a number.
+
+**The judge model is upstream's `gpt-5.5` and should stay there without a strong
+reason.** `scripts/replay-judge.ts` re-judges stored transcripts with a
+different model and compares verdicts, so the question is answerable for pennies
+whenever it comes up again. `gpt-5.4-mini` agreed on 15 of 15 including both
+real catches, so a switch is safe; it is just not worth making, because these
+checks are mostly negatives guarding against invented capabilities and the
+saving is trivial.
 
 **Prefer deterministic checks.** Across supabase/evals, 69 of 91 checks are
 deterministic and 22 are judged. A scenario that is entirely judged is a design

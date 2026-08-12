@@ -985,41 +985,37 @@ project forces the matrix to run one job at a time. That is the constraint the
 org-level key removes, and it is what makes it worth asking about rather than waiting
 for.
 
-### The judge is a fixed cost on every pass, and a cheaper one agrees
+### The judge was never expensive: a correction
 
-The OpenAI invoice for the whole project to date is $17.41, and unpicking one day of it
-found a cost nobody had counted. The judge is `gpt-5.5`, inherited from supabase/evals,
-called once per judged check on **every experiment**. That is roughly $2.85 per
-fourteen-scenario pass regardless of which agent ran, so across six experiments it is
-$17 a pass and around $74 a month, comparable to a whole extra agent.
+A per-model usage export settled two things the invoice alone could not, and one of them
+overturns a decision made on this page.
 
-Supabase did choose it deliberately: they pair it with `reasoningEffort: 'low'` and
-`textVerbosity: 'low'`, so the intent is a capable model with its reasoning tokens
-suppressed, and their guidance is to prefer deterministic checks and use a judge only
-for semantic correctness. Changing it needed evidence rather than arithmetic, because
-most of our judged checks are negatives that exist to catch invented capabilities. A
-cheaper judge that misses one does not lose a little precision; it reports green while
-the thing the regression suite guards against recurs.
+**`gpt-5.6` resolves to `gpt-5.6-sol`**, the dearest of the three variants at $2.50
+fresh, $0.25 cached and $15.00 output per million. That was unknowable from the pricing
+page, which lists no bare `gpt-5.6`, and it is why the price table leaves that id
+unpriced rather than guessing. Across 536 requests it cost $9.51, which works out at
+about $0.53 a scenario and **$7.40 for a fourteen-scenario pass**.
 
-So the verdicts we already have were replayed against a cheaper model rather than
-argued about. `scripts/replay-judge.ts` re-judges stored transcripts and compares,
-which costs pennies and is measured against known-correct answers.
+**The judge cost was overstated by roughly twenty-eight times.** It was derived as a
+residual: one day's invoice minus the four Codex runs identifiable that day, with
+everything left over attributed to judging. The remainder was mostly other Codex usage
+that had not been counted, including a re-run and the replay experiment itself.
 
-**`gpt-5.4-mini` at low effort agreed with `gpt-5.5` on 15 of 15, including both real
-catches.** Both are the June regex hallucination, which is the failure the project was
-built to prevent, and the cheaper model caught both.
+The real figure, from the model breakdown: 45 requests, 161,150 input tokens, 4,257
+output, none cached. Even priced generously that is **$0.93 for every judge call ever
+made**, about two pence a call, or ten pence per fourteen-scenario pass. Not $2.85 a
+pass, and not $74 a month.
 
-The first run of the replay disagreed once, and that was a bug in the replay rather
-than a difference between models. Two scenarios share a check name and have different
-rubrics: the benchmark one forgives an agent that tries a regex, finds it rejected and
-corrects itself, because there the agent is also being asked to build. Keying rubrics
-by check name alone applied the stricter rubric to the wrong scenario. Keyed by
-scenario and check, the disagreement disappeared.
+So the judge was never a cost worth optimising, and the case for moving off `gpt-5.5`
+was built on a number that was wrong. The replay evidence stands - `gpt-5.4-mini` agreed
+15 of 15 including both real catches - but agreement is a reason the switch is *safe*,
+not a reason it is *worthwhile*. Weighed against a saving of about £2 a month, diverging
+from upstream on precisely the checks that guard against invented capabilities is not a
+trade worth making.
 
-Fifteen cases is a small sample and only two of them are catches, so this is evidence
-rather than proof. What it supports is switching and watching, not switching and
-forgetting: if a hallucination ever reaches a customer that the suite scored green, the
-judge model is the first thing to re-examine.
+The lesson is narrower than the arithmetic: a residual is not a measurement. Attributing
+an unexplained remainder to the thing currently under discussion is how a plausible
+number becomes a decision.
 
 ### Findings raised, and where
 
@@ -1246,7 +1242,8 @@ start earning from day one.
 
 | Trigger | Runs | Why |
 |---|---|---|
-| `schedule`, weekly | benchmark suite, all experiments | Published scores |
+| `schedule`, weekly | benchmark suite, frontier agents + weak pair | Published scores, and the weak pair is the only source of failures |
+| `schedule`, monthly | benchmark suite, full matrix | Adds the `-no-skills` twins, whose delta does not move week to week |
 | `repository_dispatch` from the docs repo, and PRs touching `skills/` | regression suite only | Cheap, catches hallucination regressions |
 | PR label `run-evals-changed` | only the scenarios changed in the PR | Scenario authoring loop |
 | `workflow_dispatch` | anything, by suite/eval/experiment | New model releases, one-offs |

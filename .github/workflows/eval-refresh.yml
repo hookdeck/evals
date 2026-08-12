@@ -1,10 +1,28 @@
 name: Refresh eval results
 
-# Manual only, deliberately. Automatic triggers arrive in Phase 3 alongside the
-# published scoreboard; until then a run is something a person chooses to spend
-# money on. The inherited nightly schedule and the PR-label triggers were
-# removed rather than left to fire against a half-built suite.
+# Two schedules, because everything weekly costs $279 a month against a $200
+# budget, and cadence is a better lever than dropping scenarios: the cheap
+# experiments carry the signal and the expensive ones carry the headline.
+#
+# Weekly, about $185 a month: the frontier agents plus the weak pair. The weak
+# pair is the only source of failures in the suite and the only place a skills
+# difference has been observable, and it is the most sensitive regression
+# detector because it sits on the pass/fail boundary rather than passing
+# everything.
+#
+# Monthly adds the `-no-skills` twins of the two expensive agents. Their delta
+# has measured zero on every scenario, four times, and will not move week to
+# week; a month is soon enough to notice if it ever does.
+#
+# Costs are measured rather than estimated: $20.53 for a fourteen-scenario
+# Claude pass, $7.40 for gpt-5.6 (which resolves to gpt-5.6-sol), about $4 for
+# the weak model, pennies for judging.
 on:
+  schedule:
+    # Weekly: frontier agents and the weak pair.
+    - cron: '0 6 * * 1'
+    # Monthly: the full matrix, adding the no-skills twins.
+    - cron: '0 8 1 * *'
   workflow_dispatch:
     inputs:
       experiments:
@@ -66,17 +84,42 @@ jobs:
         run: |
           set -euo pipefail
 
-          suite_json="$(jq -Rc 'split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(length > 0))' <<< "${{ inputs.suite }}")"
-          experiment_suite_json="$(jq -Rc 'split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(length > 0))' <<< "${{ inputs.experiment_suite }}")"
+          # A scheduled run has no inputs, so the two crons carry their own
+          # experiment sets. Weekly is the frontier agents and the weak pair;
+          # the monthly one adds the no-skills twins for a full matrix.
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            if [ "${{ github.event.schedule }}" = "0 8 1 * *" ]; then
+              experiments="claude-code-sonnet-5,claude-code-sonnet-5-no-skills,codex-gpt-5.6,codex-gpt-5.6-no-skills,codex-gpt-5.4-mini,codex-gpt-5.4-mini-no-skills"
+            else
+              experiments="claude-code-sonnet-5,codex-gpt-5.6,codex-gpt-5.4-mini,codex-gpt-5.4-mini-no-skills"
+            fi
+            eval_id=""
+            suite="benchmark"
+            experiment_suite="benchmark,no-skills"
+            runs="1"
+            timeout_sec="900"
+            do_merge="false"
+          else
+            experiments="${{ inputs.experiments }}"
+            eval_id="${{ inputs.eval }}"
+            suite="${{ inputs.suite }}"
+            experiment_suite="${{ inputs.experiment_suite }}"
+            runs="${{ inputs.runs }}"
+            timeout_sec="${{ inputs.timeout_sec }}"
+            do_merge="${{ inputs.merge }}"
+          fi
+
+          suite_json="$(jq -Rc 'split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(length > 0))' <<< "$suite")"
+          experiment_suite_json="$(jq -Rc 'split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(length > 0))' <<< "$experiment_suite")"
 
           {
-            echo "experiments_override=${{ inputs.experiments }}"
-            echo "eval=${{ inputs.eval }}"
+            echo "experiments_override=$experiments"
+            echo "eval=$eval_id"
             echo "suite=$suite_json"
             echo "experiment_suite=$experiment_suite_json"
-            echo "runs=${{ inputs.runs }}"
-            echo "timeout_sec=${{ inputs.timeout_sec }}"
-            echo "do_merge=${{ inputs.merge }}"
+            echo "runs=$runs"
+            echo "timeout_sec=$timeout_sec"
+            echo "do_merge=$do_merge"
           } >> "$GITHUB_OUTPUT"
 
       - name: Checkout
@@ -147,10 +190,17 @@ jobs:
                 continue
               fi
 
+              # Always ask which experiments belong to this suite, then narrow
+              # to the override if there is one. Using the override directly
+              # emitted every named experiment once per suite, so a four-name
+              # weekly list produced eight pairs per scenario, half of them
+              # labelled with a suite the experiment is not in.
+              suite_experiments="$(pnpm --silent eval -- list --experiment-suite "$experiment_suite" --eval "$id")"
               if [ -n "$experiments_override" ]; then
-                experiments_json="$(jq -Rc 'split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(length > 0))' <<< "$experiments_override")"
+                wanted="$(jq -Rc 'split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(length > 0))' <<< "$experiments_override")"
+                experiments_json="$(jq -c --argjson wanted "$wanted" '[.[] | select(. as $e | $wanted | index($e))]' <<< "$suite_experiments")"
               else
-                experiments_json="$(pnpm --silent eval -- list --experiment-suite "$experiment_suite" --eval "$id")"
+                experiments_json="$suite_experiments"
               fi
 
               while IFS= read -r experiment; do
