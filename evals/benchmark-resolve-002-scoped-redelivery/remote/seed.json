@@ -1,0 +1,64 @@
+{
+  "resources": [
+    { "kind": "sources", "ref": "checkout", "body": { "name": "checkout" } },
+    { "kind": "sources", "ref": "inventory", "body": { "name": "inventory" } },
+    {
+      "kind": "destinations",
+      "ref": "orders",
+      "body": {
+        "name": "orders-api",
+        "type": "HTTP",
+        "config": {
+          "url": "https://mock.hookdeck.com/api/v1/orders?status=503"
+        }
+      }
+    },
+    {
+      "kind": "destinations",
+      "ref": "stock",
+      "body": {
+        "name": "stock-api",
+        "type": "HTTP",
+        "config": { "url": "https://mock.hookdeck.com/api/v1/stock?status=503" }
+      }
+    },
+    {
+      "kind": "connections",
+      "body": {
+        "name": "checkout-to-orders",
+        "source_id": "$ref:checkout",
+        "destination_id": "$ref:orders"
+      }
+    },
+    {
+      "kind": "connections",
+      "body": {
+        "name": "inventory-to-stock",
+        "source_id": "$ref:inventory",
+        "destination_id": "$ref:stock"
+      }
+    }
+  ],
+  "events": [
+    {
+      "source": "checkout",
+      "count": 3,
+      "body": { "reference": "CHK-4401", "total": 120 }
+    },
+    {
+      "source": "inventory",
+      "count": 2,
+      "body": { "sku": "SKU-9901", "delta": -3 }
+    }
+  ],
+  "after": [
+    {
+      "path": "/destinations/$ref:orders",
+      "body": { "config": { "url": "https://mock.hookdeck.com/api/v1/orders" } }
+    },
+    {
+      "path": "/destinations/$ref:stock",
+      "body": { "config": { "url": "https://mock.hookdeck.com/api/v1/stock" } }
+    }
+  ]
+}

@@ -9,7 +9,7 @@ knowing before you change anything.
 Phase 0 (framework spike) and Phase 1 (the project provisioner) are done.
 Phase 2 is underway and parts of Phase 3 landed early.
 
-**Scenarios: thirteen.** Three regression, ten benchmark.
+**Scenarios: seventeen.** Three regression, fourteen benchmark.
 
 | Suite | Stage | Scenario | Where it stands |
 |---|---|---|---|
@@ -25,6 +25,10 @@ Phase 2 is underway and parts of Phase 3 landed early.
 | benchmark | build | transform-001-reshape-payload | Passes Claude Code and GPT-5.4-mini. No signal |
 | benchmark | build | filtering-002-high-value-retries | Passes Claude Code 3/3, first run. Floor untested |
 | benchmark | build | alerting-001-delivery-alerts | Passes Claude Code 3/3, first run. Floor untested. $2.81, 726s |
+| benchmark | resolve | resolve-002-scoped-redelivery | BM9. Unrun. First user of the seed `after` block |
+| benchmark | build | delivery-001-slow-consumer | BM10. Unrun |
+| benchmark | build | delivery-002-rate-limited-endpoint | BM11. Unrun |
+| benchmark | build | dedupe-001-duplicate-events | BM14. Unrun |
 | benchmark | build | verification-002-elevenlabs-callbacks | Passes Claude Code; GPT-5.4-mini fails, never setting `webhook_secret_key`. Signal |
 
 **Experiments: five.** `claude-code-sonnet-5` and `codex-gpt-5.6` with

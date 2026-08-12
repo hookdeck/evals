@@ -32,7 +32,13 @@ export interface SeedResource {
    * BM8's paused connection. Defaults to PUT: the action endpoints
    * (pause, unpause, enable, disable, archive) are all PUT on this API.
    */
-  then?: { path: string; method?: HttpMethod; body?: unknown }[];
+  then?: SeedStep[];
+}
+
+export interface SeedStep {
+  path: string;
+  method?: HttpMethod;
+  body?: unknown;
 }
 
 export interface SeedEvent {
@@ -53,6 +59,16 @@ export interface SeedEvent {
 export interface Seed {
   resources?: SeedResource[];
   events?: SeedEvent[];
+  /**
+   * Requests applied after every event has been sent.
+   *
+   * A `then` step runs while its resource is being created, so it cannot
+   * express "let these deliveries fail, then repair the endpoint". That state
+   * is what a resolve scenario starts from: history that already went wrong and
+   * a system that is now healthy. Paths may contain `$ref:name`, resolved to
+   * the created resource's id.
+   */
+  after?: SeedStep[];
 }
 
 export interface AppliedSeed {
@@ -134,5 +150,22 @@ export async function applySeed(
     }
   }
 
+  for (const step of seed.after ?? []) {
+    await client.request(
+      step.method ?? 'PUT',
+      resolvePathRefs(step.path, refs),
+      resolveRefs(step.body, refs)
+    );
+  }
+
   return { refs };
+}
+
+/** Replace `$ref:name` in a path with the created resource's id. */
+function resolvePathRefs(path: string, refs: AppliedSeed['refs']): string {
+  return path.replace(/\$ref:([\w-]+)/g, (_, name: string) => {
+    const target = refs[name];
+    if (!target) throw new Error(`seed step references unknown ref "${name}"`);
+    return target.id;
+  });
 }

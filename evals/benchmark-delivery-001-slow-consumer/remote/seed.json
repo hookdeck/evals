@@ -1,0 +1,22 @@
+{
+  "resources": [
+    { "kind": "sources", "ref": "jobs", "body": { "name": "jobs" } },
+    {
+      "kind": "destinations",
+      "ref": "worker",
+      "body": {
+        "name": "inference-worker",
+        "type": "HTTP",
+        "config": { "url": "https://mock.hookdeck.com/api/v1/infer" }
+      }
+    },
+    {
+      "kind": "connections",
+      "body": {
+        "name": "jobs-to-worker",
+        "source_id": "$ref:jobs",
+        "destination_id": "$ref:worker"
+      }
+    }
+  ]
+}

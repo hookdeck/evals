@@ -160,3 +160,46 @@ describe('applySeed', () => {
     ).rejects.toThrow(/no delivery URL/);
   });
 });
+
+describe('after steps', () => {
+  beforeEach(() => vi.restoreAllMocks());
+
+  it('runs after every event has been sent', async () => {
+    // A resolve scenario needs history that already failed and a system that is
+    // now healthy, which `then` cannot express: it runs at creation time.
+    const { impl, calls } = recordingFetch({
+      'POST /sources': { id: 'src_1', url: 'https://hkdk.events/abc' },
+      'POST /destinations': { id: 'dst_1' },
+    });
+    vi.stubGlobal('fetch', impl);
+
+    await applySeed(client(), {
+      resources: [
+        { kind: 'sources', ref: 'src', body: { name: 's' } },
+        { kind: 'destinations', ref: 'dst', body: { name: 'd' } },
+      ],
+      events: [{ source: 'src', body: { a: 1 } }],
+      after: [
+        {
+          path: '/destinations/$ref:dst',
+          body: { config: { url: 'https://example.test/fixed' } },
+        },
+      ],
+    });
+
+    expect(calls.at(-1)).toMatchObject({
+      method: 'PUT',
+      path: '/destinations/dst_1',
+    });
+    // and it really is last: the event POST came before it
+    expect(calls.at(-2)?.path).toBe('https://hkdk.events/abc');
+  });
+
+  it('rejects a path referencing an unknown ref', async () => {
+    const { impl } = recordingFetch();
+    vi.stubGlobal('fetch', impl);
+    await expect(
+      applySeed(client(), { after: [{ path: '/destinations/$ref:nope' }] })
+    ).rejects.toThrow(/unknown ref "nope"/);
+  });
+});

@@ -1,0 +1,22 @@
+{
+  "resources": [
+    { "kind": "sources", "ref": "payments", "body": { "name": "payments" } },
+    {
+      "kind": "destinations",
+      "ref": "ledger",
+      "body": {
+        "name": "ledger-api",
+        "type": "HTTP",
+        "config": { "url": "https://mock.hookdeck.com/api/v1/ledger" }
+      }
+    },
+    {
+      "kind": "connections",
+      "body": {
+        "name": "payments-to-ledger",
+        "source_id": "$ref:payments",
+        "destination_id": "$ref:ledger"
+      }
+    }
+  ]
+}

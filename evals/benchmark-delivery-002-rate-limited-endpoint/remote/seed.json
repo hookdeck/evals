@@ -1,0 +1,22 @@
+{
+  "resources": [
+    { "kind": "sources", "ref": "enrich", "body": { "name": "enrichment" } },
+    {
+      "kind": "destinations",
+      "ref": "llm",
+      "body": {
+        "name": "llm-api",
+        "type": "HTTP",
+        "config": { "url": "https://mock.hookdeck.com/api/v1/enrich" }
+      }
+    },
+    {
+      "kind": "connections",
+      "body": {
+        "name": "enrichment-to-llm",
+        "source_id": "$ref:enrich",
+        "destination_id": "$ref:llm"
+      }
+    }
+  ]
+}
