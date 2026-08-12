@@ -209,6 +209,16 @@ or encoding an agent chose. Signing a request and checking it is accepted is
 both possible and better: it passes an agent that reached a correct setup by an
 unanticipated route, and fails config that looks right but rejects real traffic.
 
+**An example list in a skill is read as an exhaustive list.** Measured: the
+event-gateway skill described source types as "Provider presets (Stripe,
+Shopify, GitHub, etc.)" and the API has 151. A weak model with that skill
+concluded ElevenLabs was unsupported, built a generic `WEBHOOK` source with
+hand-rolled verification, and scored worse than the same model with no skill at
+all. Naming the count and giving a way to list them took it from zero mentions
+of `ELEVENLABS` to thirty-three. An agent has no other source for where a
+boundary is, so a skill that is illustrative where it needs to be complete is
+not neutral, it is harmful.
+
 **An agent can install skills itself, and a baseline that does is not a
 baseline.** The sandbox has network access because scenarios need the
 documentation, and the skills registry is on that network. `skills.selfInstalled`

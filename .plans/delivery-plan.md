@@ -973,6 +973,69 @@ project forces the matrix to run one job at a time. That is the constraint the
 org-level key removes, and it is what makes it worth asking about rather than waiting
 for.
 
+### The improvement loop, closed on a skill that was steering agents wrong
+
+The loop the launch is gated on, run end to end on the only pair that can measure a
+lift. Skills had changed no outcome anywhere, but every comparison had been made on
+Claude Code, which passes everything either way. The weak model is where the failures
+are, so that is where a lift is observable.
+
+**Before.** `codex-gpt-5.4-mini-no-skills` fails three scenarios, all credential
+handling: a wrong Stripe secret, a missing `webhook_secret_key`, an unauthenticated
+`hookdeck listen`.
+
+**With skills.** One fixed, one unchanged, and one substantially worse.
+
+| Scenario | no-skills | +skills |
+|---|---|---|
+| local delivery | fail | **pass** |
+| Stripe verification | fail 4/5 | fail 4/5 |
+| ElevenLabs verification | fail 4/5 | **fail 0/1** |
+
+The regression is the useful part. Without skills the agent created an `ELEVENLABS`
+source and got four of five checks. With skills it created a generic `WEBHOOK` source
+and hand-rolled verification, never mentioning `ELEVENLABS` once, while following the
+skill's own `--source-type` pattern twelve times.
+
+**The cause is one line of skill content.** `authentication.md` described source types as
+"Provider presets (Stripe, Shopify, GitHub, etc.)". The API has 151. An agent reading
+three examples reasonably concluded ElevenLabs was not among them and fell back to the
+generic path, which is worse in every way: it hand-rolls an algorithm, header and
+encoding the preset already knows.
+
+That is a skill making an agent worse than no skill, by being illustrative where a
+reader needs it to be complete. It generalises past this one line: **an example list in
+a skill is read as an exhaustive list**, because the agent has no other source for the
+boundary.
+
+**The fix**, applied to `hookdeck/agent-skills`: say there are over 150 presets, say
+that the examples are examples, and give a command that lists them all.
+
+**After.** The regression is repaired.
+
+| | `ELEVENLABS` mentioned | Score |
+|---|---|---|
+| no skills | - | 4/5 |
+| skills, before the fix | 0 times | 0/5 |
+| skills, after the fix | 33 times | 4/5 |
+
+Stated honestly: the fix repaired damage the skill was doing, and did not produce a lift
+over no skills. The aided delta on this scenario is still zero. What changed is that it
+is no longer negative, and the mechanism is understood rather than inferred.
+
+That is the loop the plan gates launch on, run end to end: a measured failure, a
+diagnosis specific enough to act on, a fix, and a re-measurement that moves the number
+it predicted. It is also a better launch story than a lift would have been, because it
+is falsifiable and specific. We shipped a skill, measured it making an agent worse,
+found the sentence responsible, and fixed it.
+
+**One gap remains and it is the same one on both verification scenarios.** Stripe and
+ElevenLabs both still fail on "the source accepts a genuine signature", with skills and
+without: the agent creates the right source type and does not configure the provider
+secret correctly. `webhook_secret_key` appears in zero files across the skill, and the
+API route for source authentication is not documented in it at all. That is the second
+PR, and unlike the first it should produce a real lift rather than repairing one.
+
 ### The competence gap is authentication, not reasoning
 
 Ten benchmark scenarios, all passing on Claude Code, three failing on GPT-5.4-mini. The
