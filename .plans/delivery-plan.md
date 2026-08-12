@@ -980,6 +980,28 @@ project forces the matrix to run one job at a time. That is the constraint the
 org-level key removes, and it is what makes it worth asking about rather than waiting
 for.
 
+### Findings raised, and where
+
+Every product finding from the suite has been filed against the repo that owns it, with
+the measurement behind it. This is what the improvement loop produces beyond a number.
+
+| # | Finding | Raised |
+|---|---|---|
+| 1 | `listen` crashes without a TTY unless given `--output compact` | hookdeck-cli#333 |
+| 2 | A disconnected CLI destination ignores requests; recovery is manual and undocumented, and `ignored_count` is hidden from the API reference | website#741 |
+| 3 | `listen` ignores `HOOKDECK_API_KEY` and silently creates a guest account | hookdeck-cli#334 |
+| 4 | `connection upsert` accepts an empty `--source-webhook-secret` | hookdeck-cli#335 |
+| 5 | A skill's example list read as exhaustive, making an agent worse than no skill | agent-skills#26 |
+
+Three of the five belong to `hookdeck listen`, which is worth noticing on its own: it is
+the highest-traffic agent-facing surface we have and the least forgiving. All five share
+a shape. Nothing errors, the agent reports success, and the failure appears later
+somewhere else.
+
+Finding 4 is the one to fix first if only one gets attention. It is the single cause of
+two of the three failures in the suite, across two models and two providers, and the fix
+is rejecting a value that cannot mean anything.
+
 ### The improvement loop, closed on a skill that was steering agents wrong
 
 The loop the launch is gated on, run end to end on the only pair that can measure a
