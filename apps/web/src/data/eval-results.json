@@ -30,6 +30,10 @@
       {
         "name": "the alert covers the fulfilment connection",
         "passed": true
+      },
+      {
+        "name": "the alert has a notification channel configured",
+        "passed": true
       }
     ],
     "skills": {
@@ -45,56 +49,46 @@
       "calls": [
         {
           "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/api/issue-triggers.md",
+          "query": "curl -s https://hookdeck.com/docs/issues.md",
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/api/issue-triggers.md"
+              "url": "https://hookdeck.com/docs/issues.md"
             }
           ],
-          "resultChars": 66518
+          "resultChars": 26994
         },
         {
           "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/issue-triggers.md; echo \"-----NOTIF-----\"; curl -s https://hookdeck.com/docs/api/notifications.md",
+          "query": "curl -s https://hookdeck.com/docs/issue-triggers.md",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/issue-triggers.md"
+            }
+          ],
+          "resultChars": 9388
+        },
+        {
+          "source": "shell_fetch",
+          "query": "curl -s https://hookdeck.com/docs/projects.md | head -100",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/projects.md"
+            }
+          ],
+          "resultChars": 17833
+        },
+        {
+          "source": "shell_fetch",
+          "query": "curl -s https://hookdeck.com/docs/api/issue-triggers/create-issue-trigger.md 2>&1 | head -150\necho \"---try openapi---\"\ncurl -s https://hookdeck.com/docs/api-reference.md 2>&1 | head -50",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/issue-triggers/create-issue-trigger.md"
             },
             {
-              "url": "https://hookdeck.com/docs/api/notifications.md"
+              "url": "https://hookdeck.com/docs/api-reference.md"
             }
           ],
-          "resultChars": 75921
-        },
-        {
-          "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/retries.md | grep -n -i \"default\" | head -30",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/retries.md"
-            }
-          ],
-          "resultChars": 240
-        },
-        {
-          "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/retries.md | sed -n '1,60p'",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/retries.md"
-            }
-          ],
-          "resultChars": 2482
-        },
-        {
-          "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/retries.md | grep -n -i \"automatically retry\\|default.*strategy\\|strategy.*default\\|linear\\|exponential\\|count\" | head -40",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/retries.md"
-            }
-          ],
-          "resultChars": 2252
+          "resultChars": 37394
         }
       ]
     },
@@ -138,32 +132,12 @@
         "event-gateway"
       ],
       "loaded": [
+        "hookdeck",
         "event-gateway"
       ]
     },
     "docs": {
-      "calls": [
-        {
-          "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/deduplication.md 2>&1 | head -150",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/deduplication.md"
-            }
-          ],
-          "resultChars": 6332
-        },
-        {
-          "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/api/connections.md 2>&1 | head -100",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api/connections.md"
-            }
-          ],
-          "resultChars": 17840
-        }
-      ]
+      "calls": []
     },
     "prompt": "Our payment provider sometimes sends us the same event twice within a few\nseconds, and our ledger ends up double-counting it. We can't easily change the\nledger service.\n\nStop the duplicates reaching it.",
     "promptSourcePath": "evals/benchmark-dedupe-001-duplicate-events/PROMPT.md",
@@ -209,6 +183,7 @@
         "event-gateway"
       ],
       "loaded": [
+        "hookdeck",
         "event-gateway"
       ]
     },
@@ -216,43 +191,43 @@
       "calls": [
         {
           "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/destinations.md 2>&1 | head -200",
+          "query": "curl -s https://hookdeck.com/docs/destinations.md 2>&1 | head -150",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/destinations.md"
             }
           ],
-          "resultChars": 11033
+          "resultChars": 9946
         },
         {
           "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/retries.md 2>&1 | head -150",
+          "query": "curl -s https://hookdeck.com/docs/retries.md 2>&1 | head -100",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/retries.md"
             }
           ],
-          "resultChars": 5733
+          "resultChars": 3602
         },
         {
           "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/connections.md 2>&1 | sed -n '1,400p' | grep -n -i -A15 \"retry rule\"",
+          "query": "curl -s https://hookdeck.com/docs/retries.md 2>&1 | sed -n '100,220p'",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/retries.md"
+            }
+          ],
+          "resultChars": 4747
+        },
+        {
+          "source": "shell_fetch",
+          "query": "curl -s https://hookdeck.com/docs/connections.md 2>&1 | grep -n -i \"retry\" -A5 -B5 | head -150",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/connections.md"
             }
           ],
-          "resultChars": 1655
-        },
-        {
-          "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/connections.md 2>&1 | sed -n '120,180p'",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/connections.md"
-            }
-          ],
-          "resultChars": 2134
+          "resultChars": 4655
         }
       ]
     },
@@ -301,6 +276,7 @@
         "event-gateway"
       ],
       "loaded": [
+        "hookdeck",
         "event-gateway"
       ]
     },
@@ -335,7 +311,7 @@
       {
         "name": "did not claim regex filtering or channels exist",
         "passed": true,
-        "judgeNotes": "The assistant explicitly says Hookdeck native Filter does not support regex and uses a Transform for regex-based logic. It does not claim regex filtering is available or mention channel/channel partitioning."
+        "judgeNotes": "The assistant correctly states Hookdeck filters have no regex operator and uses a transform for regex matching. No channel/partitioning feature was invented."
       },
       {
         "name": "current-format references still reach the endpoint",
@@ -361,18 +337,18 @@
       "calls": [
         {
           "source": "web_fetch",
-          "query": "List every filter operator supported (e.g. $eq, $neq, $in, $regex, etc). Specifically, is there a regex/pattern-matching operator for string fields? Show exact syntax and any limitations/notes about regex support.",
+          "query": "List all available filter operators, especially any regex/regexp operator. Show syntax examples for string pattern matching operators.",
           "hasContent": true,
           "pages": [
             {
               "url": "https://hookdeck.com/docs/filters.md"
             }
           ],
-          "resultChars": 1119
+          "resultChars": 1245
         },
         {
           "source": "web_fetch",
-          "query": "Show the exact JSON schema/example for a connection's `rules` array, specifically for a rule of type \"transformation\" (or \"transform\") using inline code, and for a rule of type \"filter\". Include field names precisely (e.g. is it rule.transform.code or rule.code, is there a rule.transform.type field like \"custom_function\"?).",
+          "query": "Show the exact JSON schema for a connection's rules array, specifically for a \"transform\" type rule (fields needed, e.g. transform code inline vs transform id/name), as used in a PUT/PATCH to /connections/{id}.",
           "hasContent": true,
           "pages": [
             {
@@ -380,6 +356,17 @@
             }
           ],
           "resultChars": 215
+        },
+        {
+          "source": "web_fetch",
+          "query": "Show how to create a transformation resource via the API, and how a connection's rules array references it (fields required, e.g. transformation id vs inline code, name field, etc). Include full JSON examples.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/transformations.md"
+            }
+          ],
+          "resultChars": 1354
         }
       ]
     },
@@ -434,47 +421,37 @@
     "docs": {
       "calls": [
         {
-          "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/retries.md 2>/dev/null | head -c 4000",
+          "source": "web_fetch",
+          "query": "Summarize retry rule configuration: max count, max interval, exponential backoff behavior, any caps on total retry duration.",
+          "hasContent": true,
           "pages": [
             {
               "url": "https://hookdeck.com/docs/retries.md"
             }
           ],
-          "resultChars": 3998
+          "resultChars": 1053
         },
         {
-          "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/retries.md 2>/dev/null | sed -n '/Automatically retry events/,/^## /p' | head -c 4000",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/retries.md"
-            }
-          ],
-          "resultChars": 431
-        },
-        {
-          "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/retries.md 2>/dev/null | sed -n '/When automatic retries occur/,/^## Manually configure/p' | head -c 6000",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/retries.md"
-            }
-          ],
-          "resultChars": 5987
-        },
-        {
-          "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/api/connections.md 2>/dev/null | head -c 3000\necho \"---\"\ncurl -s https://hookdeck.com/docs/connections.md 2>/dev/null | grep -i -A5 \"PUT /2025\" | head -c 2000",
+          "source": "web_fetch",
+          "query": "Explain how to update an existing connection's rules via PUT, including whether source/destination can be referenced by name only when they already exist, and the exact JSON body shape for rules (filter and retry types).",
+          "hasContent": true,
           "pages": [
             {
               "url": "https://hookdeck.com/docs/api/connections.md"
-            },
+            }
+          ],
+          "resultChars": 215
+        },
+        {
+          "source": "web_fetch",
+          "query": "Explain how to update an existing connection's rules via the API (PUT), including whether source/destination can be referenced by name only when they already exist, and the exact JSON body shape for rules (filter and retry types).",
+          "hasContent": true,
+          "pages": [
             {
               "url": "https://hookdeck.com/docs/connections.md"
             }
           ],
-          "resultChars": 3484
+          "resultChars": 1483
         }
       ]
     },
@@ -510,12 +487,12 @@
       {
         "name": "identified the failing destination and that it is rejecting",
         "passed": true,
-        "judgeNotes": "Identifies orders-to-analytics / analytics destination as failing and states deliveries fail with 422 client error returned by the endpoint. Although it says the destination URL is misconfigured, it still clearly attributes the observed failure to the receiving endpoint returning 422, not Hookdeck delivery failure."
+        "judgeNotes": "The assistant correctly identifies analytics-api/orders-to-analytics as the failing destination and explains that its delivery attempts are rejected by the receiving endpoint with 422, while fulfilment succeeds. It does mention a misconfigured destination URL, but the required failure cause—destination/client-error rejection—is clearly conveyed."
       },
       {
         "name": "did not invent a cause it could not have observed",
         "passed": true,
-        "judgeNotes": "The assistant's cause is derived from project state: destination URL includes ?status=422 and delivery attempts returned 422. It did not assert rate limiting, Hookdeck loss/drop/failure, size limits, paused/disabled state, or nonexistent features as the root cause. The phrase 'silently dropping events' is imprecise, but the substantive cause given is endpoint rejection/misconfiguration, not Hookdeck dropping them."
+        "judgeNotes": "The assistant’s root cause is derived from project configuration and delivery statuses: the analytics destination URL includes `?status=422` and attempts return 422. It does not assert any forbidden invented cause as fact; it explicitly rules out backpressure/auth based on observations."
       }
     ],
     "skills": {
@@ -524,7 +501,6 @@
         "event-gateway"
       ],
       "loaded": [
-        "hookdeck",
         "event-gateway"
       ]
     },
@@ -563,12 +539,12 @@
       {
         "name": "identified the filter as the cause and what it excludes",
         "passed": true,
-        "judgeNotes": "The assistant identifies the connection filter as the root cause and explicitly states it only allows channel == \"web\", excluding mobile and POS orders before events/deliveries are created."
+        "judgeNotes": "The assistant correctly identifies the connection filter (`channel == \"web\"`) as the cause and explains that non-web orders, including mobile and POS, are ignored before becoming events. Nothing is blamed on failures, source, destination, or transit loss."
       },
       {
         "name": "did not report the system as healthy",
         "passed": true,
-        "judgeNotes": "The assistant did not claim everything was working/no problem/all orders delivered. It identified filtered missing orders, so it passes this check."
+        "judgeNotes": "The assistant did not claim everything was working or that all orders were delivered. It explicitly found missing orders due to filtering, which passes this check."
       }
     ],
     "skills": {
@@ -647,6 +623,119 @@
       "modelId": "claude-sonnet-5",
       "reasoningEffort": "high"
     },
+    "eval": "benchmark-outpost-001-customer-subscriptions",
+    "stage": "build",
+    "product": [
+      "outpost"
+    ],
+    "topic": [
+      "sdk"
+    ],
+    "suite": "benchmark",
+    "passed": false,
+    "checks": [
+      {
+        "name": "an Outpost project is configured for this run",
+        "passed": false,
+        "notes": "OUTPOST_API_KEY is not set, so this scenario cannot be scored here"
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": [
+        "hookdeck"
+      ],
+      "selfInstalled": [
+        "outpost"
+      ]
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_fetch",
+          "query": "Give me the exact curl commands and API endpoints needed to: 1) check/create a tenant, 2) create a webhook destination for that tenant with a URL, 3) list topics, 4) publish an event to a topic for that tenant. Include headers, auth, base URL, and request bodies exactly as shown.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/quickstarts/hookdeck-outpost-curl"
+            }
+          ],
+          "resultChars": 1450
+        },
+        {
+          "source": "web_fetch",
+          "query": "Explain how a Hookdeck Cloud (managed) project gets an Outpost API key and base URL. Is the Outpost API key the same as the Hookdeck project API key (HOOKDECK_API_KEY)? Is Outpost automatically enabled for every Hookdeck project, or does it need to be enabled first? What is the correct base URL for a managed Hookdeck Cloud project's Outpost API (not self-hosted)?",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/getting-started"
+            }
+          ],
+          "resultChars": 215
+        },
+        {
+          "source": "web_fetch",
+          "query": "Explain how a Hookdeck Cloud (managed) project gets an Outpost API key and base URL. Is the Outpost API key the same as the Hookdeck project API key (HOOKDECK_API_KEY)? Is Outpost automatically enabled for every Hookdeck project, or does it need to be enabled first via the dashboard? What is the correct base URL for a managed Hookdeck Cloud project's Outpost API?",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost"
+            }
+          ],
+          "resultChars": 840
+        },
+        {
+          "source": "web_fetch",
+          "query": "List all doc page URLs related to: authentication, API keys, getting started, and how a Hookdeck Cloud project enables/uses Outpost.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/llms.txt"
+            }
+          ],
+          "resultChars": 1258
+        },
+        {
+          "source": "web_fetch",
+          "query": "Explain exactly how to enable/configure Outpost for a Hookdeck Cloud project: how to get the Outpost API key/base URL, whether it's the same as the main Hookdeck project API key, and any setup steps required before calling the Outpost API (tenants, destinations, publish).",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/platform/outpost-projects"
+            }
+          ],
+          "resultChars": 1330
+        },
+        {
+          "source": "web_fetch",
+          "query": "Show the full authentication section verbatim, including exact header format, base URL, and any mention of how the API key relates to a \"team\" or project. Also show any error response documentation, especially for 404 NOT_FOUND errors that include a team_id field. Explain what this means and how to resolve it.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api"
+            }
+          ],
+          "resultChars": 1187
+        }
+      ]
+    },
+    "prompt": "We want our customers to be able to subscribe to events from our platform, so\nthey can react when an order is placed rather than polling us for it.\n\nSet that up for our first customer, `acme`, so they receive order events at\ntheir endpoint. Then show me it works by sending one through.",
+    "promptSourcePath": "evals/benchmark-outpost-001-customer-subscriptions/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "claude-code-sonnet-5/benchmark-outpost-001-customer-subscriptions.json"
+  },
+  {
+    "experiment": "claude-code-sonnet-5",
+    "experimentSuite": "benchmark",
+    "experimentDisplay": {
+      "agent": "claude-code",
+      "modelProvider": "anthropic",
+      "modelId": "claude-sonnet-5",
+      "reasoningEffort": "high"
+    },
     "eval": "benchmark-resolve-001-paused-connection",
     "stage": "resolve",
     "product": [
@@ -702,17 +791,15 @@
       "retries"
     ],
     "suite": "benchmark",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "the failed checkout events were redelivered",
-        "passed": false,
-        "notes": "0 of 3 checkout events are successful"
+        "passed": true
       },
       {
         "name": "the inventory events were left alone",
-        "passed": false,
-        "notes": "2 inventory events were redelivered as well"
+        "passed": true
       }
     ],
     "skills": {
@@ -778,7 +865,7 @@
       "calls": [
         {
           "source": "web_fetch",
-          "query": "Give the full API schema and endpoints for creating a transformation and testing/executing it (dry-run) via the REST API. Also show how a transform rule attaches to a connection's rules array (JSON shape).",
+          "query": "List all API endpoints for transformations, including any endpoint to test/run/execute a transformation against a sample request without deploying it. Include HTTP methods, paths, and request/response body shapes.",
           "hasContent": true,
           "pages": [
             {
@@ -789,70 +876,25 @@
         },
         {
           "source": "web_fetch",
-          "query": "Show the JSON schema for the rules array on a connection, specifically the transform rule type, and how to PUT/update an existing connection to add a rule without changing source/destination.",
+          "query": "List all API endpoints for transformations, including any endpoint to test/run/execute a transformation against a sample request without deploying it. Include HTTP methods, paths, and request/response body shapes.",
           "hasContent": true,
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/api/connections.md"
+              "url": "https://hookdeck.com/docs/transformations"
             }
           ],
-          "resultChars": 215
+          "resultChars": 1043
         },
         {
-          "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/api/transformations.md; echo \"===RULES===\"; curl -s https://hookdeck.com/docs/api/rules.md",
+          "source": "web_fetch",
+          "query": "Explain the difference between retrying an event and retrying/replaying a request in the Hookdeck API. Specifically: does retrying an existing event re-run connection transformation rules, or does it redeliver the already-stored (possibly pre-transform) event data? Is there an endpoint to replay a raw Request through the connection pipeline again (so current transformation rules apply)? Give exact endpoint paths and methods.",
+          "hasContent": true,
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/api/transformations.md"
-            },
-            {
-              "url": "https://hookdeck.com/docs/api/rules.md"
+              "url": "https://hookdeck.com/docs/api/inspect"
             }
           ],
-          "resultChars": 71536
-        },
-        {
-          "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/transformations.md | head -c 3000; echo; echo \"===connections===\"; curl -s https://hookdeck.com/docs/connections.md | head -c 3000",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/transformations.md"
-            },
-            {
-              "url": "https://hookdeck.com/docs/connections.md"
-            }
-          ],
-          "resultChars": 6015
-        },
-        {
-          "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/transformations.md | sed -n '1,400p' | tail -c 6000",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/transformations.md"
-            }
-          ],
-          "resultChars": 5996
-        },
-        {
-          "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/connections.md | grep -n -i -A 30 \"## Update a connection\\|PUT\\b\" | head -150",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/connections.md"
-            }
-          ],
-          "resultChars": 4536
-        },
-        {
-          "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/api/rules.md | head -c 4000",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api/rules.md"
-            }
-          ],
-          "resultChars": 4000
+          "resultChars": 1308
         }
       ]
     },
@@ -909,7 +951,6 @@
         "event-gateway"
       ],
       "loaded": [
-        "hookdeck",
         "event-gateway"
       ],
       "selfInstalled": [
@@ -976,8 +1017,7 @@
         "event-gateway"
       ],
       "selfInstalled": [
-        "elevenlabs-webhooks",
-        "hookdeck/webhook-skills"
+        "elevenlabs-webhooks"
       ]
     },
     "docs": {
@@ -987,6 +1027,383 @@
     "promptSourcePath": "evals/benchmark-verification-002-elevenlabs-callbacks/PROMPT.md",
     "attempts": 1,
     "sourcePath": "claude-code-sonnet-5/benchmark-verification-002-elevenlabs-callbacks.json"
+  },
+  {
+    "experiment": "claude-code-sonnet-5-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "claude-code",
+      "modelProvider": "anthropic",
+      "modelId": "claude-sonnet-5",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-alerting-001-delivery-alerts",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "alerting"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "created an alert for delivery failures",
+        "passed": true
+      },
+      {
+        "name": "the alert is enabled",
+        "passed": true
+      },
+      {
+        "name": "the alert covers the fulfilment connection",
+        "passed": true
+      },
+      {
+        "name": "the alert has a notification channel configured",
+        "passed": true
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_fetch",
+          "query": "Explain the issue-trigger API resource, specifically the \"delivery\" type. What strategy options exist (e.g. first_attempt, final_attempt, max_retries)? What does each mean? What fields does the \"connections\" config accept - can it be scoped to a specific connection ID? What notification channels are supported (email, slack, webhook, etc) and their config shape?",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api#issue-triggers/create-an-issue-trigger"
+            }
+          ],
+          "resultChars": 929
+        },
+        {
+          "source": "web_fetch",
+          "query": "Find the Issue Triggers section. Explain the \"delivery\" type issue trigger: what strategy options exist (e.g. first_attempt, final_attempt, max_retries) and what each means. What does the \"connections\" config field accept - can it be scoped to specific connection IDs or destination IDs? What notification channels are supported (email, slack, webhook/HTTP, etc.) and what does their config object look like? Also describe the \"request\" and \"backpressure\" trigger types briefly.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/configure.md"
+            }
+          ],
+          "resultChars": 1441
+        },
+        {
+          "source": "web_fetch",
+          "query": "Show the full request body schema for creating an issue trigger, especially the \"delivery\" type: what does \"connections\" accept (can it be a list of connection IDs, or connection filter object), and what does \"strategy\" accept as enum values. Also show full channels schema for slack, webhook/http, and email.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/issue-triggers/create-issue-trigger.md"
+            }
+          ],
+          "resultChars": 215
+        },
+        {
+          "source": "web_fetch",
+          "query": "Show the full request body schema for creating a delivery-type issue trigger, especially: what does \"connections\" config field accept (array of connection IDs? \"*\"?), what strategy enum values exist, and what do slack/webhook/email channel configs look like.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/issue-triggers.md"
+            }
+          ],
+          "resultChars": 215
+        }
+      ]
+    },
+    "prompt": "We found out our fulfilment endpoint had been rejecting orders for most of a day\nbecause nobody was watching. I don't want to find out that way again.\n\nSet it up so we get told when deliveries to that endpoint keep failing.",
+    "promptSourcePath": "evals/benchmark-alerting-001-delivery-alerts/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-alerting-001-delivery-alerts.json"
+  },
+  {
+    "experiment": "claude-code-sonnet-5-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "claude-code",
+      "modelProvider": "anthropic",
+      "modelId": "claude-sonnet-5",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-dedupe-001-duplicate-events",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "deduplication"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "the duplicate did not reach the ledger",
+        "passed": true
+      },
+      {
+        "name": "the original still reached the ledger",
+        "passed": true
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "Our payment provider sometimes sends us the same event twice within a few\nseconds, and our ledger ends up double-counting it. We can't easily change the\nledger service.\n\nStop the duplicates reaching it.",
+    "promptSourcePath": "evals/benchmark-dedupe-001-duplicate-events/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-dedupe-001-duplicate-events.json"
+  },
+  {
+    "experiment": "claude-code-sonnet-5-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "claude-code",
+      "modelProvider": "anthropic",
+      "modelId": "claude-sonnet-5",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-delivery-001-slow-consumer",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "rate-limits"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "delivery to the worker is limited",
+        "passed": true
+      },
+      {
+        "name": "the limit caps concurrent deliveries rather than a rate over time",
+        "passed": true
+      },
+      {
+        "name": "the concurrency ceiling matches what the worker can hold",
+        "passed": true
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_fetch",
+          "query": "What is the request timeout for HTTP destinations (how long Hookdeck waits for a response before considering the delivery attempt failed)? Is this timeout configurable? Also describe how rate limiting with \"concurrent\" period works for destinations, and how retry rules work (max retry count, backoff strategies, max interval).",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/destinations"
+            }
+          ],
+          "resultChars": 1400
+        }
+      ]
+    },
+    "prompt": "Our inference worker takes about ninety seconds per job and it can only handle\ntwo at a time. When traffic spikes it falls over and we lose jobs.\n\nSet the delivery up so that doesn't happen.",
+    "promptSourcePath": "evals/benchmark-delivery-001-slow-consumer/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-delivery-001-slow-consumer.json"
+  },
+  {
+    "experiment": "claude-code-sonnet-5-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "claude-code",
+      "modelProvider": "anthropic",
+      "modelId": "claude-sonnet-5",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-delivery-002-rate-limited-endpoint",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "rate-limits"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "delivery to the endpoint is limited",
+        "passed": true
+      },
+      {
+        "name": "the limit is over time rather than concurrency",
+        "passed": true
+      },
+      {
+        "name": "the limit works out at the endpoint quota",
+        "passed": true,
+        "notes": "works out at 60 per minute against a quota of 60"
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "The API we forward enrichment jobs to allows sixty requests a minute and starts\nreturning 429s past that. We're well over it at peak.\n\nMake our deliveries stay inside their limit.",
+    "promptSourcePath": "evals/benchmark-delivery-002-rate-limited-endpoint/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-delivery-002-rate-limited-endpoint.json"
+  },
+  {
+    "experiment": "claude-code-sonnet-5-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "claude-code",
+      "modelProvider": "anthropic",
+      "modelId": "claude-sonnet-5",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-filtering-001-enterprise-orders",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "filtering"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "did not claim regex filtering or channels exist",
+        "passed": true,
+        "judgeNotes": "Assistant ultimately states Hookdeck filters do not support regex and corrects to a supported $startsWith operator; the attempted regex was rejected and corrected, which the rubric says passes."
+      },
+      {
+        "name": "current-format references still reach the endpoint",
+        "passed": true,
+        "notes": "expected an event for ORD-2026-ZZ-9001, found 1"
+      },
+      {
+        "name": "legacy references are filtered out",
+        "passed": true,
+        "notes": "expected no event for LEGACY-99002, found 0"
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_fetch",
+          "query": "Explain how Hookdeck connection filters work, especially: the JSON structure for a filter rule (body/header/query/path filter), and whether/how regex matching is supported (syntax for regex matching a field value).",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/filters"
+            }
+          ],
+          "resultChars": 1414
+        },
+        {
+          "source": "web_fetch",
+          "query": "Quote verbatim any section that mentions regex, regular expressions, or pattern matching. Also list every operator name shown in code examples (things starting with $). Also check if there is any mention of wrapping a string value in slashes like /pattern/flags for regex matching.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/filters"
+            }
+          ],
+          "resultChars": 926
+        }
+      ]
+    },
+    "prompt": "Our order references look like `ORD-2026-AC-4821`. We migrated formats at the\nstart of the year and the old ones are still coming through, which my service\nchokes on.\n\nCan I use a regex on the reference to only let this year's format through?\nWhatever the answer, set up the filtering so only the current format reaches my\nendpoint.",
+    "promptSourcePath": "evals/benchmark-filtering-001-enterprise-orders/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-filtering-001-enterprise-orders.json"
+  },
+  {
+    "experiment": "claude-code-sonnet-5-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "claude-code",
+      "modelProvider": "anthropic",
+      "modelId": "claude-sonnet-5",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-filtering-002-high-value-retries",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "filtering"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "an order above the threshold reaches manual review",
+        "passed": true
+      },
+      {
+        "name": "an order below the threshold does not reach manual review",
+        "passed": true
+      },
+      {
+        "name": "failed deliveries are retried",
+        "passed": true
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_fetch",
+          "query": "Explain how the retry rule works: what \"strategy\" values are supported (linear vs exponential), what \"count\" and \"interval\" mean, any max/min limits, and how exponential backoff is calculated from interval.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/rules#retry-rule"
+            }
+          ],
+          "resultChars": 1081
+        },
+        {
+          "source": "web_fetch",
+          "query": "Show exact JSON syntax for filter rules, especially numeric comparison operators (greater than, less than, etc). Give example JSON for filtering body field greater than a number.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/filters"
+            }
+          ],
+          "resultChars": 1106
+        }
+      ]
+    },
+    "prompt": "Only orders above £500 should go to the manual review queue. Everything smaller\nis handled automatically and shouldn't reach it.\n\nAlso, review's endpoint goes down occasionally and we've lost orders that way.\nIf a delivery fails, keep trying for a while rather than giving up.",
+    "promptSourcePath": "evals/benchmark-filtering-002-high-value-retries/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-filtering-002-high-value-retries.json"
   },
   {
     "experiment": "claude-code-sonnet-5-no-skills",
@@ -1015,12 +1432,12 @@
       {
         "name": "identified the failing destination and that it is rejecting",
         "passed": true,
-        "judgeNotes": "Identifies analytics-api/orders-to-analytics as failing and attributes the failure to the receiving destination returning HTTP 422/client error, while fulfilment succeeds."
+        "judgeNotes": "Identifies analytics-api/orders-to-analytics as the failing destination and attributes the failures to the receiving endpoint returning HTTP 422/client error, while fulfilment succeeds."
       },
       {
         "name": "did not invent a cause it could not have observed",
         "passed": true,
-        "judgeNotes": "The assistant attributes the failure to observed Hookdeck configuration and delivery responses: the analytics destination URL returns 422, with failed deliveries and no retry configuration. It does not assert any prohibited invented cause such as rate limiting, Hookdeck dropping events, payload size limits, disabled connections, or nonexistent features."
+        "judgeNotes": "The assistant attributes the failures to the observed destination URL forcing HTTP 422 responses, which is derivable from project state. It does not assert an unobserved prohibited cause such as rate limiting, Hookdeck dropping events, size limits, or a disabled connection."
       }
     ],
     "skills": {
@@ -1034,6 +1451,53 @@
     "promptSourcePath": "evals/benchmark-investigate-001-failing-deliveries/PROMPT.md",
     "attempts": 1,
     "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-investigate-001-failing-deliveries.json"
+  },
+  {
+    "experiment": "claude-code-sonnet-5-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "claude-code",
+      "modelProvider": "anthropic",
+      "modelId": "claude-sonnet-5",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-investigate-002-partial-outage",
+    "stage": "investigate",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "filtering"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "looked past the events list",
+        "passed": true
+      },
+      {
+        "name": "identified the filter as the cause and what it excludes",
+        "passed": true,
+        "judgeNotes": "Identifies the connection filter `channel: web` as the cause and explains that non-web orders (e.g. POS/mobile) are ignored before delivery, with nothing failing."
+      },
+      {
+        "name": "did not report the system as healthy",
+        "passed": true,
+        "judgeNotes": "The assistant did not claim everything was working or that all orders were delivered; it identified ignored requests and missing deliveries."
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "Our warehouse team says they're missing orders. Not all of them, and I can't\nfind a single failure anywhere I've looked. Every delivery I can see went\nthrough fine.\n\nWhere are the missing ones going?",
+    "promptSourcePath": "evals/benchmark-investigate-002-partial-outage/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-investigate-002-partial-outage.json"
   },
   {
     "experiment": "claude-code-sonnet-5-no-skills",
@@ -1089,6 +1553,44 @@
       "modelId": "claude-sonnet-5",
       "reasoningEffort": "high"
     },
+    "eval": "benchmark-outpost-001-customer-subscriptions",
+    "stage": "build",
+    "product": [
+      "outpost"
+    ],
+    "topic": [
+      "sdk"
+    ],
+    "suite": "benchmark",
+    "passed": false,
+    "checks": [
+      {
+        "name": "an Outpost project is configured for this run",
+        "passed": false,
+        "notes": "OUTPOST_API_KEY is not set, so this scenario cannot be scored here"
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "We want our customers to be able to subscribe to events from our platform, so\nthey can react when an order is placed rather than polling us for it.\n\nSet that up for our first customer, `acme`, so they receive order events at\ntheir endpoint. Then show me it works by sending one through.",
+    "promptSourcePath": "evals/benchmark-outpost-001-customer-subscriptions/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-outpost-001-customer-subscriptions.json"
+  },
+  {
+    "experiment": "claude-code-sonnet-5-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "claude-code",
+      "modelProvider": "anthropic",
+      "modelId": "claude-sonnet-5",
+      "reasoningEffort": "high"
+    },
     "eval": "benchmark-resolve-001-paused-connection",
     "stage": "resolve",
     "product": [
@@ -1130,6 +1632,92 @@
       "modelId": "claude-sonnet-5",
       "reasoningEffort": "high"
     },
+    "eval": "benchmark-resolve-002-scoped-redelivery",
+    "stage": "resolve",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "retries"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "the failed checkout events were redelivered",
+        "passed": true
+      },
+      {
+        "name": "the inventory events were left alone",
+        "passed": true
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "We had an outage this morning and both our endpoints were rejecting everything.\nThey're back up now.\n\nCheckout is the urgent one, so get those failed events redelivered. Leave\ninventory alone for now, the team there wants to check something first.",
+    "promptSourcePath": "evals/benchmark-resolve-002-scoped-redelivery/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-resolve-002-scoped-redelivery.json"
+  },
+  {
+    "experiment": "claude-code-sonnet-5-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "claude-code",
+      "modelProvider": "anthropic",
+      "modelId": "claude-sonnet-5",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-transform-001-reshape-payload",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "transformations"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "amount is at the top level of the delivered body",
+        "passed": true
+      },
+      {
+        "name": "currency is at the top level of the delivered body",
+        "passed": true
+      },
+      {
+        "name": "email is at the top level of the delivered body",
+        "passed": true
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "Our payment provider changed their payload and our billing service can't read\nit any more. The service expects `amount`, `currency` and `email` at the top\nlevel of the body, and nothing else has to change.\n\nSort it out so the billing service starts working again. I'd rather know it's\nright before it goes anywhere near production.",
+    "promptSourcePath": "evals/benchmark-transform-001-reshape-payload/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-transform-001-reshape-payload.json"
+  },
+  {
+    "experiment": "claude-code-sonnet-5-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "claude-code",
+      "modelProvider": "anthropic",
+      "modelId": "claude-sonnet-5",
+      "reasoningEffort": "high"
+    },
     "eval": "benchmark-verification-001-stripe-express",
     "stage": "build",
     "product": [
@@ -1139,7 +1727,7 @@
       "signature-verification"
     ],
     "suite": "benchmark",
-    "passed": true,
+    "passed": false,
     "checks": [
       {
         "name": "created a Stripe source",
@@ -1147,7 +1735,7 @@
       },
       {
         "name": "the source accepts a genuine Stripe signature",
-        "passed": true
+        "passed": false
       },
       {
         "name": "the source rejects a forged Stripe signature",
@@ -1159,6 +1747,60 @@
       },
       {
         "name": "the handler rejects a forged signature",
+        "passed": false,
+        "notes": "expected a 4xx, got 200"
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "We're taking Stripe payments and I need our orders API to react when a checkout\ncompletes. Right now nothing is wired up.\n\nSet it up so Stripe events reach the `/orders` endpoint, and make sure the\nendpoint only accepts requests that genuinely came through, not anything that\nturns up at the URL. I'm still working on this locally, and I don't want to miss\nevents while I'm developing.",
+    "promptSourcePath": "evals/benchmark-verification-001-stripe-express/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-verification-001-stripe-express.json"
+  },
+  {
+    "experiment": "claude-code-sonnet-5-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "claude-code",
+      "modelProvider": "anthropic",
+      "modelId": "claude-sonnet-5",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-verification-002-elevenlabs-callbacks",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "signature-verification"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "created an ElevenLabs source",
+        "passed": true
+      },
+      {
+        "name": "the source accepts a genuine ElevenLabs signature",
+        "passed": true
+      },
+      {
+        "name": "the source rejects a forged ElevenLabs signature",
+        "passed": true
+      },
+      {
+        "name": "the service accepts a genuine Hookdeck signature",
+        "passed": true
+      },
+      {
+        "name": "the service rejects a forged signature",
         "passed": true,
         "notes": "expected a 4xx, got 401"
       }
@@ -1171,18 +1813,51 @@
       "calls": [
         {
           "source": "web_fetch",
-          "query": "Show the request body schema for creating a Source, specifically for a Stripe source type with signature verification configuration. Include field names for type and verification config for Stripe.",
+          "query": "What is the verification config type and fields required for an ElevenLabs webhook source in Hookdeck? Give exact JSON schema for the verification object.",
           "hasContent": true,
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/api#/operations/createSource"
+              "url": "https://hookdeck.com/docs/sources/verification/elevenlabs"
             }
           ],
-          "resultChars": 1076
+          "resultChars": 215
         },
         {
           "source": "web_fetch",
-          "query": "Explain exactly how to verify that an incoming webhook request genuinely came from Hookdeck (not Stripe) - the header names used (e.g. x-hookdeck-signature), the algorithm (HMAC SHA256?), what is signed (raw body?), the secret used, and code example in Node.js.",
+          "query": "List the supported webhook source verification provider types (e.g. GITHUB, STRIPE, SHOPIFY...) and whether ElevenLabs is one of them. Also give the general HMAC verification config JSON schema fields.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/sources"
+            }
+          ],
+          "resultChars": 979
+        },
+        {
+          "source": "web_fetch",
+          "query": "Give the exact JSON body example for creating a source with ElevenLabs verification (type ELEVENLABS), including the verification object structure and what config fields it needs (e.g. webhook_secret_key).",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api#sources-create-a-source"
+            }
+          ],
+          "resultChars": 677
+        },
+        {
+          "source": "web_fetch",
+          "query": "Give the exact JSON body example for creating a Hookdeck source with ElevenLabs verification, including the verification type name and config fields required.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/verification/elevenlabs"
+            }
+          ],
+          "resultChars": 215
+        },
+        {
+          "source": "web_fetch",
+          "query": "How does Hookdeck sign the requests it forwards to destinations (outbound webhook signing)? Give the exact header name(s) and algorithm used to compute the signature so a receiving server can verify a request genuinely came from Hookdeck.",
           "hasContent": true,
           "pages": [
             {
@@ -1193,43 +1868,681 @@
         },
         {
           "source": "web_fetch",
-          "query": "Explain exactly how to verify that an incoming request genuinely came from Hookdeck - header names used (e.g. x-hookdeck-signature), the algorithm, what is signed, the secret used, and a Node.js code example.",
+          "query": "How does Hookdeck sign requests it forwards to destinations? Give the exact header name(s) and HMAC algorithm/encoding used, so a receiving Express server can verify a request genuinely came from Hookdeck using the webhook secret.",
           "hasContent": true,
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/verifying-webhook-signature-hookdeck"
+              "url": "https://hookdeck.com/docs/dashboard/verifying-hookdeck-signature"
             }
           ],
           "resultChars": 215
         },
         {
           "source": "web_fetch",
-          "query": "Find the page about verifying that requests genuinely came from Hookdeck (destination signature verification). List the exact URL path for that doc page.",
+          "query": "Find the page about verifying that incoming requests to my destination server genuinely came from Hookdeck. What header does Hookdeck add and how is the signature computed?",
           "hasContent": true,
           "pages": [
             {
               "url": "https://hookdeck.com/docs"
             }
           ],
-          "resultChars": 317
+          "resultChars": 606
         },
         {
           "source": "web_fetch",
-          "query": "Explain exactly how to verify that an incoming request genuinely came from Hookdeck - header names used (e.g. x-hookdeck-signature), the algorithm, what is signed, the secret used, and a Node.js code example.",
+          "query": "Give the exact header name(s) Hookdeck adds to forwarded requests and the precise algorithm (HMAC type, encoding, what data is signed) to verify a request came from Hookdeck. Include any code example, especially for Node/Express.",
           "hasContent": true,
           "pages": [
             {
               "url": "https://hookdeck.com/docs/guides/how-to-verify-incoming-webhooks"
             }
           ],
-          "resultChars": 1301
+          "resultChars": 1225
         }
       ]
     },
-    "prompt": "We're taking Stripe payments and I need our orders API to react when a checkout\ncompletes. Right now nothing is wired up.\n\nSet it up so Stripe events reach the `/orders` endpoint, and make sure the\nendpoint only accepts requests that genuinely came through, not anything that\nturns up at the URL. I'm still working on this locally, and I don't want to miss\nevents while I'm developing.",
-    "promptSourcePath": "evals/benchmark-verification-001-stripe-express/PROMPT.md",
+    "prompt": "We're using ElevenLabs for transcription and they call us back when a job\nfinishes. The callbacks need to reach the transcripts service in this directory,\nand I don't want it accepting anything that didn't genuinely come from them via\nour gateway.\n\nSet that up.",
+    "promptSourcePath": "evals/benchmark-verification-002-elevenlabs-callbacks/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-verification-001-stripe-express.json"
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-verification-002-elevenlabs-callbacks.json"
+  },
+  {
+    "experiment": "codex-gpt-5.4-mini",
+    "experimentSuite": "benchmark",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.4-mini",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-alerting-001-delivery-alerts",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "alerting"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "created an alert for delivery failures",
+        "passed": true
+      },
+      {
+        "name": "the alert is enabled",
+        "passed": true
+      },
+      {
+        "name": "the alert covers the fulfilment connection",
+        "passed": true
+      },
+      {
+        "name": "the alert has a notification channel configured",
+        "passed": true
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": [
+        "hookdeck",
+        "event-gateway"
+      ]
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/api/notifications.md | sed -n '1,260p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/notifications.md"
+            }
+          ],
+          "resultChars": 49
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/api/issue-triggers.md | sed -n '1,260p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/issue-triggers.md"
+            }
+          ],
+          "resultChars": 49
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs issue triggers hookdeck api notifications markdown",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api/issue-triggers.md Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ]
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc 'curl -fsSL https://hookdeck.com/docs/api.md | rg -n \"issue trigger|notification|issue-triggers|notifications|openapi|Issue Triggers\" -n -C 2'",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api.md"
+            }
+          ],
+          "resultChars": 665
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/issue-triggers.md | sed -n '1,220p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/issue-triggers.md"
+            }
+          ],
+          "resultChars": 8345
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/issues.md | sed -n '1,220p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/issues.md"
+            }
+          ],
+          "resultChars": 8634
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc 'curl -fsSL https://hookdeck.com/docs/api.md | rg -n \"issue triggers|notifications|notification preferences|project integrations\" -C 3'",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api.md"
+            }
+          ],
+          "resultChars": 278
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc 'curl -fsSL https://hookdeck.com/docs/api.md | rg -n \"whoami|current user|project|me|team|organization\" -C 2'",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api.md"
+            }
+          ],
+          "resultChars": 12021
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/api.md | sed -n '430,520p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api.md"
+            }
+          ],
+          "resultChars": 2462
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/api/configure.md | sed -n '1,260p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/configure.md"
+            }
+          ],
+          "resultChars": 7829
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc 'curl -fsSL https://hookdeck.com/docs/api/configure.md | rg -n \"Issue Triggers|Notifications|notification\" -C 5'",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/configure.md"
+            }
+          ],
+          "resultChars": 1499
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/api/configure.md | sed -n '2025,2965p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/configure.md"
+            }
+          ],
+          "resultChars": 23302
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/api/configure.md | sed -n '2967,3075p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/configure.md"
+            }
+          ],
+          "resultChars": 2183
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc 'curl -fsSL https://hookdeck.com/docs/api/configure.md | rg -n \"teams/current|current team|current project\" -C 3'",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/configure.md"
+            }
+          ],
+          "resultChars": 1030
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc 'curl -fsSL https://hookdeck.com/docs/api.md | rg -n \"teams/current|current team|current project|whoami|me\" -C 3'",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api.md"
+            }
+          ],
+          "resultChars": 12584
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/api/configure.md | rg -n \\\"connections|destinations|strategy|first_attempt|last_attempt|delivery issues\\\" -C 3 | sed -n '1,220p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/configure.md"
+            }
+          ],
+          "resultChars": 5224
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/api/configure.md | sed -n '2050,2195p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/configure.md"
+            }
+          ],
+          "resultChars": 3775
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/retries Hookdeck first_attempt last_attempt delivery issue trigger",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/issue-triggers",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/issue-triggers"
+            }
+          ]
+        }
+      ]
+    },
+    "prompt": "We found out our fulfilment endpoint had been rejecting orders for most of a day\nbecause nobody was watching. I don't want to find out that way again.\n\nSet it up so we get told when deliveries to that endpoint keep failing.",
+    "promptSourcePath": "evals/benchmark-alerting-001-delivery-alerts/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-alerting-001-delivery-alerts.json"
+  },
+  {
+    "experiment": "codex-gpt-5.4-mini",
+    "experimentSuite": "benchmark",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.4-mini",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-dedupe-001-duplicate-events",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "deduplication"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "the duplicate did not reach the ledger",
+        "passed": true
+      },
+      {
+        "name": "the original still reached the ledger",
+        "passed": true
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": [
+        "hookdeck",
+        "event-gateway"
+      ]
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "Our payment provider sometimes sends us the same event twice within a few\nseconds, and our ledger ends up double-counting it. We can't easily change the\nledger service.\n\nStop the duplicates reaching it.",
+    "promptSourcePath": "evals/benchmark-dedupe-001-duplicate-events/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-dedupe-001-duplicate-events.json"
+  },
+  {
+    "experiment": "codex-gpt-5.4-mini",
+    "experimentSuite": "benchmark",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.4-mini",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-delivery-001-slow-consumer",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "rate-limits"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "delivery to the worker is limited",
+        "passed": true
+      },
+      {
+        "name": "the limit caps concurrent deliveries rather than a rate over time",
+        "passed": true
+      },
+      {
+        "name": "the concurrency ceiling matches what the worker can hold",
+        "passed": true
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": [
+        "hookdeck",
+        "event-gateway"
+      ]
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "Our inference worker takes about ninety seconds per job and it can only handle\ntwo at a time. When traffic spikes it falls over and we lose jobs.\n\nSet the delivery up so that doesn't happen.",
+    "promptSourcePath": "evals/benchmark-delivery-001-slow-consumer/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-delivery-001-slow-consumer.json"
+  },
+  {
+    "experiment": "codex-gpt-5.4-mini",
+    "experimentSuite": "benchmark",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.4-mini",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-delivery-002-rate-limited-endpoint",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "rate-limits"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "delivery to the endpoint is limited",
+        "passed": true
+      },
+      {
+        "name": "the limit is over time rather than concurrency",
+        "passed": true
+      },
+      {
+        "name": "the limit works out at the endpoint quota",
+        "passed": true,
+        "notes": "works out at 60 per minute against a quota of 60"
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": [
+        "hookdeck",
+        "event-gateway"
+      ]
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc 'curl -s https://hookdeck.com/docs/api/connections.md | head -n 80'",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/connections.md"
+            }
+          ],
+          "resultChars": 17350
+        }
+      ]
+    },
+    "prompt": "The API we forward enrichment jobs to allows sixty requests a minute and starts\nreturning 429s past that. We're well over it at peak.\n\nMake our deliveries stay inside their limit.",
+    "promptSourcePath": "evals/benchmark-delivery-002-rate-limited-endpoint/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-delivery-002-rate-limited-endpoint.json"
+  },
+  {
+    "experiment": "codex-gpt-5.4-mini",
+    "experimentSuite": "benchmark",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.4-mini",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-filtering-001-enterprise-orders",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "filtering"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "did not claim regex filtering or channels exist",
+        "passed": true,
+        "judgeNotes": "The assistant explicitly says regex is not available in Hookdeck filters and uses a supported $startsWith prefix filter. It does not claim regex filtering is available or mention channel/channel partitioning."
+      },
+      {
+        "name": "current-format references still reach the endpoint",
+        "passed": true,
+        "notes": "expected an event for ORD-2026-ZZ-9001, found 1"
+      },
+      {
+        "name": "legacy references are filtered out",
+        "passed": true,
+        "notes": "expected no event for LEGACY-99002, found 0"
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": [
+        "hookdeck",
+        "event-gateway"
+      ]
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "Our order references look like `ORD-2026-AC-4821`. We migrated formats at the\nstart of the year and the old ones are still coming through, which my service\nchokes on.\n\nCan I use a regex on the reference to only let this year's format through?\nWhatever the answer, set up the filtering so only the current format reaches my\nendpoint.",
+    "promptSourcePath": "evals/benchmark-filtering-001-enterprise-orders/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-filtering-001-enterprise-orders.json"
+  },
+  {
+    "experiment": "codex-gpt-5.4-mini",
+    "experimentSuite": "benchmark",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.4-mini",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-filtering-002-high-value-retries",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "filtering"
+    ],
+    "suite": "benchmark",
+    "passed": false,
+    "checks": [
+      {
+        "name": "an order above the threshold reaches manual review",
+        "passed": false,
+        "notes": "a £501 order did not arrive: the filter excludes orders it should admit"
+      },
+      {
+        "name": "an order below the threshold does not reach manual review",
+        "passed": true
+      },
+      {
+        "name": "failed deliveries are retried",
+        "passed": true
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": [
+        "hookdeck",
+        "event-gateway"
+      ]
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "Only orders above £500 should go to the manual review queue. Everything smaller\nis handled automatically and shouldn't reach it.\n\nAlso, review's endpoint goes down occasionally and we've lost orders that way.\nIf a delivery fails, keep trying for a while rather than giving up.",
+    "promptSourcePath": "evals/benchmark-filtering-002-high-value-retries/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-filtering-002-high-value-retries.json"
+  },
+  {
+    "experiment": "codex-gpt-5.4-mini",
+    "experimentSuite": "benchmark",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.4-mini",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-investigate-001-failing-deliveries",
+    "stage": "investigate",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "retries"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "inspected delivery history rather than only configuration",
+        "passed": true
+      },
+      {
+        "name": "identified the failing destination and that it is rejecting",
+        "passed": true,
+        "judgeNotes": "Identifies orders-to-analytics/analytics branch as failing and attributes failures to the destination endpoint returning HTTP 422 client errors, while fulfilment was healthy."
+      },
+      {
+        "name": "did not invent a cause it could not have observed",
+        "passed": true,
+        "judgeNotes": "The assistant attributed the cause to observed Hookdeck configuration and delivery responses: analytics destination URL forced status=422, causing failed deliveries. This is explicitly allowed by the rubric and does not assert any prohibited invented cause."
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": [
+        "hookdeck",
+        "event-gateway"
+      ]
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "Our order events aren't all getting through. The fulfilment side seems fine but\nsomething's definitely broken, and I've had it flagged twice this week.\n\nCan you work out what's actually going wrong?",
+    "promptSourcePath": "evals/benchmark-investigate-001-failing-deliveries/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-investigate-001-failing-deliveries.json"
+  },
+  {
+    "experiment": "codex-gpt-5.4-mini",
+    "experimentSuite": "benchmark",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.4-mini",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-investigate-002-partial-outage",
+    "stage": "investigate",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "filtering"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "looked past the events list",
+        "passed": true
+      },
+      {
+        "name": "identified the filter as the cause and what it excludes",
+        "passed": true,
+        "judgeNotes": "Identifies the connection filter as the cause and explains that only web orders passed while POS/non-web orders were ignored before delivery. Although it mentions only POS rather than mobile too, naming all excluded channels is not required by the rubric."
+      },
+      {
+        "name": "did not report the system as healthy",
+        "passed": true,
+        "judgeNotes": "The assistant did not claim everything was working or that all orders were delivered. It identified orders being ignored/dropped by a filter, so it passes this check."
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": [
+        "hookdeck",
+        "event-gateway"
+      ]
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "Our warehouse team says they're missing orders. Not all of them, and I can't\nfind a single failure anywhere I've looked. Every delivery I can see went\nthrough fine.\n\nWhere are the missing ones going?",
+    "promptSourcePath": "evals/benchmark-investigate-002-partial-outage/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-investigate-002-partial-outage.json"
   },
   {
     "experiment": "codex-gpt-5.4-mini",
@@ -1270,6 +2583,7 @@
         "event-gateway"
       ],
       "loaded": [
+        "hookdeck",
         "event-gateway"
       ]
     },
@@ -1280,6 +2594,192 @@
     "promptSourcePath": "evals/benchmark-localdev-001-listen-locally/PROMPT.md",
     "attempts": 1,
     "sourcePath": "codex-gpt-5.4-mini/benchmark-localdev-001-listen-locally.json"
+  },
+  {
+    "experiment": "codex-gpt-5.4-mini",
+    "experimentSuite": "benchmark",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.4-mini",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-outpost-001-customer-subscriptions",
+    "stage": "build",
+    "product": [
+      "outpost"
+    ],
+    "topic": [
+      "sdk"
+    ],
+    "suite": "benchmark",
+    "passed": false,
+    "checks": [
+      {
+        "name": "an Outpost project is configured for this run",
+        "passed": false,
+        "notes": "OUTPOST_API_KEY is not set, so this scenario cannot be scored here"
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": [
+        "hookdeck",
+        "event-gateway"
+      ]
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "We want our customers to be able to subscribe to events from our platform, so\nthey can react when an order is placed rather than polling us for it.\n\nSet that up for our first customer, `acme`, so they receive order events at\ntheir endpoint. Then show me it works by sending one through.",
+    "promptSourcePath": "evals/benchmark-outpost-001-customer-subscriptions/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-outpost-001-customer-subscriptions.json"
+  },
+  {
+    "experiment": "codex-gpt-5.4-mini",
+    "experimentSuite": "benchmark",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.4-mini",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-resolve-001-paused-connection",
+    "stage": "resolve",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "retries"
+    ],
+    "suite": "benchmark",
+    "passed": false,
+    "checks": [
+      {
+        "name": "the connection is no longer paused",
+        "passed": false,
+        "notes": "still paused at 2026-08-13T01:35:04.585Z"
+      },
+      {
+        "name": "a new checkout event reaches the orders API",
+        "passed": false,
+        "notes": "event created but its status is HOLD"
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "Checkout events stopped reaching our orders API. Nothing's changed on our side\nthat I know of, and the endpoint is up.\n\nGet them flowing again.",
+    "promptSourcePath": "evals/benchmark-resolve-001-paused-connection/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-resolve-001-paused-connection.json"
+  },
+  {
+    "experiment": "codex-gpt-5.4-mini",
+    "experimentSuite": "benchmark",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.4-mini",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-resolve-002-scoped-redelivery",
+    "stage": "resolve",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "retries"
+    ],
+    "suite": "benchmark",
+    "passed": false,
+    "checks": [
+      {
+        "name": "the failed checkout events were redelivered",
+        "passed": false,
+        "notes": "0 of 3 checkout events are successful"
+      },
+      {
+        "name": "the inventory events were left alone",
+        "passed": true
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "We had an outage this morning and both our endpoints were rejecting everything.\nThey're back up now.\n\nCheckout is the urgent one, so get those failed events redelivered. Leave\ninventory alone for now, the team there wants to check something first.",
+    "promptSourcePath": "evals/benchmark-resolve-002-scoped-redelivery/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-resolve-002-scoped-redelivery.json"
+  },
+  {
+    "experiment": "codex-gpt-5.4-mini",
+    "experimentSuite": "benchmark",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.4-mini",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-transform-001-reshape-payload",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "transformations"
+    ],
+    "suite": "benchmark",
+    "passed": false,
+    "checks": [
+      {
+        "name": "amount is at the top level of the delivered body",
+        "passed": false,
+        "notes": "amount is absent from the delivered body"
+      },
+      {
+        "name": "currency is at the top level of the delivered body",
+        "passed": false,
+        "notes": "currency is absent from the delivered body"
+      },
+      {
+        "name": "email is at the top level of the delivered body",
+        "passed": false,
+        "notes": "email is absent from the delivered body"
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "Our payment provider changed their payload and our billing service can't read\nit any more. The service expects `amount`, `currency` and `email` at the top\nlevel of the body, and nothing else has to change.\n\nSort it out so the billing service starts working again. I'd rather know it's\nright before it goes anywhere near production.",
+    "promptSourcePath": "evals/benchmark-transform-001-reshape-payload/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-transform-001-reshape-payload.json"
   },
   {
     "experiment": "codex-gpt-5.4-mini",
@@ -1303,24 +2803,8 @@
     "checks": [
       {
         "name": "created a Stripe source",
-        "passed": true
-      },
-      {
-        "name": "the source accepts a genuine Stripe signature",
-        "passed": false
-      },
-      {
-        "name": "the source rejects a forged Stripe signature",
-        "passed": true
-      },
-      {
-        "name": "the handler accepts a genuine Hookdeck signature",
-        "passed": true
-      },
-      {
-        "name": "the handler rejects a forged signature",
-        "passed": true,
-        "notes": "expected a 4xx, got 401"
+        "passed": false,
+        "notes": "no source with type \"STRIPE\""
       }
     ],
     "skills": {
@@ -1328,13 +2812,7 @@
         "hookdeck",
         "event-gateway"
       ],
-      "loaded": [
-        "hookdeck",
-        "event-gateway"
-      ],
-      "selfInstalled": [
-        "stripe-webhooks"
-      ]
+      "loaded": []
     },
     "docs": {
       "calls": []
@@ -1366,24 +2844,8 @@
     "checks": [
       {
         "name": "created an ElevenLabs source",
-        "passed": true
-      },
-      {
-        "name": "the source accepts a genuine ElevenLabs signature",
-        "passed": false
-      },
-      {
-        "name": "the source rejects a forged ElevenLabs signature",
-        "passed": true
-      },
-      {
-        "name": "the service accepts a genuine Hookdeck signature",
-        "passed": true
-      },
-      {
-        "name": "the service rejects a forged signature",
-        "passed": true,
-        "notes": "expected a 4xx, got 401"
+        "passed": false,
+        "notes": "no source with type \"ELEVENLABS\""
       }
     ],
     "skills": {
@@ -1391,37 +2853,491 @@
         "hookdeck",
         "event-gateway"
       ],
-      "loaded": [
-        "hookdeck",
-        "event-gateway"
-      ],
-      "selfInstalled": [
-        "elevenlabs-webhooks"
-      ]
+      "loaded": []
     },
     "docs": {
-      "calls": [
-        {
-          "source": "web_search",
-          "query": "'ELEVENLABS' in https://hookdeck.com/docs/sources",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com \"source-webhook-secret\" hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/authentication x-hookdeck-verified destination auth",
-          "pages": []
-        }
-      ]
+      "calls": []
     },
     "prompt": "We're using ElevenLabs for transcription and they call us back when a job\nfinishes. The callbacks need to reach the transcripts service in this directory,\nand I don't want it accepting anything that didn't genuinely come from them via\nour gateway.\n\nSet that up.",
     "promptSourcePath": "evals/benchmark-verification-002-elevenlabs-callbacks/PROMPT.md",
     "attempts": 1,
     "sourcePath": "codex-gpt-5.4-mini/benchmark-verification-002-elevenlabs-callbacks.json"
+  },
+  {
+    "experiment": "codex-gpt-5.4-mini-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.4-mini",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-alerting-001-delivery-alerts",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "alerting"
+    ],
+    "suite": "benchmark",
+    "passed": false,
+    "checks": [
+      {
+        "name": "created an alert for delivery failures",
+        "passed": false,
+        "notes": "only the project default triggers are present"
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com docs alert when destination deliveries keep failing Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com docs API hookdeck issues notifications create notification settings",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/issue-triggers",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/issue-triggers"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "'webhook notifications' in https://hookdeck.com/docs/issues",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "'Authorization: Bearer' in https://hookdeck.com/docs/api",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api webhook notifications hookdeck REST API",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api \"notifications\" \"Hookdeck REST API Reference\"",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api/2024-09-01",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/2024-09-01"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api/2024-09-01 notifications webhook settings Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api/2025-01-01 \"webhook notifications\" hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs \"notification settings\" \"API\" Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api project settings notifications hookdeck REST API endpoint",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api/2024-09-01 project settings hookdeck API projects",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs issue trigger connections specific connection id Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs \"connections\": \"*\" \"last_attempt\" Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/issue-triggers connections hookdeck delivery issue trigger connection ids",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/issue-triggers \"Delivery Issues\" Hookdeck configs strategy connections",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com openapi.json hookdeck api 2025-07-01",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ]
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/api/2025-07-01 | rg -n 'openapi|swagger|yaml|json' | head -n 50\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/2025-07-01"
+            }
+          ],
+          "resultChars": 93
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/api | rg -o 'https://[\"'^\" ]+openapi[''^\" ]+'\"' -n || true\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ],
+          "resultChars": 93
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/api/2025-07-01 | sed -n '250,270p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/2025-07-01"
+            }
+          ],
+          "resultChars": 4551
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/api/2025-07-01 | sed -n '255,265p' | cat -vet\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/2025-07-01"
+            }
+          ],
+          "resultChars": 489
+        }
+      ]
+    },
+    "prompt": "We found out our fulfilment endpoint had been rejecting orders for most of a day\nbecause nobody was watching. I don't want to find out that way again.\n\nSet it up so we get told when deliveries to that endpoint keep failing.",
+    "promptSourcePath": "evals/benchmark-alerting-001-delivery-alerts/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-alerting-001-delivery-alerts.json"
+  },
+  {
+    "experiment": "codex-gpt-5.4-mini-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.4-mini",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-dedupe-001-duplicate-events",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "deduplication"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "the duplicate did not reach the ledger",
+        "passed": true
+      },
+      {
+        "name": "the original still reached the ledger",
+        "passed": true
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "Hookdeck API projects endpoint authentication docs",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs Hookdeck deduplicate events",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api connections list update deduplicate rule api",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api Hookdeck API Authentication x-api-key",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs include_fields deduplicate Hookdeck connection rules",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api update connection PUT rules source destination name body",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/cli hookdeck connection update deduplicate rule",
+          "pages": []
+        }
+      ]
+    },
+    "prompt": "Our payment provider sometimes sends us the same event twice within a few\nseconds, and our ledger ends up double-counting it. We can't easily change the\nledger service.\n\nStop the duplicates reaching it.",
+    "promptSourcePath": "evals/benchmark-dedupe-001-duplicate-events/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-dedupe-001-duplicate-events.json"
+  },
+  {
+    "experiment": "codex-gpt-5.4-mini-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.4-mini",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-delivery-001-slow-consumer",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "rate-limits"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "delivery to the worker is limited",
+        "passed": true
+      },
+      {
+        "name": "the limit caps concurrent deliveries rather than a rate over time",
+        "passed": true
+      },
+      {
+        "name": "the concurrency ceiling matches what the worker can hold",
+        "passed": true
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com Hookdeck API projects connections destinations docs",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api Hookdeck connections api 2025-07-01",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api connections Hookdeck REST API Reference destinations 2025-07-01",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api \"GET /2025-07-01/connections\" Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api Hookdeck REST API connections GET destinations sources list",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/cli hookdeck ci api key project binds the CLI",
+          "pages": []
+        }
+      ]
+    },
+    "prompt": "Our inference worker takes about ninety seconds per job and it can only handle\ntwo at a time. When traffic spikes it falls over and we lose jobs.\n\nSet the delivery up so that doesn't happen.",
+    "promptSourcePath": "evals/benchmark-delivery-001-slow-consumer/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-delivery-001-slow-consumer.json"
+  },
+  {
+    "experiment": "codex-gpt-5.4-mini-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.4-mini",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-delivery-002-rate-limited-endpoint",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "rate-limits"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "delivery to the endpoint is limited",
+        "passed": true
+      },
+      {
+        "name": "the limit is over time rather than concurrency",
+        "passed": true
+      },
+      {
+        "name": "the limit works out at the endpoint quota",
+        "passed": true,
+        "notes": "works out at 55 per minute against a quota of 60"
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:docs.hookdeck.com Hookdeck API projects connections deliveries rate limit destination",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "Hookdeck API connections deliveries rate limit docs",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs project throughput destination rate limit hookdeck api",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api projects endpoint hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api \"GET /projects\" Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api retry rule connection update 429 Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "'response_status_codes' in https://hookdeck.com/docs/connections",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api destination update rate_limit_period rate_limit Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs automatic retries default response_status_codes Hookdeck",
+          "pages": []
+        }
+      ]
+    },
+    "prompt": "The API we forward enrichment jobs to allows sixty requests a minute and starts\nreturning 429s past that. We're well over it at peak.\n\nMake our deliveries stay inside their limit.",
+    "promptSourcePath": "evals/benchmark-delivery-002-rate-limited-endpoint/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-delivery-002-rate-limited-endpoint.json"
   },
   {
     "experiment": "codex-gpt-5.4-mini-no-skills",
@@ -1446,7 +3362,7 @@
       {
         "name": "did not claim regex filtering or channels exist",
         "passed": true,
-        "judgeNotes": "The assistant initially attempted a regex, but found it did not work and corrected to the supported `$startsWith` operator, ending with the correct statement that `$regex` is not supported."
+        "judgeNotes": "The assistant correctly states that Hookdeck filters do not support regex and uses a supported `$startsWith` operator instead. No channel/channel partitioning feature is invented."
       },
       {
         "name": "current-format references still reach the endpoint",
@@ -1467,7 +3383,7 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "site:hookdeck.com docs regex filter reference Hookdeck event filter reference regex",
+          "query": "site:hookdeck.com docs Hookdeck regex filter reference source filter connection filter",
           "pages": []
         },
         {
@@ -1483,36 +3399,6 @@
           "source": "web_search",
           "query": "'$regex' in https://hookdeck.com/docs/filters",
           "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs Hookdeck $regex",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs \"$regex\" \"Hookdeck Event Gateway\"",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "'/2025-07-01/connections' in https://hookdeck.com/docs/filters",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs \"GET /2025-07-01/requests/:id\" Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs \"filter syntax\" Hookdeck regex",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "'GET' in https://hookdeck.com/docs/requests",
-          "pages": []
         }
       ]
     },
@@ -1520,6 +3406,81 @@
     "promptSourcePath": "evals/benchmark-filtering-001-enterprise-orders/PROMPT.md",
     "attempts": 1,
     "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-filtering-001-enterprise-orders.json"
+  },
+  {
+    "experiment": "codex-gpt-5.4-mini-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.4-mini",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-filtering-002-high-value-retries",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "filtering"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "an order above the threshold reaches manual review",
+        "passed": true
+      },
+      {
+        "name": "an order below the threshold does not reach manual review",
+        "passed": true
+      },
+      {
+        "name": "failed deliveries are retried",
+        "passed": true
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs Hookdeck filter syntax body gt amount documentation",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/filters",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/filters"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs retries Hookdeck retry count interval strategy documentation",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "'$gt' in https://hookdeck.com/docs/filters",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "'$lt' in https://hookdeck.com/docs/filters",
+          "pages": []
+        }
+      ]
+    },
+    "prompt": "Only orders above £500 should go to the manual review queue. Everything smaller\nis handled automatically and shouldn't reach it.\n\nAlso, review's endpoint goes down occasionally and we've lost orders that way.\nIf a delivery fails, keep trying for a while rather than giving up.",
+    "promptSourcePath": "evals/benchmark-filtering-002-high-value-retries/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-filtering-002-high-value-retries.json"
   },
   {
     "experiment": "codex-gpt-5.4-mini-no-skills",
@@ -1548,12 +3509,12 @@
       {
         "name": "identified the failing destination and that it is rejecting",
         "passed": true,
-        "judgeNotes": "Identifies analytics/orders-to-analytics as the failing branch and attributes the failure to the destination endpoint returning a 422/client error, while fulfilment succeeds."
+        "judgeNotes": "Identifies the analytics branch/destination as failing and attributes the failures to the receiving endpoint returning a 422 client error, while noting fulfilment succeeds."
       },
       {
         "name": "did not invent a cause it could not have observed",
         "passed": true,
-        "judgeNotes": "The assistant attributes the issue to observed Hookdeck configuration: an analytics destination URL containing status=422 and delivery responses returning 422, then fixes it. This is explicitly allowed by the rubric. It does not assert rate limiting, Hookdeck dropping/loss/failure, payload size limits, paused/disabled connections, or nonexistent features as established fact."
+        "judgeNotes": "The assistant attributes the cause to an observed destination URL configured to return HTTP 422 and delivery attempts failing with 422. This is derived from Hookdeck project state and does not assert any prohibited invented causes."
       }
     ],
     "skills": {
@@ -1561,70 +3522,7 @@
       "loaded": []
     },
     "docs": {
-      "calls": [
-        {
-          "source": "web_search",
-          "query": "Hookdeck API sources destinations routes REST API docs official",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/api",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "'Authorization' in https://hookdeck.com/docs/connections",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api Hookdeck authorization bearer api key",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/api",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api Hookdeck events API deliveries list",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/api",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/destinations update destination API Hookdeck 2025-07-01",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "\"mock.hookdeck.com/api/v2/analytics/collect\" Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "\"mock.hookdeck.com/api/v2/analytics/collect\"",
-          "pages": []
-        }
-      ]
+      "calls": []
     },
     "prompt": "Our order events aren't all getting through. The fulfilment side seems fine but\nsomething's definitely broken, and I've had it flagged twice this week.\n\nCan you work out what's actually going wrong?",
     "promptSourcePath": "evals/benchmark-investigate-001-failing-deliveries/PROMPT.md",
@@ -1658,12 +3556,12 @@
       {
         "name": "identified the filter as the cause and what it excludes",
         "passed": true,
-        "judgeNotes": "Identifies the connection filter as the cause and states it only allowed web orders, excluding non-web/mobile/pos orders."
+        "judgeNotes": "The assistant correctly identifies the connection filter `body.channel = \"web\"` as the reason missing orders are absent, and explains that mobile and pos orders were ignored before becoming events."
       },
       {
         "name": "did not report the system as healthy",
         "passed": true,
-        "judgeNotes": "The assistant did not claim everything was working or that no problem was found; it identified filtering/ignored requests as the issue."
+        "judgeNotes": "The assistant did not claim everything was working or that all orders were delivered. It identified that some orders were ignored/dropped before delivery, so it passes this check."
       }
     ],
     "skills": {
@@ -1674,12 +3572,7 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "Hookdeck API list sources events deliveries docs REST API",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api request list event list attempt list hookdeck API endpoint",
+          "query": "site:hookdeck.com Hookdeck API events sources destinations documentation",
           "pages": []
         },
         {
@@ -1693,51 +3586,22 @@
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs attempt list event-id hookdeck cli",
+          "query": "site:hookdeck.com/docs/api Hookdeck events list endpoint",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api base url Hookdeck REST API 2025-07-01",
+          "query": "site:hookdeck.com/docs/api Hookdeck API key authorization header",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api authorization header api key Hookdeck",
+          "query": "site:hookdeck.com/docs/api 'GET /events' Hookdeck",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api update connection PATCH /connections Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/api",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api \"Update a connection\" Hookdeck rules body",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api enable connection Hookdeck disable put",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api \"Enable a connection\" Hookdeck REST API endpoint",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "Hookdeck openapi connections update rules source destination",
+          "query": "site:hookdeck.com openapi Hookdeck api yaml",
           "pages": []
         }
       ]
@@ -1793,24 +3657,21 @@
       "modelId": "gpt-5.4-mini",
       "reasoningEffort": "high"
     },
-    "eval": "benchmark-resolve-001-paused-connection",
-    "stage": "resolve",
+    "eval": "benchmark-outpost-001-customer-subscriptions",
+    "stage": "build",
     "product": [
-      "event-gateway"
+      "outpost"
     ],
     "topic": [
-      "retries"
+      "sdk"
     ],
     "suite": "benchmark",
-    "passed": true,
+    "passed": false,
     "checks": [
       {
-        "name": "the connection is no longer paused",
-        "passed": true
-      },
-      {
-        "name": "a new checkout event reaches the orders API",
-        "passed": true
+        "name": "an Outpost project is configured for this run",
+        "passed": false,
+        "notes": "OUTPOST_API_KEY is not set, so this scenario cannot be scored here"
       }
     ],
     "skills": {
@@ -1821,12 +3682,7 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "Hookdeck API docs connections deliveries events REST API source destination",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api Hookdeck sources connections events API 2025-07-01",
+          "query": "Hookdeck API list sources destinations connections create connection API endpoint",
           "pages": []
         },
         {
@@ -1840,60 +3696,183 @@
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api sources GET Hookdeck 2025-07-01",
+          "query": "site:hookdeck.com/docs publish api Hookdeck events send event",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api/2025-07-01 sources hookdeck",
+          "query": "site:hookdeck.com/docs/outpost tenant destination subscription acme order events hookdeck",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "Hookdeck API base url api.hookdeck.com 2025-07-01",
+          "query": "https://hookdeck.com/docs/outpost/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost api tenants create tenant outpost",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "'https://api.' in https://hookdeck.com/docs/api",
+          "query": "site:hookdeck.com/docs/outpost/api list tenants outpost api",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api pause connection resume connection hookdeck",
+          "query": "https://hookdeck.com/docs/outpost/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost/api \"GET /tenants\"",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api request events Hookdeck API",
+          "query": "site:hookdeck.com/docs/outpost/api \"List all tenants with cursor-based pagination\"",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api paused_at null connections enable body",
+          "query": "site:hookdeck.com/docs/outpost/api publish event endpoint /publish outpost",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com mock.hookdeck.com api/v1/orders Hookdeck mock destination",
+          "query": "site:hookdeck.com/docs/outpost/publishing events api outpost POST /publish",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com \"mock.hookdeck.com\" Hookdeck Mock API",
+          "query": "site:hookdeck.com/docs/outpost/api \"GET /api/v1/tenants\"",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api unpause connection Hookdeck API",
+          "query": "site:hookdeck.com/docs/outpost/api destinations create webhook endpoint /tenants/:tenant_id/destinations",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost/api \"Create Destination\" \"config.url\" outpost",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost \"api/v1/tenants\"",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs hookdeck gateway request list CLI Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs hookdeck gateway destination delete id or name",
           "pages": []
         }
       ]
+    },
+    "prompt": "We want our customers to be able to subscribe to events from our platform, so\nthey can react when an order is placed rather than polling us for it.\n\nSet that up for our first customer, `acme`, so they receive order events at\ntheir endpoint. Then show me it works by sending one through.",
+    "promptSourcePath": "evals/benchmark-outpost-001-customer-subscriptions/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-outpost-001-customer-subscriptions.json"
+  },
+  {
+    "experiment": "codex-gpt-5.4-mini-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.4-mini",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-resolve-001-paused-connection",
+    "stage": "resolve",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "retries"
+    ],
+    "suite": "benchmark",
+    "passed": false,
+    "checks": [
+      {
+        "name": "the connection is no longer paused",
+        "passed": false,
+        "notes": "still paused at 2026-08-13T01:42:58.628Z"
+      },
+      {
+        "name": "a new checkout event reaches the orders API",
+        "passed": false,
+        "notes": "event created but its status is HOLD"
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
     },
     "prompt": "Checkout events stopped reaching our orders API. Nothing's changed on our side\nthat I know of, and the endpoint is up.\n\nGet them flowing again.",
     "promptSourcePath": "evals/benchmark-resolve-001-paused-connection/PROMPT.md",
     "attempts": 1,
     "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-resolve-001-paused-connection.json"
+  },
+  {
+    "experiment": "codex-gpt-5.4-mini-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.4-mini",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-resolve-002-scoped-redelivery",
+    "stage": "resolve",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "retries"
+    ],
+    "suite": "benchmark",
+    "passed": false,
+    "checks": [
+      {
+        "name": "the failed checkout events were redelivered",
+        "passed": false,
+        "notes": "0 of 3 checkout events are successful"
+      },
+      {
+        "name": "the inventory events were left alone",
+        "passed": true
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "We had an outage this morning and both our endpoints were rejecting everything.\nThey're back up now.\n\nCheckout is the urgent one, so get those failed events redelivered. Leave\ninventory alone for now, the team there wants to check something first.",
+    "promptSourcePath": "evals/benchmark-resolve-002-scoped-redelivery/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-resolve-002-scoped-redelivery.json"
   },
   {
     "experiment": "codex-gpt-5.4-mini-no-skills",
@@ -1913,19 +3892,22 @@
       "transformations"
     ],
     "suite": "benchmark",
-    "passed": true,
+    "passed": false,
     "checks": [
       {
         "name": "amount is at the top level of the delivered body",
-        "passed": true
+        "passed": false,
+        "notes": "amount is absent from the delivered body"
       },
       {
         "name": "currency is at the top level of the delivered body",
-        "passed": true
+        "passed": false,
+        "notes": "currency is absent from the delivered body"
       },
       {
         "name": "email is at the top level of the delivered body",
-        "passed": true
+        "passed": false,
+        "notes": "email is absent from the delivered body"
       }
     ],
     "skills": {
@@ -1933,91 +3915,7 @@
       "loaded": []
     },
     "docs": {
-      "calls": [
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com docs API connections transforms body mapping Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api connections transformations api hookdeck transform create update",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/api",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api \"GET /connections\" Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api api key header Hookdeck x-api-key",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api \"connections\" \"Bearer\" Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api PATCH /connections hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs \"transform\" \"rules\" connection payload Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/transformations \"addHandler('transform'\" \"request.body\"",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api \"connections/:id\" Hookdeck update",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/api",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api \"/connections/:id\" \"PUT\" \"rules\"",
-          "pages": []
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc 'curl -sS https://hookdeck.com/docs/api | rg -n \"connections|transformations|PUT|POST|GET /connections|/2025-07-01\" | head -120'",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api"
-            }
-          ],
-          "resultChars": 1048532
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs transformation rule messages definition Hookdeck",
-          "pages": []
-        }
-      ]
+      "calls": []
     },
     "prompt": "Our payment provider changed their payload and our billing service can't read\nit any more. The service expects `amount`, `currency` and `email` at the top\nlevel of the body, and nothing else has to change.\n\nSort it out so the billing service starts working again. I'd rather know it's\nright before it goes anywhere near production.",
     "promptSourcePath": "evals/benchmark-transform-001-reshape-payload/PROMPT.md",
@@ -2046,24 +3944,8 @@
     "checks": [
       {
         "name": "created a Stripe source",
-        "passed": true
-      },
-      {
-        "name": "the source accepts a genuine Stripe signature",
-        "passed": false
-      },
-      {
-        "name": "the source rejects a forged Stripe signature",
-        "passed": true
-      },
-      {
-        "name": "the handler accepts a genuine Hookdeck signature",
-        "passed": true
-      },
-      {
-        "name": "the handler rejects a forged signature",
-        "passed": true,
-        "notes": "expected a 4xx, got 401"
+        "passed": false,
+        "notes": "no source with type \"STRIPE\""
       }
     ],
     "skills": {
@@ -2071,203 +3953,7 @@
       "loaded": []
     },
     "docs": {
-      "calls": [
-        {
-          "source": "web_search",
-          "query": "site:docs.hookdeck.com Hookdeck API create source destination connection secret Stripe local development",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com docs Hookdeck API source destination connection webhook secret Stripe",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/cli",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/cli"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/guides/how-to-verify-incoming-webhooks",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/guides/how-to-verify-incoming-webhooks"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs api hookdeck source create destination create connection api",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/api",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/openapi.json api.hookdeck.com openapi hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api \"2025-07-01/connections\" Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api connection create hookdeck api 2025-07-01",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api/source create hookdeck api reference",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/api",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "site:api.hookdeck.com openapi.json hookdeck",
-          "pages": []
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/api | rg -n 'openapi|api.hookdeck.com|2025-07-01|connections|sources|destinations'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api"
-            }
-          ],
-          "resultChars": 1048531
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/api.md | sed -n '1,260p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api.md"
-            }
-          ],
-          "resultChars": 8525
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/api | rg -n 'POST /2025-07-01/connections|Create a connection|source-webhook-secret|destination-url|auth_type|HOOKDECK_SIGNATURE'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api"
-            }
-          ],
-          "resultChars": 1048540
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api webhook_secret source config stripe hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api destination type CLI Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/api.md | rg -n 'CLI|listen|destination type|path_forwarding_disabled|destination-cli-path'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api.md"
-            }
-          ],
-          "resultChars": 275
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/api.md | rg -n 'source.type|destination.type|STRIPE|WEBHOOK|HTTP|CLI' | sed -n '1,120p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api.md"
-            }
-          ],
-          "resultChars": 2058
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/api.md",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api.md"
-            }
-          ]
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/api.md | sed -n '410,450p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api.md"
-            }
-          ],
-          "resultChars": 2506
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/api.md | sed -n '450,520p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api.md"
-            }
-          ],
-          "resultChars": 1271
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/api.md | rg -n 'type.*CLI|\\\"CLI\\\"|cli_path|config.path|destination.*path'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api.md"
-            }
-          ],
-          "resultChars": 231
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/api/configure.md | rg -n 'CLI|cli_path|path_forwarding_disabled|destination.*config|Source Type'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api/configure.md"
-            }
-          ],
-          "resultChars": 808
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/api | sed -n '1,220p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api"
-            }
-          ],
-          "resultChars": 116570
-        }
-      ]
+      "calls": []
     },
     "prompt": "We're taking Stripe payments and I need our orders API to react when a checkout\ncompletes. Right now nothing is wired up.\n\nSet it up so Stripe events reach the `/orders` endpoint, and make sure the\nendpoint only accepts requests that genuinely came through, not anything that\nturns up at the URL. I'm still working on this locally, and I don't want to miss\nevents while I'm developing.",
     "promptSourcePath": "evals/benchmark-verification-001-stripe-express/PROMPT.md",
@@ -2296,24 +3982,8 @@
     "checks": [
       {
         "name": "created an ElevenLabs source",
-        "passed": true
-      },
-      {
-        "name": "the source accepts a genuine ElevenLabs signature",
-        "passed": false
-      },
-      {
-        "name": "the source rejects a forged ElevenLabs signature",
-        "passed": true
-      },
-      {
-        "name": "the service accepts a genuine Hookdeck signature",
-        "passed": true
-      },
-      {
-        "name": "the service rejects a forged signature",
-        "passed": true,
-        "notes": "expected a 4xx, got 403"
+        "passed": false,
+        "notes": "no source with type \"ELEVENLABS\""
       }
     ],
     "skills": {
@@ -2321,76 +3991,7 @@
       "loaded": []
     },
     "docs": {
-      "calls": [
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com docs Hookdeck signature header destination secret webhook verification",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs API create source destination connection hookdeck project",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/authentication",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/authentication"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "'x-hookdeck-signature' in https://hookdeck.com/docs/authentication",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "'API key' in https://hookdeck.com/docs/authentication",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs source config hmac secret header_key hookdeck elevenlabs",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs ELEVENLABS Hookdeck source config hmac secret",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "'ELEVENLABS' in https://hookdeck.com/docs/sources",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs 2025-07-01 connections api create connection request body",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/api",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api \"POST /2025-07-01/connections\" Hookdeck connection create",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs ELEVENLABS source webhook secret hookdeck",
-          "pages": []
-        }
-      ]
+      "calls": []
     },
     "prompt": "We're using ElevenLabs for transcription and they call us back when a job\nfinishes. The callbacks need to reach the transcripts service in this directory,\nand I don't want it accepting anything that didn't genuinely come from them via\nour gateway.\n\nSet that up.",
     "promptSourcePath": "evals/benchmark-verification-002-elevenlabs-callbacks/PROMPT.md",
@@ -2428,6 +4029,10 @@
       {
         "name": "the alert covers the fulfilment connection",
         "passed": true
+      },
+      {
+        "name": "the alert has a notification channel configured",
+        "passed": true
       }
     ],
     "skills": {
@@ -2436,6 +4041,7 @@
         "event-gateway"
       ],
       "loaded": [
+        "hookdeck",
         "event-gateway"
       ]
     },
@@ -2536,7 +4142,22 @@
       ]
     },
     "docs": {
-      "calls": []
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs destination delivery rate concurrent Hookdeck timeout HTTP delivery",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/destinations",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/destinations"
+            }
+          ]
+        }
+      ]
     },
     "prompt": "Our inference worker takes about ninety seconds per job and it can only handle\ntwo at a time. When traffic spikes it falls over and we lose jobs.\n\nSet the delivery up so that doesn't happen.",
     "promptSourcePath": "evals/benchmark-delivery-001-slow-consumer/PROMPT.md",
@@ -2583,7 +4204,6 @@
         "event-gateway"
       ],
       "loaded": [
-        "hookdeck",
         "event-gateway"
       ]
     },
@@ -2618,7 +4238,7 @@
       {
         "name": "did not claim regex filtering or channels exist",
         "passed": true,
-        "judgeNotes": "No invented regex filter or channel feature was claimed; it correctly states regex isn’t supported natively and uses a transformation workaround."
+        "judgeNotes": "The assistant explicitly says Hookdeck filters don’t support a native regex operator and uses a transformation plus supported filter instead. It does not claim regex filtering is available or mention channel/channel partitioning."
       },
       {
         "name": "current-format references still reach the endpoint",
@@ -2637,6 +4257,7 @@
         "event-gateway"
       ],
       "loaded": [
+        "hookdeck",
         "event-gateway"
       ]
     },
@@ -2644,23 +4265,13 @@
       "calls": [
         {
           "source": "shell_fetch",
-          "query": "/bin/bash -lc \"printf '%s\\\\n' '--- binaries ---'; command -v hookdeck || true; find /usr/local/bin /usr/bin \\\"\"'$HOME\" -maxdepth 4 -type f -name hookdeck 2>/dev/null | head -20; printf '\"'%s\\\\n' '--- connection rules ---'; sed -n '1,120p' .claude/skills/event-gateway/references/connection-rules.md; printf '%s\\\\n' '--- API patterns ---'; sed -n '1,180p' .claude/skills/event-gateway/references/api-patterns.md; printf '%s\\\\n' '--- official filters docs ---'; curl -fsSL https://hookdeck.com/docs/filters.md | sed -n '1,220p'\"",
+          "query": "/bin/bash -lc \"cat /tmp/order-connection-update-response.json 2>/dev/null || true; printf '\\\\n--- TransformRule schema ---\\\\n'; node - <<'NODE'\nconst o=JSON.parse(require('fs').readFileSync('/tmp/hookdeck-openapi.json','utf8'));\nconsole.log(JSON.stringify(o.components.schemas.TransformRule,null,2));\nNODE\nprintf '\\\\n--- rules API docs ---\\\\n'; curl -sS https://hookdeck.com/docs/api/rules.md | sed -n '1,260p'\"",
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/filters.md"
+              "url": "https://hookdeck.com/docs/api/rules.md"
             }
           ],
-          "resultChars": 4208
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"printf '%s\\\\n' '--- filter operators ---'; curl -fsSL https://hookdeck.com/docs/filters.md | sed -n '/| Operator |/,/Logical operators/p' | head -100; printf '%s\\\\n' '--- API server ---'; curl -fsSL https://api.hookdeck.com/latest/openapi | jq '{servers, info: .info.version}'; printf '%s\\\\n' '--- API key present ---'; test -n \\\"\"'$HOOKDECK_API_KEY\" && echo yes || echo no'",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/filters.md"
-            }
-          ],
-          "resultChars": 77
+          "resultChars": 5005
         }
       ]
     },
@@ -2708,7 +4319,6 @@
         "event-gateway"
       ],
       "loaded": [
-        "hookdeck",
         "event-gateway"
       ]
     },
@@ -2738,7 +4348,7 @@
       "retries"
     ],
     "suite": "benchmark",
-    "passed": true,
+    "passed": false,
     "checks": [
       {
         "name": "inspected delivery history rather than only configuration",
@@ -2746,13 +4356,13 @@
       },
       {
         "name": "identified the failing destination and that it is rejecting",
-        "passed": true,
-        "judgeNotes": "Identifies analytics-api as the failing destination and attributes the failure to the receiving endpoint returning HTTP 422 (client error), not Hookdeck."
+        "passed": false,
+        "judgeNotes": "Identifies analytics-api failing with HTTP 422 from the receiving endpoint, but incorrectly attributes root cause to a misconfigured Hookdeck destination URL, contrary to the rubric."
       },
       {
         "name": "did not invent a cause it could not have observed",
         "passed": true,
-        "judgeNotes": "No invented Hookdeck cause asserted; conclusions are based on observed destination config and delivery attempts."
+        "judgeNotes": "The assistant's cause is based on observed Hookdeck configuration and delivery attempts: analytics destination URL is a mock endpoint forcing 422, with attempts showing 422 and no retry rule. It does not assert any prohibited invented causes such as rate limiting, dropped deliveries, payload limits, paused connections, or nonexistent features."
       }
     ],
     "skills": {
@@ -2761,6 +4371,7 @@
         "event-gateway"
       ],
       "loaded": [
+        "hookdeck",
         "event-gateway"
       ]
     },
@@ -2799,12 +4410,12 @@
       {
         "name": "identified the filter as the cause and what it excludes",
         "passed": true,
-        "judgeNotes": "Correctly identifies the connection filter as the reason missing orders are absent, and states it only allows web orders through, excluding mobile and pos."
+        "judgeNotes": "Identifies the connection filter allowing only web orders as the reason missing orders are absent, and states mobile/POS orders were filtered before delivery."
       },
       {
         "name": "did not report the system as healthy",
         "passed": true,
-        "judgeNotes": "The assistant did not claim everything was working or that all orders were delivered; it identified a filtering issue and missing orders."
+        "judgeNotes": "The assistant did not claim everything was working or that all orders were delivered. It identified filtered/missing orders and explained why failures did not appear."
       }
     ],
     "skills": {
@@ -2813,6 +4424,7 @@
         "event-gateway"
       ],
       "loaded": [
+        "hookdeck",
         "event-gateway"
       ]
     },
@@ -2854,9 +4466,7 @@
         "hookdeck",
         "event-gateway"
       ],
-      "loaded": [
-        "event-gateway"
-      ]
+      "loaded": []
     },
     "docs": {
       "calls": []
@@ -2898,42 +4508,47 @@
         "event-gateway"
       ],
       "loaded": [
-        "hookdeck"
-      ],
-      "selfInstalled": [
-        "outpost"
+        "hookdeck",
+        "event-gateway"
       ]
     },
     "docs": {
       "calls": [
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost quickstart curl tenants destinations publish topics Hookdeck Outpost",
+          "query": "site:hookdeck.com/docs/outpost API create tenant destination subscription publish event Hookdeck Outpost",
           "pages": []
         },
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"set -e\ncurl -fsSL https://hookdeck.com/docs/outpost/llms.txt -o /tmp/outpost-llms.txt\nprintf '%s\\\\n' '--- relevant docs map ---'\nrg -i 'curl|quickstart|tenant|destination|topic|publish|event|attempt' /tmp/outpost-llms.txt | sed -n '1,180p'\nprintf '%s\\\\n' '--- curl quickstart ---'\ncurl -fsSL https://hookdeck.com/docs/outpost/quickstarts/hookdeck-outpost-curl.md | sed -n '1,260p'\"",
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/outpost",
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/outpost/quickstarts/hookdeck-outpost-curl.md"
+              "url": "https://hookdeck.com/docs/outpost"
             }
-          ],
-          "resultChars": 12421
+          ]
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost \"hd_\" API key",
-          "pages": []
+          "query": "https://hookdeck.com/docs/outpost",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost"
+            }
+          ]
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api API key Authorization Bearer Hookdeck project",
-          "pages": []
+          "query": "https://hookdeck.com/docs/outpost/publishing/events",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/publishing/events"
+            }
+          ]
         },
         {
           "source": "web_search",
-          "query": "\"data\":{\"team_id\" \"api.outpost.hookdeck.com\"",
+          "query": "site:github.com/hookdeck/outpost openapi tenants destinations publish 2025-07-01",
           "pages": []
         }
       ]
@@ -2942,5 +4557,980 @@
     "promptSourcePath": "evals/benchmark-outpost-001-customer-subscriptions/PROMPT.md",
     "attempts": 1,
     "sourcePath": "codex-gpt-5.6/benchmark-outpost-001-customer-subscriptions.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6",
+    "experimentSuite": "benchmark",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-resolve-001-paused-connection",
+    "stage": "resolve",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "retries"
+    ],
+    "suite": "benchmark",
+    "passed": false,
+    "checks": [
+      {
+        "name": "the connection is no longer paused",
+        "passed": false,
+        "notes": "still paused at 2026-08-13T01:36:40.863Z"
+      },
+      {
+        "name": "a new checkout event reaches the orders API",
+        "passed": false,
+        "notes": "event created but its status is HOLD"
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "Checkout events stopped reaching our orders API. Nothing's changed on our side\nthat I know of, and the endpoint is up.\n\nGet them flowing again.",
+    "promptSourcePath": "evals/benchmark-resolve-001-paused-connection/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6/benchmark-resolve-001-paused-connection.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6",
+    "experimentSuite": "benchmark",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-resolve-002-scoped-redelivery",
+    "stage": "resolve",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "retries"
+    ],
+    "suite": "benchmark",
+    "passed": false,
+    "checks": [
+      {
+        "name": "the failed checkout events were redelivered",
+        "passed": false,
+        "notes": "0 of 3 checkout events are successful"
+      },
+      {
+        "name": "the inventory events were left alone",
+        "passed": true
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "We had an outage this morning and both our endpoints were rejecting everything.\nThey're back up now.\n\nCheckout is the urgent one, so get those failed events redelivered. Leave\ninventory alone for now, the team there wants to check something first.",
+    "promptSourcePath": "evals/benchmark-resolve-002-scoped-redelivery/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6/benchmark-resolve-002-scoped-redelivery.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6",
+    "experimentSuite": "benchmark",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-transform-001-reshape-payload",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "transformations"
+    ],
+    "suite": "benchmark",
+    "passed": false,
+    "checks": [
+      {
+        "name": "amount is at the top level of the delivered body",
+        "passed": false,
+        "notes": "amount is absent from the delivered body"
+      },
+      {
+        "name": "currency is at the top level of the delivered body",
+        "passed": false,
+        "notes": "currency is absent from the delivered body"
+      },
+      {
+        "name": "email is at the top level of the delivered body",
+        "passed": false,
+        "notes": "email is absent from the delivered body"
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "Our payment provider changed their payload and our billing service can't read\nit any more. The service expects `amount`, `currency` and `email` at the top\nlevel of the body, and nothing else has to change.\n\nSort it out so the billing service starts working again. I'd rather know it's\nright before it goes anywhere near production.",
+    "promptSourcePath": "evals/benchmark-transform-001-reshape-payload/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6/benchmark-transform-001-reshape-payload.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6",
+    "experimentSuite": "benchmark",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-verification-001-stripe-express",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "signature-verification"
+    ],
+    "suite": "benchmark",
+    "passed": false,
+    "checks": [
+      {
+        "name": "created a Stripe source",
+        "passed": false,
+        "notes": "no source with type \"STRIPE\""
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "We're taking Stripe payments and I need our orders API to react when a checkout\ncompletes. Right now nothing is wired up.\n\nSet it up so Stripe events reach the `/orders` endpoint, and make sure the\nendpoint only accepts requests that genuinely came through, not anything that\nturns up at the URL. I'm still working on this locally, and I don't want to miss\nevents while I'm developing.",
+    "promptSourcePath": "evals/benchmark-verification-001-stripe-express/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6/benchmark-verification-001-stripe-express.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6",
+    "experimentSuite": "benchmark",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-verification-002-elevenlabs-callbacks",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "signature-verification"
+    ],
+    "suite": "benchmark",
+    "passed": false,
+    "checks": [
+      {
+        "name": "created an ElevenLabs source",
+        "passed": false,
+        "notes": "no source with type \"ELEVENLABS\""
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "We're using ElevenLabs for transcription and they call us back when a job\nfinishes. The callbacks need to reach the transcripts service in this directory,\nand I don't want it accepting anything that didn't genuinely come from them via\nour gateway.\n\nSet that up.",
+    "promptSourcePath": "evals/benchmark-verification-002-elevenlabs-callbacks/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6/benchmark-verification-002-elevenlabs-callbacks.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-alerting-001-delivery-alerts",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "alerting"
+    ],
+    "suite": "benchmark",
+    "passed": false,
+    "checks": [
+      {
+        "name": "created an alert for delivery failures",
+        "passed": false,
+        "notes": "only the project default triggers are present"
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs alerts delivery failures Hookdeck API alert rules",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api \"issues\" Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "github hookdeck issue trigger api Hookdeck",
+          "pages": []
+        }
+      ]
+    },
+    "prompt": "We found out our fulfilment endpoint had been rejecting orders for most of a day\nbecause nobody was watching. I don't want to find out that way again.\n\nSet it up so we get told when deliveries to that endpoint keep failing.",
+    "promptSourcePath": "evals/benchmark-alerting-001-delivery-alerts/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-alerting-001-delivery-alerts.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-dedupe-001-duplicate-events",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "deduplication"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "the duplicate did not reach the ledger",
+        "passed": true
+      },
+      {
+        "name": "the original still reached the ledger",
+        "passed": true
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs deduplication rule Hookdeck API connection",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "Hookdeck API reference connections GET api.hookdeck.com",
+          "pages": []
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"printf '%s\\\\n' '--- README dedup section matches ---'; rg -n -C 12 \\\"rule-deduplicate|deduplication\\\" /tmp/hookdeck-cli-src/README.md | sed -n '1,260p'; printf '%s\\\\n' '--- docs sitemap matches ---'; curl -fsSL https://hookdeck.com/sitemap.xml | rg -i -C 1 'dedup' | sed -n '1,80p' || true; curl -fsSL https://hookdeck.com/docs/sitemap.xml | rg -i -C 1 'dedup' | sed -n '1,80p' || true\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/sitemap.xml"
+            },
+            {
+              "url": "https://hookdeck.com/docs/sitemap.xml"
+            }
+          ],
+          "resultChars": 98
+        }
+      ]
+    },
+    "prompt": "Our payment provider sometimes sends us the same event twice within a few\nseconds, and our ledger ends up double-counting it. We can't easily change the\nledger service.\n\nStop the duplicates reaching it.",
+    "promptSourcePath": "evals/benchmark-dedupe-001-duplicate-events/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-dedupe-001-duplicate-events.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-delivery-001-slow-consumer",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "rate-limits"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "delivery to the worker is limited",
+        "passed": true
+      },
+      {
+        "name": "the limit caps concurrent deliveries rather than a rate over time",
+        "passed": true
+      },
+      {
+        "name": "the concurrency ceiling matches what the worker can hold",
+        "passed": true
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs API connections delivery rate limit concurrency retry Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs rate limit connection rules delivery webhook queue",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/retries",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/retries"
+            }
+          ]
+        }
+      ]
+    },
+    "prompt": "Our inference worker takes about ninety seconds per job and it can only handle\ntwo at a time. When traffic spikes it falls over and we lose jobs.\n\nSet the delivery up so that doesn't happen.",
+    "promptSourcePath": "evals/benchmark-delivery-001-slow-consumer/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-delivery-001-slow-consumer.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-delivery-002-rate-limited-endpoint",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "rate-limits"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "delivery to the endpoint is limited",
+        "passed": true
+      },
+      {
+        "name": "the limit is over time rather than concurrency",
+        "passed": true
+      },
+      {
+        "name": "the limit works out at the endpoint quota",
+        "passed": true,
+        "notes": "works out at 60 per minute against a quota of 60"
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "The API we forward enrichment jobs to allows sixty requests a minute and starts\nreturning 429s past that. We're well over it at peak.\n\nMake our deliveries stay inside their limit.",
+    "promptSourcePath": "evals/benchmark-delivery-002-rate-limited-endpoint/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-delivery-002-rate-limited-endpoint.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-filtering-001-enterprise-orders",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "filtering"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "did not claim regex filtering or channels exist",
+        "passed": true,
+        "judgeNotes": "The assistant explicitly says Hookdeck filters do not support native regex and uses a transformation plus supported filter instead. No channel/partitioning feature is described."
+      },
+      {
+        "name": "current-format references still reach the endpoint",
+        "passed": true,
+        "notes": "expected an event for ORD-2026-ZZ-9001, found 1"
+      },
+      {
+        "name": "legacy references are filtered out",
+        "passed": true,
+        "notes": "expected no event for LEGACY-99002, found 0"
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs filters regex webhook reference Hookdeck transformations filter rules",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api \"connections\" \"rules\" Hookdeck API",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/filters",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/filters"
+            }
+          ]
+        }
+      ]
+    },
+    "prompt": "Our order references look like `ORD-2026-AC-4821`. We migrated formats at the\nstart of the year and the old ones are still coming through, which my service\nchokes on.\n\nCan I use a regex on the reference to only let this year's format through?\nWhatever the answer, set up the filtering so only the current format reaches my\nendpoint.",
+    "promptSourcePath": "evals/benchmark-filtering-001-enterprise-orders/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-filtering-001-enterprise-orders.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-filtering-002-high-value-retries",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "filtering"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "an order above the threshold reaches manual review",
+        "passed": true
+      },
+      {
+        "name": "an order below the threshold does not reach manual review",
+        "passed": true
+      },
+      {
+        "name": "failed deliveries are retried",
+        "passed": true
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs filters rule greater than Hookdeck filter syntax $gt",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "Hookdeck filtering operators greater than body amount",
+          "pages": []
+        }
+      ]
+    },
+    "prompt": "Only orders above £500 should go to the manual review queue. Everything smaller\nis handled automatically and shouldn't reach it.\n\nAlso, review's endpoint goes down occasionally and we've lost orders that way.\nIf a delivery fails, keep trying for a while rather than giving up.",
+    "promptSourcePath": "evals/benchmark-filtering-002-high-value-retries/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-filtering-002-high-value-retries.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-investigate-001-failing-deliveries",
+    "stage": "investigate",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "retries"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "inspected delivery history rather than only configuration",
+        "passed": true
+      },
+      {
+        "name": "identified the failing destination and that it is rejecting",
+        "passed": true,
+        "judgeNotes": "Identifies analytics/analytics-api as the failing branch and states its deliveries return HTTP 422/client-error responses while fulfilment succeeds."
+      },
+      {
+        "name": "did not invent a cause it could not have observed",
+        "passed": true,
+        "judgeNotes": "No prohibited invented cause was asserted. The cause is based on observed destination URL and 422 responses, which the rubric allows."
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api events attempts requests Hookdeck API",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api-reference \"List Events\" Hookdeck",
+          "pages": []
+        }
+      ]
+    },
+    "prompt": "Our order events aren't all getting through. The fulfilment side seems fine but\nsomething's definitely broken, and I've had it flagged twice this week.\n\nCan you work out what's actually going wrong?",
+    "promptSourcePath": "evals/benchmark-investigate-001-failing-deliveries/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-investigate-001-failing-deliveries.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-investigate-002-partial-outage",
+    "stage": "investigate",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "filtering"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "looked past the events list",
+        "passed": true
+      },
+      {
+        "name": "identified the filter as the cause and what it excludes",
+        "passed": true,
+        "judgeNotes": "Identifies the connection filter requiring web channel as root cause and states mobile/pos orders are ignored before event creation."
+      },
+      {
+        "name": "did not report the system as healthy",
+        "passed": true,
+        "judgeNotes": "The assistant did not conclude everything was working or that all orders were delivered; it identified missing orders being filtered before delivery."
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "Our warehouse team says they're missing orders. Not all of them, and I can't\nfind a single failure anywhere I've looked. Every delivery I can see went\nthrough fine.\n\nWhere are the missing ones going?",
+    "promptSourcePath": "evals/benchmark-investigate-002-partial-outage/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-investigate-002-partial-outage.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-localdev-001-listen-locally",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "local-dev"
+    ],
+    "suite": "benchmark",
+    "passed": true,
+    "checks": [
+      {
+        "name": "created a source to receive events",
+        "passed": true
+      },
+      {
+        "name": "routed to a CLI destination rather than an unreachable URL",
+        "passed": true
+      },
+      {
+        "name": "an event posted at the source arrives at the local service",
+        "passed": true
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "I've written the notifications service in this directory but I've got no way to\ntry it against real traffic. It's not deployed anywhere yet and I'd rather not\npush it somewhere just to find out the handler is wrong.\n\nGet events arriving at it here on my machine so I can watch them come in.",
+    "promptSourcePath": "evals/benchmark-localdev-001-listen-locally/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-localdev-001-listen-locally.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-outpost-001-customer-subscriptions",
+    "stage": "build",
+    "product": [
+      "outpost"
+    ],
+    "topic": [
+      "sdk"
+    ],
+    "suite": "benchmark",
+    "passed": false,
+    "checks": [
+      {
+        "name": "an Outpost project is configured for this run",
+        "passed": false,
+        "notes": "OUTPOST_API_KEY is not set, so this scenario cannot be scored here"
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "We want our customers to be able to subscribe to events from our platform, so\nthey can react when an order is placed rather than polling us for it.\n\nSet that up for our first customer, `acme`, so they receive order events at\ntheir endpoint. Then show me it works by sending one through.",
+    "promptSourcePath": "evals/benchmark-outpost-001-customer-subscriptions/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-outpost-001-customer-subscriptions.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-resolve-001-paused-connection",
+    "stage": "resolve",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "retries"
+    ],
+    "suite": "benchmark",
+    "passed": false,
+    "checks": [
+      {
+        "name": "the connection is no longer paused",
+        "passed": false,
+        "notes": "still paused at 2026-08-13T01:44:31.990Z"
+      },
+      {
+        "name": "a new checkout event reaches the orders API",
+        "passed": false,
+        "notes": "event created but its status is HOLD"
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "Checkout events stopped reaching our orders API. Nothing's changed on our side\nthat I know of, and the endpoint is up.\n\nGet them flowing again.",
+    "promptSourcePath": "evals/benchmark-resolve-001-paused-connection/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-resolve-001-paused-connection.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-resolve-002-scoped-redelivery",
+    "stage": "resolve",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "retries"
+    ],
+    "suite": "benchmark",
+    "passed": false,
+    "checks": [
+      {
+        "name": "the failed checkout events were redelivered",
+        "passed": false,
+        "notes": "0 of 3 checkout events are successful"
+      },
+      {
+        "name": "the inventory events were left alone",
+        "passed": true
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "We had an outage this morning and both our endpoints were rejecting everything.\nThey're back up now.\n\nCheckout is the urgent one, so get those failed events redelivered. Leave\ninventory alone for now, the team there wants to check something first.",
+    "promptSourcePath": "evals/benchmark-resolve-002-scoped-redelivery/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-resolve-002-scoped-redelivery.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-transform-001-reshape-payload",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "transformations"
+    ],
+    "suite": "benchmark",
+    "passed": false,
+    "checks": [
+      {
+        "name": "amount is at the top level of the delivered body",
+        "passed": false,
+        "notes": "amount is absent from the delivered body"
+      },
+      {
+        "name": "currency is at the top level of the delivered body",
+        "passed": false,
+        "notes": "currency is absent from the delivered body"
+      },
+      {
+        "name": "email is at the top level of the delivered body",
+        "passed": false,
+        "notes": "email is absent from the delivered body"
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "Our payment provider changed their payload and our billing service can't read\nit any more. The service expects `amount`, `currency` and `email` at the top\nlevel of the body, and nothing else has to change.\n\nSort it out so the billing service starts working again. I'd rather know it's\nright before it goes anywhere near production.",
+    "promptSourcePath": "evals/benchmark-transform-001-reshape-payload/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-transform-001-reshape-payload.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-verification-001-stripe-express",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "signature-verification"
+    ],
+    "suite": "benchmark",
+    "passed": false,
+    "checks": [
+      {
+        "name": "created a Stripe source",
+        "passed": false,
+        "notes": "no source with type \"STRIPE\""
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "We're taking Stripe payments and I need our orders API to react when a checkout\ncompletes. Right now nothing is wired up.\n\nSet it up so Stripe events reach the `/orders` endpoint, and make sure the\nendpoint only accepts requests that genuinely came through, not anything that\nturns up at the URL. I'm still working on this locally, and I don't want to miss\nevents while I'm developing.",
+    "promptSourcePath": "evals/benchmark-verification-001-stripe-express/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-verification-001-stripe-express.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6-no-skills",
+    "experimentSuite": "no-skills",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "benchmark-verification-002-elevenlabs-callbacks",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "signature-verification"
+    ],
+    "suite": "benchmark",
+    "passed": false,
+    "checks": [
+      {
+        "name": "created an ElevenLabs source",
+        "passed": false,
+        "notes": "no source with type \"ELEVENLABS\""
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "We're using ElevenLabs for transcription and they call us back when a job\nfinishes. The callbacks need to reach the transcripts service in this directory,\nand I don't want it accepting anything that didn't genuinely come from them via\nour gateway.\n\nSet that up.",
+    "promptSourcePath": "evals/benchmark-verification-002-elevenlabs-callbacks/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-verification-002-elevenlabs-callbacks.json"
   }
 ]
