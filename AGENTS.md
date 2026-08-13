@@ -367,6 +367,18 @@ seeded events to leave `QUEUED`/`SCHEDULED` before running `after`. The retry
 rules in that seed do not help: `count: 0` gates reattempts, and this is the
 first attempt.
 
+**Identify a bad population by its cause, not by what its rows look like.**
+When the Codex CLI died mid-run on 13 August, twenty-two runs were scored
+without the agent doing anything. Picking the rows to re-run by fingerprint,
+zero docs calls and every check failed, missed four of them: `resolve-002`
+carries a negative check ("the inventory events were left alone") which
+*passes* when an agent does nothing, so a dead row showed one of two checks
+green and read as genuine. The row was looked at directly and the passing
+check was taken as evidence the agent had worked; it was evidence of the
+opposite. Cross-referencing job start times against the outage window gave the
+exact set in one query. A fingerprint describes symptoms and any scenario with
+a negative check breaks it; the outage window is the cause and cannot.
+
 **Regression scenarios passing is correct.** They guard against a mistake
 already seen and fixed; all agents passing is the desired state. For benchmark
 scenarios the opposite holds: at least one agent must fail, or there is no
