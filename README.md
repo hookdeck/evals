@@ -63,7 +63,10 @@ Agent-backed runs require the relevant provider key in `.env` (e.g. `OPENAI_API_
 
 ## Running evals
 
-Running evals executes experiment x eval pairs and writes local result files under `results/`.
+Running evals executes experiment x eval pairs and writes local result files under
+`.eval-runs/`, which is gitignored working state. `results/` is the published
+contract: `latest.json` for the most recent successful run, `runs/` for the
+history, and `index.json` listing what exists.
 
 Run a single eval with one experiment:
 

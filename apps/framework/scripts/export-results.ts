@@ -26,7 +26,9 @@ import {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..', '..', '..');
-const RESULTS_DIR = join(ROOT, 'results');
+// Raw per-run output. Gitignored working state, not the published
+// contract, which lives in `results/`.
+const RESULTS_DIR = join(ROOT, '.eval-runs');
 const EVALS_DIR = join(ROOT, 'evals');
 const EXPERIMENTS_DIR = join(ROOT, 'experiments');
 const OUTPUT_PATH = join(
@@ -250,7 +252,7 @@ async function loadEvalResults(): Promise<EvalResult[]> {
       continue;
     }
 
-    // Skip results whose experiment no longer exists. `results/` is a local
+    // Skip results whose experiment no longer exists. `.eval-runs/` is a local
     // scratch directory that outlives renames, so a rename leaves a full set of
     // results under the old name and every one of them would otherwise be
     // published: rows for an experiment nobody can run, carrying no display
@@ -258,7 +260,7 @@ async function loadEvalResults(): Promise<EvalResult[]> {
     // because silently dropping results is how you lose a run you meant to keep.
     if (!experimentMetadata.has(experiment)) {
       console.warn(
-        `skipping results/${experiment}: no experiments/${experiment}.ts. ` +
+        `skipping .eval-runs/${experiment}: no experiments/${experiment}.ts. ` +
           'Delete the directory if it is left over from a rename.'
       );
       continue;

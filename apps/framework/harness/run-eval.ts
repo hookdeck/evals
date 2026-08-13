@@ -276,14 +276,21 @@ function resolveSkillSources(
   return sources;
 }
 
+/**
+ * Where raw per-run output goes. Dot-prefixed and gitignored: it is working
+ * state, rewritten every run and never published. `results/` is the published
+ * contract and deliberately not this.
+ */
+const RAW_RUNS_DIRNAME = '.eval-runs';
+
 function resultPath(modelName: string, ev: Pick<EvalManifest, 'id' | 'mode'>) {
-  return join(ROOT, 'results', modelName, `${ev.id}.json`);
+  return join(ROOT, RAW_RUNS_DIRNAME, modelName, `${ev.id}.json`);
 }
 
 function workspacePath(modelName: string, evalId: string, attempt: number) {
   return join(
     ROOT,
-    'results',
+    RAW_RUNS_DIRNAME,
     modelName,
     evalId,
     `attempt-${attempt}`,

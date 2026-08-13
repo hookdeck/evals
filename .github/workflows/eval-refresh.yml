@@ -397,7 +397,7 @@ jobs:
           # working, and failing the job would make a correct skip look like a
           # broken one. An experiment skipped for a missing agent key, or a run
           # that died, is a misconfiguration and must fail loudly.
-          if [ ! -f "results/${{ matrix.experiment }}/${{ matrix.eval_id }}.json" ]; then
+          if [ ! -f ".eval-runs/${{ matrix.experiment }}/${{ matrix.eval_id }}.json" ]; then
             if grep -q "SKIP .* x ${{ matrix.eval_id }} (requires " "$run_log"; then
               echo "::notice::${{ matrix.eval_id }} declares a requirement this environment does not meet; skipped without a result"
               exit 0
@@ -411,8 +411,8 @@ jobs:
         with:
           name: raw-results-${{ matrix.experiment }}__${{ matrix.eval_id }}
           path: |
-            results/${{ matrix.experiment }}/
-            !results/**/node_modules/**
+            .eval-runs/${{ matrix.experiment }}/
+            !.eval-runs/**/node_modules/**
           retention-days: 3
 
   publish-results:
@@ -461,12 +461,12 @@ jobs:
         run: |
           set -euo pipefail
 
-          mkdir -p results
+          mkdir -p .eval-runs
           pairs='${{ needs.prepare.outputs.pairs }}'
           while IFS= read -r experiment; do
-            mkdir -p "results/$experiment"
+            mkdir -p ".eval-runs/$experiment"
             for artifact_dir in "downloaded-results/raw-results-${experiment}__"*/; do
-              [ -d "$artifact_dir" ] && cp -R "$artifact_dir"/. "results/$experiment"/
+              [ -d "$artifact_dir" ] && cp -R "$artifact_dir"/. ".eval-runs/$experiment"/
             done
           done < <(jq -r '.[].experiment' <<< "$pairs" | sort -u)
 
@@ -485,6 +485,23 @@ jobs:
             fi
             pnpm --filter @hookdeck-evals/framework export-results -- "${export_args[@]}"
           fi
+
+      - name: Publish snapshot
+        # `apps/web/src/data/eval-results.json` is the preview app's own input.
+        # Anything outside this repo reading it is coupled to where our app
+        # keeps its fixtures. `results/` is the contract: latest.json for the
+        # most recent run, runs/ for the history, index.json for what exists.
+        #
+        # History is kept because it cannot be reconstructed. A row records
+        # whether an agent passed, not what it did, so overwriting latest.json
+        # destroys the previous answer. Snapshots are what make "did this get
+        # better or worse" answerable at all.
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm --filter @hookdeck-evals/framework exec tsx scripts/publish-snapshot.ts \
+            --run-id "${{ github.run_id }}" \
+            --published-at "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"
 
       - name: Upload exported results
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -510,6 +527,10 @@ jobs:
           for result_file in apps/web/src/data/*eval-results.json; do
             [ -f "$result_file" ] && git add "$result_file"
           done
+          # The published contract and its history. Staged explicitly rather
+          # than with `git add -A`, so a stray file a run happens to leave in
+          # the working tree cannot ride along into a published commit.
+          git add results/latest.json results/index.json results/runs
 
           if git diff --cached --quiet; then
             echo "No eval result changes to commit"

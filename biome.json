@@ -10,7 +10,7 @@
     "ignore": [
       "**/dist",
       "apps/web",
-      "results",
+      ".eval-runs",
       "submodules",
       "skills",
       ".claude",

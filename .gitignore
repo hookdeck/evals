@@ -14,7 +14,9 @@ dist/
 # BM1, which failed on a workspace the agent never received.
 !evals/*/local/.env
 .DS_Store
-results/*/
+# Raw per-run output: working state, rewritten every run, never published.
+# `results/` is the published contract and IS tracked.
+.eval-runs/
 .sync-tmp/
 
 .spike-pristine.json
