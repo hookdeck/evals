@@ -59,9 +59,16 @@ only", and the page should not imply it.
 
 ## Scoring shape, which constrains the layout
 
-**Per stage, never blended.** "Build 5/6, Investigate 2/3" rather than "74%". A single
-ranked leaderboard needs a blended number to sort by, which is the thing we decided
-not to publish. Three stages: build, investigate, resolve. There is no deploy stage.
+**Per stage first, with a blended total as a scanning aid.** "Build 5/6,
+Investigate 2/3" are the substance; a total percentage sits alongside them. The
+total was originally excluded, on the grounds that one figure per agent is what
+makes a table rankable, and was reinstated by decision after comparing against
+upstream, which has one and reads better for it. The tradeoff was stated and
+accepted rather than forgotten. Three stages: build, investigate, resolve. There
+is no deploy stage.
+
+Per-stage cells stay as fractions rather than percentages: `2/2` is honest where
+`100%` implies a sample that does not exist. The total is the one percentage.
 
 **Failures are always visible.** Showing where agents fail is what makes the passing
 numbers believable, so failure is a normal state to design for rather than an

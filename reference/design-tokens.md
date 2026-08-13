@@ -111,6 +111,15 @@ create or mutate, and it ships inside the CLI both arms already get. A third run
 becomes real if a public read/write MCP ships, and not before. That is a product
 trigger, not a measurement we are choosing to defer.
 
+**A blended total is published, by decision, reversing an earlier constraint.**
+The original brief said scores are per stage and never blended, on the grounds
+that one figure per agent is what makes a table rankable and quotable. The page
+shipped without a total on that basis, and the total was then reinstated
+deliberately after comparing against supabase/evals, which has one and is easier
+to scan for it. The tradeoff was stated and accepted: the per-stage figures
+remain the substance, and the total is a scanning aid. Do not remove it again
+citing the original constraint.
+
 **The skills delta is not the headline.** The page brief says to make `-no-skills` vs
 `+skills` the easiest comparison on the page, because it was assumed to be the finding.
 Measured, it is zero on the build scenarios, at 39% and 56% more tokens. Publish it,
