@@ -239,6 +239,10 @@ jobs:
       AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
       HOOKDECK_API_KEY: ${{ secrets.HOOKDECK_API_KEY }}
       HOOKDECK_WEBHOOK_SECRET: ${{ secrets.HOOKDECK_WEBHOOK_SECRET }}
+      # Scenarios declaring `requires: [outpost]` need this. Absent, the run
+      # on 13 August scored outpost-001 as six agent failures rather than
+      # skipping it, which is a false result published against named vendors.
+      OUTPOST_API_KEY: ${{ secrets.OUTPOST_API_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
@@ -285,6 +289,7 @@ jobs:
             echo "AI_GATEWAY_API_KEY=${AI_GATEWAY_API_KEY}"
             echo "HOOKDECK_API_KEY=${HOOKDECK_API_KEY}"
             echo "HOOKDECK_WEBHOOK_SECRET=${HOOKDECK_WEBHOOK_SECRET}"
+            echo "OUTPOST_API_KEY=${OUTPOST_API_KEY}"
           } > .env
 
       - name: Run evals

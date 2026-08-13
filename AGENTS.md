@@ -59,6 +59,10 @@ others would have caught.
 `eval-refresh` runs on two schedules and on manual dispatch, with
 `HOOKDECK_API_KEY`, `HOOKDECK_WEBHOOK_SECRET`, `ANTHROPIC_API_KEY`,
 `OPENAI_API_KEY` and `OUTPOST_API_KEY` as repository secrets, so it spends.
+`OUTPOST_API_KEY` was listed here before it existed: it was added as a secret
+and wired into the workflow on 13 August, after the first full matrix run
+scored `outpost-001` as six agent failures rather than skipping it. Check
+`gh secret list` against the workflow env rather than trusting this list.
 Weekly (Monday 06:00 UTC) runs the frontier agents and the weak pair, about $185
 a month. Monthly (1st, 08:00 UTC) adds the `-no-skills` twins for a full matrix.
 Everything weekly would be $279 against a $200 budget, and the twins are what
