@@ -21,9 +21,8 @@ import type {
  * `channels` is a required field on create but every key inside it is
  * optional, so `channels: {}` satisfies the API and produces a trigger that is
  * enabled and correctly scoped but never notifies anyone:
- * `NotificationService.send` in `hookdeck/core` (`server/services/Notification.ts`)
- * loops `for (const provider in trigger.channels)`, which is a no-op on an
- * empty object. The console's own create form defaults to `email: {selected:
+ * the notification service loops over the keys of `trigger.channels`, which is
+ * a no-op on an empty object, so nothing is ever sent. The console's own create form defaults to `email: {selected:
  * true}` for exactly this reason.
  *
  * Scored on configuration rather than by causing a real alert, which is a
