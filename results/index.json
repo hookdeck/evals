@@ -1,5 +1,14 @@
 [
   {
+    "file": "runs/2026-08-13T19-19-06-000Z.json",
+    "publishedAt": "2026-08-13T19:19:06.000Z",
+    "runId": "31732968238",
+    "rows": 90,
+    "experiments": 6,
+    "evals": 15,
+    "passed": 76
+  },
+  {
     "file": "runs/2026-08-13T18-00-00-000Z.json",
     "publishedAt": "2026-08-13T18:00:00.000Z",
     "runId": "31710452702",

@@ -757,6 +757,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-resolve-002-scoped-redelivery",
+    "ranAt": "2026-08-13T18:57:30.252Z",
     "stage": "resolve",
     "product": [
       "event-gateway"
@@ -791,8 +792,7 @@
     "prompt": "We had an outage this morning and both our endpoints were rejecting everything.\nThey're back up now.\n\nCheckout is the urgent one, so get those failed events redelivered. Leave\ninventory alone for now, the team there wants to check something first.",
     "promptSourcePath": "evals/benchmark-resolve-002-scoped-redelivery/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5/benchmark-resolve-002-scoped-redelivery.json",
-    "ranAt": "2026-08-13T00:00:00.000Z"
+    "sourcePath": "claude-code-sonnet-5/benchmark-resolve-002-scoped-redelivery.json"
   },
   {
     "experiment": "claude-code-sonnet-5",
@@ -1590,6 +1590,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-resolve-002-scoped-redelivery",
+    "ranAt": "2026-08-13T19:12:50.561Z",
     "stage": "resolve",
     "product": [
       "event-gateway"
@@ -1619,8 +1620,7 @@
     "prompt": "We had an outage this morning and both our endpoints were rejecting everything.\nThey're back up now.\n\nCheckout is the urgent one, so get those failed events redelivered. Leave\ninventory alone for now, the team there wants to check something first.",
     "promptSourcePath": "evals/benchmark-resolve-002-scoped-redelivery/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-resolve-002-scoped-redelivery.json",
-    "ranAt": "2026-08-13T00:00:00.000Z"
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-resolve-002-scoped-redelivery.json"
   },
   {
     "experiment": "claude-code-sonnet-5-no-skills",
@@ -2772,6 +2772,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-resolve-002-scoped-redelivery",
+    "ranAt": "2026-08-13T19:03:45.676Z",
     "stage": "resolve",
     "product": [
       "event-gateway"
@@ -2780,12 +2781,11 @@
       "retries"
     ],
     "suite": "benchmark",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "the failed checkout events were redelivered",
-        "passed": false,
-        "notes": "0 of 3 checkout events are successful"
+        "passed": true
       },
       {
         "name": "the inventory events were left alone",
@@ -2797,7 +2797,10 @@
         "hookdeck",
         "event-gateway"
       ],
-      "loaded": []
+      "loaded": [
+        "hookdeck",
+        "event-gateway"
+      ]
     },
     "docs": {
       "calls": []
@@ -2805,8 +2808,7 @@
     "prompt": "We had an outage this morning and both our endpoints were rejecting everything.\nThey're back up now.\n\nCheckout is the urgent one, so get those failed events redelivered. Leave\ninventory alone for now, the team there wants to check something first.",
     "promptSourcePath": "evals/benchmark-resolve-002-scoped-redelivery/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini/benchmark-resolve-002-scoped-redelivery.json",
-    "ranAt": "2026-08-13T00:00:00.000Z"
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-resolve-002-scoped-redelivery.json"
   },
   {
     "experiment": "codex-gpt-5.4-mini",
@@ -3946,6 +3948,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-resolve-002-scoped-redelivery",
+    "ranAt": "2026-08-13T19:15:11.523Z",
     "stage": "resolve",
     "product": [
       "event-gateway"
@@ -3954,12 +3957,11 @@
       "retries"
     ],
     "suite": "benchmark",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "the failed checkout events were redelivered",
-        "passed": false,
-        "notes": "0 of 3 checkout events are successful"
+        "passed": true
       },
       {
         "name": "the inventory events were left alone",
@@ -3976,8 +3978,7 @@
     "prompt": "We had an outage this morning and both our endpoints were rejecting everything.\nThey're back up now.\n\nCheckout is the urgent one, so get those failed events redelivered. Leave\ninventory alone for now, the team there wants to check something first.",
     "promptSourcePath": "evals/benchmark-resolve-002-scoped-redelivery/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-resolve-002-scoped-redelivery.json",
-    "ranAt": "2026-08-13T00:00:00.000Z"
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-resolve-002-scoped-redelivery.json"
   },
   {
     "experiment": "codex-gpt-5.4-mini-no-skills",
@@ -4992,6 +4993,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-resolve-002-scoped-redelivery",
+    "ranAt": "2026-08-13T19:06:45.645Z",
     "stage": "resolve",
     "product": [
       "event-gateway"
@@ -5000,12 +5002,11 @@
       "retries"
     ],
     "suite": "benchmark",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "the failed checkout events were redelivered",
-        "passed": false,
-        "notes": "0 of 3 checkout events are successful"
+        "passed": true
       },
       {
         "name": "the inventory events were left alone",
@@ -5017,7 +5018,9 @@
         "hookdeck",
         "event-gateway"
       ],
-      "loaded": []
+      "loaded": [
+        "event-gateway"
+      ]
     },
     "docs": {
       "calls": []
@@ -5025,8 +5028,7 @@
     "prompt": "We had an outage this morning and both our endpoints were rejecting everything.\nThey're back up now.\n\nCheckout is the urgent one, so get those failed events redelivered. Leave\ninventory alone for now, the team there wants to check something first.",
     "promptSourcePath": "evals/benchmark-resolve-002-scoped-redelivery/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6/benchmark-resolve-002-scoped-redelivery.json",
-    "ranAt": "2026-08-13T00:00:00.000Z"
+    "sourcePath": "codex-gpt-5.6/benchmark-resolve-002-scoped-redelivery.json"
   },
   {
     "experiment": "codex-gpt-5.6",
@@ -5845,6 +5847,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-resolve-002-scoped-redelivery",
+    "ranAt": "2026-08-13T19:18:32.405Z",
     "stage": "resolve",
     "product": [
       "event-gateway"
@@ -5853,12 +5856,11 @@
       "retries"
     ],
     "suite": "benchmark",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "the failed checkout events were redelivered",
-        "passed": false,
-        "notes": "0 of 3 checkout events are successful"
+        "passed": true
       },
       {
         "name": "the inventory events were left alone",
@@ -5870,13 +5872,28 @@
       "loaded": []
     },
     "docs": {
-      "calls": []
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api events retry bulk retry Hookdeck API failed events attempts",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api-reference Hookdeck events retry",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "github hookdeck API retry event endpoint",
+          "pages": []
+        }
+      ]
     },
     "prompt": "We had an outage this morning and both our endpoints were rejecting everything.\nThey're back up now.\n\nCheckout is the urgent one, so get those failed events redelivered. Leave\ninventory alone for now, the team there wants to check something first.",
     "promptSourcePath": "evals/benchmark-resolve-002-scoped-redelivery/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-resolve-002-scoped-redelivery.json",
-    "ranAt": "2026-08-13T00:00:00.000Z"
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-resolve-002-scoped-redelivery.json"
   },
   {
     "experiment": "codex-gpt-5.6-no-skills",
