@@ -95,7 +95,8 @@
     "prompt": "We found out our fulfilment endpoint had been rejecting orders for most of a day\nbecause nobody was watching. I don't want to find out that way again.\n\nSet it up so we get told when deliveries to that endpoint keep failing.",
     "promptSourcePath": "evals/benchmark-alerting-001-delivery-alerts/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5/benchmark-alerting-001-delivery-alerts.json"
+    "sourcePath": "claude-code-sonnet-5/benchmark-alerting-001-delivery-alerts.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5",
@@ -142,7 +143,8 @@
     "prompt": "Our payment provider sometimes sends us the same event twice within a few\nseconds, and our ledger ends up double-counting it. We can't easily change the\nledger service.\n\nStop the duplicates reaching it.",
     "promptSourcePath": "evals/benchmark-dedupe-001-duplicate-events/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5/benchmark-dedupe-001-duplicate-events.json"
+    "sourcePath": "claude-code-sonnet-5/benchmark-dedupe-001-duplicate-events.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5",
@@ -234,7 +236,8 @@
     "prompt": "Our inference worker takes about ninety seconds per job and it can only handle\ntwo at a time. When traffic spikes it falls over and we lose jobs.\n\nSet the delivery up so that doesn't happen.",
     "promptSourcePath": "evals/benchmark-delivery-001-slow-consumer/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5/benchmark-delivery-001-slow-consumer.json"
+    "sourcePath": "claude-code-sonnet-5/benchmark-delivery-001-slow-consumer.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5",
@@ -286,7 +289,8 @@
     "prompt": "The API we forward enrichment jobs to allows sixty requests a minute and starts\nreturning 429s past that. We're well over it at peak.\n\nMake our deliveries stay inside their limit.",
     "promptSourcePath": "evals/benchmark-delivery-002-rate-limited-endpoint/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5/benchmark-delivery-002-rate-limited-endpoint.json"
+    "sourcePath": "claude-code-sonnet-5/benchmark-delivery-002-rate-limited-endpoint.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5",
@@ -373,7 +377,8 @@
     "prompt": "Our order references look like `ORD-2026-AC-4821`. We migrated formats at the\nstart of the year and the old ones are still coming through, which my service\nchokes on.\n\nCan I use a regex on the reference to only let this year's format through?\nWhatever the answer, set up the filtering so only the current format reaches my\nendpoint.",
     "promptSourcePath": "evals/benchmark-filtering-001-enterprise-orders/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5/benchmark-filtering-001-enterprise-orders.json"
+    "sourcePath": "claude-code-sonnet-5/benchmark-filtering-001-enterprise-orders.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5",
@@ -458,7 +463,8 @@
     "prompt": "Only orders above £500 should go to the manual review queue. Everything smaller\nis handled automatically and shouldn't reach it.\n\nAlso, review's endpoint goes down occasionally and we've lost orders that way.\nIf a delivery fails, keep trying for a while rather than giving up.",
     "promptSourcePath": "evals/benchmark-filtering-002-high-value-retries/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5/benchmark-filtering-002-high-value-retries.json"
+    "sourcePath": "claude-code-sonnet-5/benchmark-filtering-002-high-value-retries.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5",
@@ -510,7 +516,8 @@
     "prompt": "Our order events aren't all getting through. The fulfilment side seems fine but\nsomething's definitely broken, and I've had it flagged twice this week.\n\nCan you work out what's actually going wrong?",
     "promptSourcePath": "evals/benchmark-investigate-001-failing-deliveries/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5/benchmark-investigate-001-failing-deliveries.json"
+    "sourcePath": "claude-code-sonnet-5/benchmark-investigate-001-failing-deliveries.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5",
@@ -562,7 +569,8 @@
     "prompt": "Our warehouse team says they're missing orders. Not all of them, and I can't\nfind a single failure anywhere I've looked. Every delivery I can see went\nthrough fine.\n\nWhere are the missing ones going?",
     "promptSourcePath": "evals/benchmark-investigate-002-partial-outage/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5/benchmark-investigate-002-partial-outage.json"
+    "sourcePath": "claude-code-sonnet-5/benchmark-investigate-002-partial-outage.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5",
@@ -612,7 +620,8 @@
     "prompt": "I've written the notifications service in this directory but I've got no way to\ntry it against real traffic. It's not deployed anywhere yet and I'd rather not\npush it somewhere just to find out the handler is wrong.\n\nGet events arriving at it here on my machine so I can watch them come in.",
     "promptSourcePath": "evals/benchmark-localdev-001-listen-locally/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5/benchmark-localdev-001-listen-locally.json"
+    "sourcePath": "claude-code-sonnet-5/benchmark-localdev-001-listen-locally.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5",
@@ -688,7 +697,8 @@
     "prompt": "We want our customers to be able to subscribe to events from our platform, so\nthey can react when an order is placed rather than polling us for it.\n\nSet that up for our first customer, `acme`, so they receive order events at\ntheir endpoint. Then show me it works by sending one through.",
     "promptSourcePath": "evals/benchmark-outpost-001-customer-subscriptions/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5/benchmark-outpost-001-customer-subscriptions.json"
+    "sourcePath": "claude-code-sonnet-5/benchmark-outpost-001-customer-subscriptions.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5",
@@ -734,7 +744,8 @@
     "prompt": "Checkout events stopped reaching our orders API. Nothing's changed on our side\nthat I know of, and the endpoint is up.\n\nGet them flowing again.",
     "promptSourcePath": "evals/benchmark-resolve-001-paused-connection/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5/benchmark-resolve-001-paused-connection.json"
+    "sourcePath": "claude-code-sonnet-5/benchmark-resolve-001-paused-connection.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5",
@@ -780,7 +791,8 @@
     "prompt": "We had an outage this morning and both our endpoints were rejecting everything.\nThey're back up now.\n\nCheckout is the urgent one, so get those failed events redelivered. Leave\ninventory alone for now, the team there wants to check something first.",
     "promptSourcePath": "evals/benchmark-resolve-002-scoped-redelivery/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5/benchmark-resolve-002-scoped-redelivery.json"
+    "sourcePath": "claude-code-sonnet-5/benchmark-resolve-002-scoped-redelivery.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5",
@@ -830,7 +842,8 @@
     "prompt": "Our payment provider changed their payload and our billing service can't read\nit any more. The service expects `amount`, `currency` and `email` at the top\nlevel of the body, and nothing else has to change.\n\nSort it out so the billing service starts working again. I'd rather know it's\nright before it goes anywhere near production.",
     "promptSourcePath": "evals/benchmark-transform-001-reshape-payload/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5/benchmark-transform-001-reshape-payload.json"
+    "sourcePath": "claude-code-sonnet-5/benchmark-transform-001-reshape-payload.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5",
@@ -893,7 +906,8 @@
     "prompt": "We're taking Stripe payments and I need our orders API to react when a checkout\ncompletes. Right now nothing is wired up.\n\nSet it up so Stripe events reach the `/orders` endpoint, and make sure the\nendpoint only accepts requests that genuinely came through, not anything that\nturns up at the URL. I'm still working on this locally, and I don't want to miss\nevents while I'm developing.",
     "promptSourcePath": "evals/benchmark-verification-001-stripe-express/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5/benchmark-verification-001-stripe-express.json"
+    "sourcePath": "claude-code-sonnet-5/benchmark-verification-001-stripe-express.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5",
@@ -957,7 +971,8 @@
     "prompt": "We're using ElevenLabs for transcription and they call us back when a job\nfinishes. The callbacks need to reach the transcripts service in this directory,\nand I don't want it accepting anything that didn't genuinely come from them via\nour gateway.\n\nSet that up.",
     "promptSourcePath": "evals/benchmark-verification-002-elevenlabs-callbacks/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5/benchmark-verification-002-elevenlabs-callbacks.json"
+    "sourcePath": "claude-code-sonnet-5/benchmark-verification-002-elevenlabs-callbacks.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5-no-skills",
@@ -1051,7 +1066,8 @@
     "prompt": "We found out our fulfilment endpoint had been rejecting orders for most of a day\nbecause nobody was watching. I don't want to find out that way again.\n\nSet it up so we get told when deliveries to that endpoint keep failing.",
     "promptSourcePath": "evals/benchmark-alerting-001-delivery-alerts/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-alerting-001-delivery-alerts.json"
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-alerting-001-delivery-alerts.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5-no-skills",
@@ -1092,7 +1108,8 @@
     "prompt": "Our payment provider sometimes sends us the same event twice within a few\nseconds, and our ledger ends up double-counting it. We can't easily change the\nledger service.\n\nStop the duplicates reaching it.",
     "promptSourcePath": "evals/benchmark-dedupe-001-duplicate-events/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-dedupe-001-duplicate-events.json"
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-dedupe-001-duplicate-events.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5-no-skills",
@@ -1149,7 +1166,8 @@
     "prompt": "Our inference worker takes about ninety seconds per job and it can only handle\ntwo at a time. When traffic spikes it falls over and we lose jobs.\n\nSet the delivery up so that doesn't happen.",
     "promptSourcePath": "evals/benchmark-delivery-001-slow-consumer/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-delivery-001-slow-consumer.json"
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-delivery-001-slow-consumer.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5-no-skills",
@@ -1195,7 +1213,8 @@
     "prompt": "The API we forward enrichment jobs to allows sixty requests a minute and starts\nreturning 429s past that. We're well over it at peak.\n\nMake our deliveries stay inside their limit.",
     "promptSourcePath": "evals/benchmark-delivery-002-rate-limited-endpoint/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-delivery-002-rate-limited-endpoint.json"
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-delivery-002-rate-limited-endpoint.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5-no-skills",
@@ -1266,7 +1285,8 @@
     "prompt": "Our order references look like `ORD-2026-AC-4821`. We migrated formats at the\nstart of the year and the old ones are still coming through, which my service\nchokes on.\n\nCan I use a regex on the reference to only let this year's format through?\nWhatever the answer, set up the filtering so only the current format reaches my\nendpoint.",
     "promptSourcePath": "evals/benchmark-filtering-001-enterprise-orders/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-filtering-001-enterprise-orders.json"
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-filtering-001-enterprise-orders.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5-no-skills",
@@ -1334,7 +1354,8 @@
     "prompt": "Only orders above £500 should go to the manual review queue. Everything smaller\nis handled automatically and shouldn't reach it.\n\nAlso, review's endpoint goes down occasionally and we've lost orders that way.\nIf a delivery fails, keep trying for a while rather than giving up.",
     "promptSourcePath": "evals/benchmark-filtering-002-high-value-retries/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-filtering-002-high-value-retries.json"
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-filtering-002-high-value-retries.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5-no-skills",
@@ -1381,7 +1402,8 @@
     "prompt": "Our order events aren't all getting through. The fulfilment side seems fine but\nsomething's definitely broken, and I've had it flagged twice this week.\n\nCan you work out what's actually going wrong?",
     "promptSourcePath": "evals/benchmark-investigate-001-failing-deliveries/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-investigate-001-failing-deliveries.json"
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-investigate-001-failing-deliveries.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5-no-skills",
@@ -1428,7 +1450,8 @@
     "prompt": "Our warehouse team says they're missing orders. Not all of them, and I can't\nfind a single failure anywhere I've looked. Every delivery I can see went\nthrough fine.\n\nWhere are the missing ones going?",
     "promptSourcePath": "evals/benchmark-investigate-002-partial-outage/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-investigate-002-partial-outage.json"
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-investigate-002-partial-outage.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5-no-skills",
@@ -1473,7 +1496,8 @@
     "prompt": "I've written the notifications service in this directory but I've got no way to\ntry it against real traffic. It's not deployed anywhere yet and I'd rather not\npush it somewhere just to find out the handler is wrong.\n\nGet events arriving at it here on my machine so I can watch them come in.",
     "promptSourcePath": "evals/benchmark-localdev-001-listen-locally/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-localdev-001-listen-locally.json"
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-localdev-001-listen-locally.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5-no-skills",
@@ -1511,7 +1535,8 @@
     "prompt": "We want our customers to be able to subscribe to events from our platform, so\nthey can react when an order is placed rather than polling us for it.\n\nSet that up for our first customer, `acme`, so they receive order events at\ntheir endpoint. Then show me it works by sending one through.",
     "promptSourcePath": "evals/benchmark-outpost-001-customer-subscriptions/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-outpost-001-customer-subscriptions.json"
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-outpost-001-customer-subscriptions.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5-no-skills",
@@ -1552,7 +1577,8 @@
     "prompt": "Checkout events stopped reaching our orders API. Nothing's changed on our side\nthat I know of, and the endpoint is up.\n\nGet them flowing again.",
     "promptSourcePath": "evals/benchmark-resolve-001-paused-connection/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-resolve-001-paused-connection.json"
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-resolve-001-paused-connection.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5-no-skills",
@@ -1593,7 +1619,8 @@
     "prompt": "We had an outage this morning and both our endpoints were rejecting everything.\nThey're back up now.\n\nCheckout is the urgent one, so get those failed events redelivered. Leave\ninventory alone for now, the team there wants to check something first.",
     "promptSourcePath": "evals/benchmark-resolve-002-scoped-redelivery/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-resolve-002-scoped-redelivery.json"
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-resolve-002-scoped-redelivery.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5-no-skills",
@@ -1661,7 +1688,8 @@
     "prompt": "Our payment provider changed their payload and our billing service can't read\nit any more. The service expects `amount`, `currency` and `email` at the top\nlevel of the body, and nothing else has to change.\n\nSort it out so the billing service starts working again. I'd rather know it's\nright before it goes anywhere near production.",
     "promptSourcePath": "evals/benchmark-transform-001-reshape-payload/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-transform-001-reshape-payload.json"
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-transform-001-reshape-payload.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5-no-skills",
@@ -1804,7 +1832,8 @@
     "prompt": "We're taking Stripe payments and I need our orders API to react when a checkout\ncompletes. Right now nothing is wired up.\n\nSet it up so Stripe events reach the `/orders` endpoint, and make sure the\nendpoint only accepts requests that genuinely came through, not anything that\nturns up at the URL. I'm still working on this locally, and I don't want to miss\nevents while I'm developing.",
     "promptSourcePath": "evals/benchmark-verification-001-stripe-express/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-verification-001-stripe-express.json"
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-verification-001-stripe-express.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "claude-code-sonnet-5-no-skills",
@@ -1939,7 +1968,8 @@
     "prompt": "We're using ElevenLabs for transcription and they call us back when a job\nfinishes. The callbacks need to reach the transcripts service in this directory,\nand I don't want it accepting anything that didn't genuinely come from them via\nour gateway.\n\nSet that up.",
     "promptSourcePath": "evals/benchmark-verification-002-elevenlabs-callbacks/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-verification-002-elevenlabs-callbacks.json"
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-verification-002-elevenlabs-callbacks.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini",
@@ -2204,7 +2234,8 @@
     "prompt": "We found out our fulfilment endpoint had been rejecting orders for most of a day\nbecause nobody was watching. I don't want to find out that way again.\n\nSet it up so we get told when deliveries to that endpoint keep failing.",
     "promptSourcePath": "evals/benchmark-alerting-001-delivery-alerts/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini/benchmark-alerting-001-delivery-alerts.json"
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-alerting-001-delivery-alerts.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini",
@@ -2251,7 +2282,8 @@
     "prompt": "Our payment provider sometimes sends us the same event twice within a few\nseconds, and our ledger ends up double-counting it. We can't easily change the\nledger service.\n\nStop the duplicates reaching it.",
     "promptSourcePath": "evals/benchmark-dedupe-001-duplicate-events/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini/benchmark-dedupe-001-duplicate-events.json"
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-dedupe-001-duplicate-events.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini",
@@ -2302,7 +2334,8 @@
     "prompt": "Our inference worker takes about ninety seconds per job and it can only handle\ntwo at a time. When traffic spikes it falls over and we lose jobs.\n\nSet the delivery up so that doesn't happen.",
     "promptSourcePath": "evals/benchmark-delivery-001-slow-consumer/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini/benchmark-delivery-001-slow-consumer.json"
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-delivery-001-slow-consumer.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini",
@@ -2365,7 +2398,8 @@
     "prompt": "The API we forward enrichment jobs to allows sixty requests a minute and starts\nreturning 429s past that. We're well over it at peak.\n\nMake our deliveries stay inside their limit.",
     "promptSourcePath": "evals/benchmark-delivery-002-rate-limited-endpoint/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini/benchmark-delivery-002-rate-limited-endpoint.json"
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-delivery-002-rate-limited-endpoint.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini",
@@ -2419,7 +2453,8 @@
     "prompt": "Our order references look like `ORD-2026-AC-4821`. We migrated formats at the\nstart of the year and the old ones are still coming through, which my service\nchokes on.\n\nCan I use a regex on the reference to only let this year's format through?\nWhatever the answer, set up the filtering so only the current format reaches my\nendpoint.",
     "promptSourcePath": "evals/benchmark-filtering-001-enterprise-orders/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini/benchmark-filtering-001-enterprise-orders.json"
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-filtering-001-enterprise-orders.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini",
@@ -2471,7 +2506,8 @@
     "prompt": "Only orders above £500 should go to the manual review queue. Everything smaller\nis handled automatically and shouldn't reach it.\n\nAlso, review's endpoint goes down occasionally and we've lost orders that way.\nIf a delivery fails, keep trying for a while rather than giving up.",
     "promptSourcePath": "evals/benchmark-filtering-002-high-value-retries/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini/benchmark-filtering-002-high-value-retries.json"
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-filtering-002-high-value-retries.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini",
@@ -2524,7 +2560,8 @@
     "prompt": "Our order events aren't all getting through. The fulfilment side seems fine but\nsomething's definitely broken, and I've had it flagged twice this week.\n\nCan you work out what's actually going wrong?",
     "promptSourcePath": "evals/benchmark-investigate-001-failing-deliveries/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini/benchmark-investigate-001-failing-deliveries.json"
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-investigate-001-failing-deliveries.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini",
@@ -2577,7 +2614,8 @@
     "prompt": "Our warehouse team says they're missing orders. Not all of them, and I can't\nfind a single failure anywhere I've looked. Every delivery I can see went\nthrough fine.\n\nWhere are the missing ones going?",
     "promptSourcePath": "evals/benchmark-investigate-002-partial-outage/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini/benchmark-investigate-002-partial-outage.json"
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-investigate-002-partial-outage.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini",
@@ -2628,7 +2666,8 @@
     "prompt": "I've written the notifications service in this directory but I've got no way to\ntry it against real traffic. It's not deployed anywhere yet and I'd rather not\npush it somewhere just to find out the handler is wrong.\n\nGet events arriving at it here on my machine so I can watch them come in.",
     "promptSourcePath": "evals/benchmark-localdev-001-listen-locally/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini/benchmark-localdev-001-listen-locally.json"
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-localdev-001-listen-locally.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini",
@@ -2672,7 +2711,8 @@
     "prompt": "We want our customers to be able to subscribe to events from our platform, so\nthey can react when an order is placed rather than polling us for it.\n\nSet that up for our first customer, `acme`, so they receive order events at\ntheir endpoint. Then show me it works by sending one through.",
     "promptSourcePath": "evals/benchmark-outpost-001-customer-subscriptions/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini/benchmark-outpost-001-customer-subscriptions.json"
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-outpost-001-customer-subscriptions.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini",
@@ -2719,7 +2759,8 @@
     "prompt": "Checkout events stopped reaching our orders API. Nothing's changed on our side\nthat I know of, and the endpoint is up.\n\nGet them flowing again.",
     "promptSourcePath": "evals/benchmark-resolve-001-paused-connection/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini/benchmark-resolve-001-paused-connection.json"
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-resolve-001-paused-connection.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini",
@@ -2764,7 +2805,8 @@
     "prompt": "We had an outage this morning and both our endpoints were rejecting everything.\nThey're back up now.\n\nCheckout is the urgent one, so get those failed events redelivered. Leave\ninventory alone for now, the team there wants to check something first.",
     "promptSourcePath": "evals/benchmark-resolve-002-scoped-redelivery/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini/benchmark-resolve-002-scoped-redelivery.json"
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-resolve-002-scoped-redelivery.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini",
@@ -2818,7 +2860,8 @@
     "prompt": "Our payment provider changed their payload and our billing service can't read\nit any more. The service expects `amount`, `currency` and `email` at the top\nlevel of the body, and nothing else has to change.\n\nSort it out so the billing service starts working again. I'd rather know it's\nright before it goes anywhere near production.",
     "promptSourcePath": "evals/benchmark-transform-001-reshape-payload/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini/benchmark-transform-001-reshape-payload.json"
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-transform-001-reshape-payload.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini",
@@ -2865,7 +2908,8 @@
     "prompt": "We're taking Stripe payments and I need our orders API to react when a checkout\ncompletes. Right now nothing is wired up.\n\nSet it up so Stripe events reach the `/orders` endpoint, and make sure the\nendpoint only accepts requests that genuinely came through, not anything that\nturns up at the URL. I'm still working on this locally, and I don't want to miss\nevents while I'm developing.",
     "promptSourcePath": "evals/benchmark-verification-001-stripe-express/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini/benchmark-verification-001-stripe-express.json"
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-verification-001-stripe-express.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini",
@@ -2939,7 +2983,8 @@
     "prompt": "We're using ElevenLabs for transcription and they call us back when a job\nfinishes. The callbacks need to reach the transcripts service in this directory,\nand I don't want it accepting anything that didn't genuinely come from them via\nour gateway.\n\nSet that up.",
     "promptSourcePath": "evals/benchmark-verification-002-elevenlabs-callbacks/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini/benchmark-verification-002-elevenlabs-callbacks.json"
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-verification-002-elevenlabs-callbacks.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini-no-skills",
@@ -3134,7 +3179,8 @@
     "prompt": "We found out our fulfilment endpoint had been rejecting orders for most of a day\nbecause nobody was watching. I don't want to find out that way again.\n\nSet it up so we get told when deliveries to that endpoint keep failing.",
     "promptSourcePath": "evals/benchmark-alerting-001-delivery-alerts/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-alerting-001-delivery-alerts.json"
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-alerting-001-delivery-alerts.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini-no-skills",
@@ -3220,7 +3266,8 @@
     "prompt": "Our payment provider sometimes sends us the same event twice within a few\nseconds, and our ledger ends up double-counting it. We can't easily change the\nledger service.\n\nStop the duplicates reaching it.",
     "promptSourcePath": "evals/benchmark-dedupe-001-duplicate-events/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-dedupe-001-duplicate-events.json"
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-dedupe-001-duplicate-events.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini-no-skills",
@@ -3314,7 +3361,8 @@
     "prompt": "Our inference worker takes about ninety seconds per job and it can only handle\ntwo at a time. When traffic spikes it falls over and we lose jobs.\n\nSet the delivery up so that doesn't happen.",
     "promptSourcePath": "evals/benchmark-delivery-001-slow-consumer/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-delivery-001-slow-consumer.json"
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-delivery-001-slow-consumer.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini-no-skills",
@@ -3415,7 +3463,8 @@
     "prompt": "The API we forward enrichment jobs to allows sixty requests a minute and starts\nreturning 429s past that. We're well over it at peak.\n\nMake our deliveries stay inside their limit.",
     "promptSourcePath": "evals/benchmark-delivery-002-rate-limited-endpoint/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-delivery-002-rate-limited-endpoint.json"
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-delivery-002-rate-limited-endpoint.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini-no-skills",
@@ -3483,7 +3532,8 @@
     "prompt": "Our order references look like `ORD-2026-AC-4821`. We migrated formats at the\nstart of the year and the old ones are still coming through, which my service\nchokes on.\n\nCan I use a regex on the reference to only let this year's format through?\nWhatever the answer, set up the filtering so only the current format reaches my\nendpoint.",
     "promptSourcePath": "evals/benchmark-filtering-001-enterprise-orders/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-filtering-001-enterprise-orders.json"
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-filtering-001-enterprise-orders.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini-no-skills",
@@ -3558,7 +3608,8 @@
     "prompt": "Only orders above £500 should go to the manual review queue. Everything smaller\nis handled automatically and shouldn't reach it.\n\nAlso, review's endpoint goes down occasionally and we've lost orders that way.\nIf a delivery fails, keep trying for a while rather than giving up.",
     "promptSourcePath": "evals/benchmark-filtering-002-high-value-retries/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-filtering-002-high-value-retries.json"
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-filtering-002-high-value-retries.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini-no-skills",
@@ -3605,7 +3656,8 @@
     "prompt": "Our order events aren't all getting through. The fulfilment side seems fine but\nsomething's definitely broken, and I've had it flagged twice this week.\n\nCan you work out what's actually going wrong?",
     "promptSourcePath": "evals/benchmark-investigate-001-failing-deliveries/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-investigate-001-failing-deliveries.json"
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-investigate-001-failing-deliveries.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini-no-skills",
@@ -3687,7 +3739,8 @@
     "prompt": "Our warehouse team says they're missing orders. Not all of them, and I can't\nfind a single failure anywhere I've looked. Every delivery I can see went\nthrough fine.\n\nWhere are the missing ones going?",
     "promptSourcePath": "evals/benchmark-investigate-002-partial-outage/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-investigate-002-partial-outage.json"
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-investigate-002-partial-outage.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini-no-skills",
@@ -3732,7 +3785,8 @@
     "prompt": "I've written the notifications service in this directory but I've got no way to\ntry it against real traffic. It's not deployed anywhere yet and I'd rather not\npush it somewhere just to find out the handler is wrong.\n\nGet events arriving at it here on my machine so I can watch them come in.",
     "promptSourcePath": "evals/benchmark-localdev-001-listen-locally/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-localdev-001-listen-locally.json"
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-localdev-001-listen-locally.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini-no-skills",
@@ -3770,7 +3824,8 @@
     "prompt": "We want our customers to be able to subscribe to events from our platform, so\nthey can react when an order is placed rather than polling us for it.\n\nSet that up for our first customer, `acme`, so they receive order events at\ntheir endpoint. Then show me it works by sending one through.",
     "promptSourcePath": "evals/benchmark-outpost-001-customer-subscriptions/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-outpost-001-customer-subscriptions.json"
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-outpost-001-customer-subscriptions.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini-no-skills",
@@ -3878,7 +3933,8 @@
     "prompt": "Checkout events stopped reaching our orders API. Nothing's changed on our side\nthat I know of, and the endpoint is up.\n\nGet them flowing again.",
     "promptSourcePath": "evals/benchmark-resolve-001-paused-connection/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-resolve-001-paused-connection.json"
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-resolve-001-paused-connection.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini-no-skills",
@@ -3920,7 +3976,8 @@
     "prompt": "We had an outage this morning and both our endpoints were rejecting everything.\nThey're back up now.\n\nCheckout is the urgent one, so get those failed events redelivered. Leave\ninventory alone for now, the team there wants to check something first.",
     "promptSourcePath": "evals/benchmark-resolve-002-scoped-redelivery/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-resolve-002-scoped-redelivery.json"
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-resolve-002-scoped-redelivery.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini-no-skills",
@@ -4033,7 +4090,8 @@
     "prompt": "Our payment provider changed their payload and our billing service can't read\nit any more. The service expects `amount`, `currency` and `email` at the top\nlevel of the body, and nothing else has to change.\n\nSort it out so the billing service starts working again. I'd rather know it's\nright before it goes anywhere near production.",
     "promptSourcePath": "evals/benchmark-transform-001-reshape-payload/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-transform-001-reshape-payload.json"
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-transform-001-reshape-payload.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini-no-skills",
@@ -4213,7 +4271,8 @@
     "prompt": "We're taking Stripe payments and I need our orders API to react when a checkout\ncompletes. Right now nothing is wired up.\n\nSet it up so Stripe events reach the `/orders` endpoint, and make sure the\nendpoint only accepts requests that genuinely came through, not anything that\nturns up at the URL. I'm still working on this locally, and I don't want to miss\nevents while I'm developing.",
     "promptSourcePath": "evals/benchmark-verification-001-stripe-express/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-verification-001-stripe-express.json"
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-verification-001-stripe-express.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.4-mini-no-skills",
@@ -4307,7 +4366,8 @@
     "prompt": "We're using ElevenLabs for transcription and they call us back when a job\nfinishes. The callbacks need to reach the transcripts service in this directory,\nand I don't want it accepting anything that didn't genuinely come from them via\nour gateway.\n\nSet that up.",
     "promptSourcePath": "evals/benchmark-verification-002-elevenlabs-callbacks/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-verification-002-elevenlabs-callbacks.json"
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-verification-002-elevenlabs-callbacks.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6",
@@ -4362,7 +4422,8 @@
     "prompt": "We found out our fulfilment endpoint had been rejecting orders for most of a day\nbecause nobody was watching. I don't want to find out that way again.\n\nSet it up so we get told when deliveries to that endpoint keep failing.",
     "promptSourcePath": "evals/benchmark-alerting-001-delivery-alerts/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6/benchmark-alerting-001-delivery-alerts.json"
+    "sourcePath": "codex-gpt-5.6/benchmark-alerting-001-delivery-alerts.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6",
@@ -4408,7 +4469,8 @@
     "prompt": "Our payment provider sometimes sends us the same event twice within a few\nseconds, and our ledger ends up double-counting it. We can't easily change the\nledger service.\n\nStop the duplicates reaching it.",
     "promptSourcePath": "evals/benchmark-dedupe-001-duplicate-events/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6/benchmark-dedupe-001-duplicate-events.json"
+    "sourcePath": "codex-gpt-5.6/benchmark-dedupe-001-duplicate-events.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6",
@@ -4473,7 +4535,8 @@
     "prompt": "Our inference worker takes about ninety seconds per job and it can only handle\ntwo at a time. When traffic spikes it falls over and we lose jobs.\n\nSet the delivery up so that doesn't happen.",
     "promptSourcePath": "evals/benchmark-delivery-001-slow-consumer/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6/benchmark-delivery-001-slow-consumer.json"
+    "sourcePath": "codex-gpt-5.6/benchmark-delivery-001-slow-consumer.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6",
@@ -4524,7 +4587,8 @@
     "prompt": "The API we forward enrichment jobs to allows sixty requests a minute and starts\nreturning 429s past that. We're well over it at peak.\n\nMake our deliveries stay inside their limit.",
     "promptSourcePath": "evals/benchmark-delivery-002-rate-limited-endpoint/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6/benchmark-delivery-002-rate-limited-endpoint.json"
+    "sourcePath": "codex-gpt-5.6/benchmark-delivery-002-rate-limited-endpoint.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6",
@@ -4589,7 +4653,8 @@
     "prompt": "Our order references look like `ORD-2026-AC-4821`. We migrated formats at the\nstart of the year and the old ones are still coming through, which my service\nchokes on.\n\nCan I use a regex on the reference to only let this year's format through?\nWhatever the answer, set up the filtering so only the current format reaches my\nendpoint.",
     "promptSourcePath": "evals/benchmark-filtering-001-enterprise-orders/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6/benchmark-filtering-001-enterprise-orders.json"
+    "sourcePath": "codex-gpt-5.6/benchmark-filtering-001-enterprise-orders.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6",
@@ -4639,7 +4704,8 @@
     "prompt": "Only orders above £500 should go to the manual review queue. Everything smaller\nis handled automatically and shouldn't reach it.\n\nAlso, review's endpoint goes down occasionally and we've lost orders that way.\nIf a delivery fails, keep trying for a while rather than giving up.",
     "promptSourcePath": "evals/benchmark-filtering-002-high-value-retries/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6/benchmark-filtering-002-high-value-retries.json"
+    "sourcePath": "codex-gpt-5.6/benchmark-filtering-002-high-value-retries.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6",
@@ -4692,7 +4758,8 @@
     "prompt": "Our order events aren't all getting through. The fulfilment side seems fine but\nsomething's definitely broken, and I've had it flagged twice this week.\n\nCan you work out what's actually going wrong?",
     "promptSourcePath": "evals/benchmark-investigate-001-failing-deliveries/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6/benchmark-investigate-001-failing-deliveries.json"
+    "sourcePath": "codex-gpt-5.6/benchmark-investigate-001-failing-deliveries.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6",
@@ -4745,7 +4812,8 @@
     "prompt": "Our warehouse team says they're missing orders. Not all of them, and I can't\nfind a single failure anywhere I've looked. Every delivery I can see went\nthrough fine.\n\nWhere are the missing ones going?",
     "promptSourcePath": "evals/benchmark-investigate-002-partial-outage/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6/benchmark-investigate-002-partial-outage.json"
+    "sourcePath": "codex-gpt-5.6/benchmark-investigate-002-partial-outage.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6",
@@ -4795,7 +4863,8 @@
     "prompt": "I've written the notifications service in this directory but I've got no way to\ntry it against real traffic. It's not deployed anywhere yet and I'd rather not\npush it somewhere just to find out the handler is wrong.\n\nGet events arriving at it here on my machine so I can watch them come in.",
     "promptSourcePath": "evals/benchmark-localdev-001-listen-locally/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6/benchmark-localdev-001-listen-locally.json"
+    "sourcePath": "codex-gpt-5.6/benchmark-localdev-001-listen-locally.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6",
@@ -4861,7 +4930,8 @@
     "prompt": "We want our customers to be able to subscribe to events from our platform, so\nthey can react when an order is placed rather than polling us for it.\n\nSet that up for our first customer, `acme`, so they receive order events at\ntheir endpoint. Then show me it works by sending one through.",
     "promptSourcePath": "evals/benchmark-outpost-001-customer-subscriptions/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6/benchmark-outpost-001-customer-subscriptions.json"
+    "sourcePath": "codex-gpt-5.6/benchmark-outpost-001-customer-subscriptions.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6",
@@ -4909,7 +4979,8 @@
     "prompt": "Checkout events stopped reaching our orders API. Nothing's changed on our side\nthat I know of, and the endpoint is up.\n\nGet them flowing again.",
     "promptSourcePath": "evals/benchmark-resolve-001-paused-connection/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6/benchmark-resolve-001-paused-connection.json"
+    "sourcePath": "codex-gpt-5.6/benchmark-resolve-001-paused-connection.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6",
@@ -4954,7 +5025,8 @@
     "prompt": "We had an outage this morning and both our endpoints were rejecting everything.\nThey're back up now.\n\nCheckout is the urgent one, so get those failed events redelivered. Leave\ninventory alone for now, the team there wants to check something first.",
     "promptSourcePath": "evals/benchmark-resolve-002-scoped-redelivery/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6/benchmark-resolve-002-scoped-redelivery.json"
+    "sourcePath": "codex-gpt-5.6/benchmark-resolve-002-scoped-redelivery.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6",
@@ -5004,7 +5076,8 @@
     "prompt": "Our payment provider changed their payload and our billing service can't read\nit any more. The service expects `amount`, `currency` and `email` at the top\nlevel of the body, and nothing else has to change.\n\nSort it out so the billing service starts working again. I'd rather know it's\nright before it goes anywhere near production.",
     "promptSourcePath": "evals/benchmark-transform-001-reshape-payload/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6/benchmark-transform-001-reshape-payload.json"
+    "sourcePath": "codex-gpt-5.6/benchmark-transform-001-reshape-payload.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6",
@@ -5066,7 +5139,8 @@
     "prompt": "We're taking Stripe payments and I need our orders API to react when a checkout\ncompletes. Right now nothing is wired up.\n\nSet it up so Stripe events reach the `/orders` endpoint, and make sure the\nendpoint only accepts requests that genuinely came through, not anything that\nturns up at the URL. I'm still working on this locally, and I don't want to miss\nevents while I'm developing.",
     "promptSourcePath": "evals/benchmark-verification-001-stripe-express/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6/benchmark-verification-001-stripe-express.json"
+    "sourcePath": "codex-gpt-5.6/benchmark-verification-001-stripe-express.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6",
@@ -5147,7 +5221,8 @@
     "prompt": "We're using ElevenLabs for transcription and they call us back when a job\nfinishes. The callbacks need to reach the transcripts service in this directory,\nand I don't want it accepting anything that didn't genuinely come from them via\nour gateway.\n\nSet that up.",
     "promptSourcePath": "evals/benchmark-verification-002-elevenlabs-callbacks/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6/benchmark-verification-002-elevenlabs-callbacks.json"
+    "sourcePath": "codex-gpt-5.6/benchmark-verification-002-elevenlabs-callbacks.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6-no-skills",
@@ -5201,7 +5276,8 @@
     "prompt": "We found out our fulfilment endpoint had been rejecting orders for most of a day\nbecause nobody was watching. I don't want to find out that way again.\n\nSet it up so we get told when deliveries to that endpoint keep failing.",
     "promptSourcePath": "evals/benchmark-alerting-001-delivery-alerts/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-alerting-001-delivery-alerts.json"
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-alerting-001-delivery-alerts.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6-no-skills",
@@ -5266,7 +5342,8 @@
     "prompt": "Our payment provider sometimes sends us the same event twice within a few\nseconds, and our ledger ends up double-counting it. We can't easily change the\nledger service.\n\nStop the duplicates reaching it.",
     "promptSourcePath": "evals/benchmark-dedupe-001-duplicate-events/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-dedupe-001-duplicate-events.json"
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-dedupe-001-duplicate-events.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6-no-skills",
@@ -5331,7 +5408,8 @@
     "prompt": "Our inference worker takes about ninety seconds per job and it can only handle\ntwo at a time. When traffic spikes it falls over and we lose jobs.\n\nSet the delivery up so that doesn't happen.",
     "promptSourcePath": "evals/benchmark-delivery-001-slow-consumer/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-delivery-001-slow-consumer.json"
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-delivery-001-slow-consumer.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6-no-skills",
@@ -5377,7 +5455,8 @@
     "prompt": "The API we forward enrichment jobs to allows sixty requests a minute and starts\nreturning 429s past that. We're well over it at peak.\n\nMake our deliveries stay inside their limit.",
     "promptSourcePath": "evals/benchmark-delivery-002-rate-limited-endpoint/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-delivery-002-rate-limited-endpoint.json"
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-delivery-002-rate-limited-endpoint.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6-no-skills",
@@ -5445,7 +5524,8 @@
     "prompt": "Our order references look like `ORD-2026-AC-4821`. We migrated formats at the\nstart of the year and the old ones are still coming through, which my service\nchokes on.\n\nCan I use a regex on the reference to only let this year's format through?\nWhatever the answer, set up the filtering so only the current format reaches my\nendpoint.",
     "promptSourcePath": "evals/benchmark-filtering-001-enterprise-orders/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-filtering-001-enterprise-orders.json"
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-filtering-001-enterprise-orders.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6-no-skills",
@@ -5501,7 +5581,8 @@
     "prompt": "Only orders above £500 should go to the manual review queue. Everything smaller\nis handled automatically and shouldn't reach it.\n\nAlso, review's endpoint goes down occasionally and we've lost orders that way.\nIf a delivery fails, keep trying for a while rather than giving up.",
     "promptSourcePath": "evals/benchmark-filtering-002-high-value-retries/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-filtering-002-high-value-retries.json"
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-filtering-002-high-value-retries.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6-no-skills",
@@ -5559,7 +5640,8 @@
     "prompt": "Our order events aren't all getting through. The fulfilment side seems fine but\nsomething's definitely broken, and I've had it flagged twice this week.\n\nCan you work out what's actually going wrong?",
     "promptSourcePath": "evals/benchmark-investigate-001-failing-deliveries/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-investigate-001-failing-deliveries.json"
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-investigate-001-failing-deliveries.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6-no-skills",
@@ -5606,7 +5688,8 @@
     "prompt": "Our warehouse team says they're missing orders. Not all of them, and I can't\nfind a single failure anywhere I've looked. Every delivery I can see went\nthrough fine.\n\nWhere are the missing ones going?",
     "promptSourcePath": "evals/benchmark-investigate-002-partial-outage/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-investigate-002-partial-outage.json"
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-investigate-002-partial-outage.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6-no-skills",
@@ -5662,7 +5745,8 @@
     "prompt": "I've written the notifications service in this directory but I've got no way to\ntry it against real traffic. It's not deployed anywhere yet and I'd rather not\npush it somewhere just to find out the handler is wrong.\n\nGet events arriving at it here on my machine so I can watch them come in.",
     "promptSourcePath": "evals/benchmark-localdev-001-listen-locally/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-localdev-001-listen-locally.json"
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-localdev-001-listen-locally.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6-no-skills",
@@ -5706,7 +5790,8 @@
     "prompt": "We want our customers to be able to subscribe to events from our platform, so\nthey can react when an order is placed rather than polling us for it.\n\nSet that up for our first customer, `acme`, so they receive order events at\ntheir endpoint. Then show me it works by sending one through.",
     "promptSourcePath": "evals/benchmark-outpost-001-customer-subscriptions/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-outpost-001-customer-subscriptions.json"
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-outpost-001-customer-subscriptions.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6-no-skills",
@@ -5747,7 +5832,8 @@
     "prompt": "Checkout events stopped reaching our orders API. Nothing's changed on our side\nthat I know of, and the endpoint is up.\n\nGet them flowing again.",
     "promptSourcePath": "evals/benchmark-resolve-001-paused-connection/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-resolve-001-paused-connection.json"
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-resolve-001-paused-connection.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6-no-skills",
@@ -5789,7 +5875,8 @@
     "prompt": "We had an outage this morning and both our endpoints were rejecting everything.\nThey're back up now.\n\nCheckout is the urgent one, so get those failed events redelivered. Leave\ninventory alone for now, the team there wants to check something first.",
     "promptSourcePath": "evals/benchmark-resolve-002-scoped-redelivery/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-resolve-002-scoped-redelivery.json"
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-resolve-002-scoped-redelivery.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6-no-skills",
@@ -5834,7 +5921,8 @@
     "prompt": "Our payment provider changed their payload and our billing service can't read\nit any more. The service expects `amount`, `currency` and `email` at the top\nlevel of the body, and nothing else has to change.\n\nSort it out so the billing service starts working again. I'd rather know it's\nright before it goes anywhere near production.",
     "promptSourcePath": "evals/benchmark-transform-001-reshape-payload/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-transform-001-reshape-payload.json"
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-transform-001-reshape-payload.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6-no-skills",
@@ -5904,7 +5992,8 @@
     "prompt": "We're taking Stripe payments and I need our orders API to react when a checkout\ncompletes. Right now nothing is wired up.\n\nSet it up so Stripe events reach the `/orders` endpoint, and make sure the\nendpoint only accepts requests that genuinely came through, not anything that\nturns up at the URL. I'm still working on this locally, and I don't want to miss\nevents while I'm developing.",
     "promptSourcePath": "evals/benchmark-verification-001-stripe-express/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-verification-001-stripe-express.json"
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-verification-001-stripe-express.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   },
   {
     "experiment": "codex-gpt-5.6-no-skills",
@@ -5975,6 +6064,7 @@
     "prompt": "We're using ElevenLabs for transcription and they call us back when a job\nfinishes. The callbacks need to reach the transcripts service in this directory,\nand I don't want it accepting anything that didn't genuinely come from them via\nour gateway.\n\nSet that up.",
     "promptSourcePath": "evals/benchmark-verification-002-elevenlabs-callbacks/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-verification-002-elevenlabs-callbacks.json"
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-verification-002-elevenlabs-callbacks.json",
+    "ranAt": "2026-08-13T00:00:00.000Z"
   }
 ]
