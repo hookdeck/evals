@@ -413,7 +413,24 @@ jobs:
           path: |
             .eval-runs/${{ matrix.experiment }}/
             !.eval-runs/**/node_modules/**
-          retention-days: 3
+          # 90 days, the GitHub maximum, and not a round number picked for
+          # neatness. These files carry the transcript, the tool calls and the
+          # agent's own report: the only record of *why* an agent did what it
+          # did, and the thing the published row cannot tell you. They are also
+          # irreplaceable, because reproducing one means paying for the run
+          # again against a model that may have changed underneath us.
+          #
+          # The window has to exceed the run cadence or it is useless for the
+          # questions worth asking. Nearly every real question is comparative
+          # ("this flipped between runs, why?") and answering one needs the
+          # evidence from both. Weekly runs at 3 days meant the previous run's
+          # evidence expired before its successor even started. The monthly
+          # -no-skills twins need 35 days to compare two consecutive runs at
+          # all, which is why this is not 30 either.
+          #
+          # Storage is free on a public repository, so the only trade-off here
+          # is against nothing.
+          retention-days: 90
 
   publish-results:
     needs: [prepare, run-evals]
@@ -509,6 +526,10 @@ jobs:
           name: eval-results-json
           path: apps/web/src/data/*eval-results.json
           if-no-files-found: error
+          # Deliberately short, unlike the raw results above. This artifact is
+          # a copy of something the next step commits to the repository and
+          # publishes to results/, so it is a convenience for inspecting a run
+          # in flight rather than a record. Nothing is lost when it expires.
           retention-days: 7
 
       - name: Commit exported results
