@@ -364,6 +364,16 @@ const evalResultShape = {
   profile: experimentSuiteSchema.optional(),
   experimentDisplay: experimentDisplayMetadataSchema.optional(),
   eval: z.string(),
+  /**
+   * ISO timestamp of when this run finished.
+   *
+   * Optional because rows exported before 13 August 2026 predate it, and a
+   * missing value has to render as unknown rather than as now. The published
+   * grid is not one snapshot: experiments refresh on different cadences and a
+   * targeted re-run replaces some pairs and leaves the rest, so this is the
+   * only thing that can answer how old a given cell is.
+   */
+  ranAt: z.string().optional(),
   stage: evalStageSchema.optional(),
   product: z.array(evalProductSchema).optional(),
   topic: z.array(evalTopicSchema).optional(),

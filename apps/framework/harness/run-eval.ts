@@ -719,6 +719,14 @@ async function main() {
               experimentSuite: SELECTED_EXPERIMENT_SUITE ?? config.suite?.[0],
               experimentDisplay,
               eval: ev.id,
+              // When this run finished. Recorded per run rather than per
+              // refresh, because the published grid is not one snapshot: the
+              // `-no-skills` twins refresh monthly and everything else weekly,
+              // and a targeted re-run replaces some pairs and leaves the rest,
+              // so two cells side by side can be a month apart. Without this
+              // the page can only describe the schedule, which is not the same
+              // question as how old a number is.
+              ranAt: new Date().toISOString(),
               ...ev.metadata,
               ...res,
             },

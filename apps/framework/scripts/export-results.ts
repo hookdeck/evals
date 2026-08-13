@@ -125,6 +125,24 @@ async function readPrompt(evalId: string) {
   };
 }
 
+/**
+ * Backfill for result files written before the harness recorded `ranAt`.
+ *
+ * A file's mtime is when the run wrote it, which is the right answer for
+ * anything produced locally or restored from a CI artifact in the same job.
+ * It is wrong if a file is ever copied or rewritten by something other than a
+ * run, so it is a fallback rather than the source of truth. Returns undefined
+ * rather than a guess when the file cannot be stat'd, so the page can render
+ * "unknown" instead of implying freshness it cannot support.
+ */
+async function fileModifiedAt(filePath: string): Promise<string | undefined> {
+  try {
+    return (await stat(filePath)).mtime.toISOString();
+  } catch {
+    return undefined;
+  }
+}
+
 async function readResultFile(
   filePath: string,
   sourcePath: string,
@@ -150,6 +168,11 @@ async function readResultFile(
     experimentDisplay:
       parsedResult.experimentDisplay ?? experimentData?.display,
     eval: parsedResult.eval,
+    // Falls back to the result file's own mtime for rows written before the
+    // harness recorded this. Approximate, but a real date beats nothing: the
+    // page's alternative is describing the refresh schedule, which answers a
+    // different question from how old a cell is.
+    ranAt: parsedResult.ranAt ?? (await fileModifiedAt(filePath)),
     stage: promptData?.stage ?? parsedResult.stage,
     product: promptData?.product ?? parsedResult.product,
     topic: promptData?.topic ?? parsedResult.topic,
