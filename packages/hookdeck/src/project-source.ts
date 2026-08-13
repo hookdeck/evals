@@ -21,6 +21,7 @@ import {
   type HookdeckResource,
   type ResourceKind,
 } from './client.js';
+import { OutpostClient } from './outpost-client.js';
 
 export interface LeasedProject {
   projectId: string;
@@ -65,6 +66,13 @@ export interface FixedProjectSourceOptions {
   /** Where the pristine snapshot is persisted between runs. */
   snapshotPath?: string;
   baseUrl?: string;
+  /**
+   * Set when scenarios requiring Outpost can run. Outpost is a separate
+   * product with its own API and its own state, and nothing else here resets
+   * it, so a tenant one run creates survives into the next.
+   */
+  outpostApiKey?: string;
+  outpostBaseUrl?: string;
 }
 
 export class FixedProjectSource implements ProjectSource {
@@ -73,6 +81,8 @@ export class FixedProjectSource implements ProjectSource {
   private readonly projectId: string;
   private readonly snapshotPath: string;
   private cachedClient?: HookdeckClient;
+  private cachedOutpostClient?: OutpostClient;
+  private outpostTenantsAtAcquire?: Set<string>;
 
   constructor(options: FixedProjectSourceOptions) {
     this.options = options;
@@ -105,9 +115,31 @@ export class FixedProjectSource implements ProjectSource {
     return this.options.apiKey;
   }
 
+  /**
+   * Undefined when no Outpost key is configured, which is the common case.
+   *
+   * Falls back to the environment rather than requiring every experiment to
+   * pass it. Six experiment files construct this source and all six would need
+   * the same line; the cost of one of them missing it is a leaked tenant that
+   * makes `outpost-001`'s first check pass on work the agent never did, which
+   * is too quiet a failure to leave to copy-paste discipline.
+   */
+  private get outpostClient(): OutpostClient | undefined {
+    const apiKey = this.options.outpostApiKey ?? process.env.OUTPOST_API_KEY;
+    if (!apiKey) return undefined;
+    if (!this.cachedOutpostClient) {
+      this.cachedOutpostClient = new OutpostClient({
+        apiKey,
+        baseUrl: this.options.outpostBaseUrl,
+      });
+    }
+    return this.cachedOutpostClient;
+  }
+
   async acquire(): Promise<LeasedProject> {
     const snapshot = await this.loadOrCaptureSnapshot();
     await this.resetToPristine(snapshot);
+    this.outpostTenantsAtAcquire = await this.listOutpostTenants();
     return {
       projectId: this.projectId,
       apiKey: this.apiKey,
@@ -129,6 +161,55 @@ export class FixedProjectSource implements ProjectSource {
     } catch {
       // Swallowed deliberately: a failed release must not fail the run, and
       // the next acquire will clean up regardless.
+    }
+    await this.releaseOutpostTenants();
+  }
+
+  /**
+   * Delete Outpost tenants this lease created.
+   *
+   * Unlike the Hookdeck side, the guarantee here is on release rather than on
+   * acquire, and that asymmetry is forced. Hookdeck resets from a persisted
+   * snapshot of what a pristine project contains, so a crashed run is harmless:
+   * the next acquire cleans up. Outpost has no such baseline. Tenants carry no
+   * marker saying which run made them, and in CI every job is a fresh checkout,
+   * so a persisted snapshot would capture a leaked tenant as pristine and
+   * protect the very thing it should delete.
+   *
+   * Comparing against what existed at acquire is the one baseline that cannot
+   * be poisoned that way, because this lease established it. The residual: a
+   * run that dies before release still leaks, and the next run inherits it.
+   * That is strictly better than not cleaning at all, and the remaining case is
+   * visible rather than silent, because a leftover tenant makes
+   * `outpost-001`'s first check pass without the agent doing anything.
+   */
+  private async releaseOutpostTenants(): Promise<void> {
+    const outpost = this.outpostClient;
+    if (!outpost || !this.outpostTenantsAtAcquire) return;
+    const keep = this.outpostTenantsAtAcquire;
+    try {
+      for (const tenant of await outpost.tenants()) {
+        if (!tenant.id || keep.has(tenant.id)) continue;
+        await outpost.deleteTenant(tenant.id);
+      }
+    } catch {
+      // Same reasoning as the Hookdeck reset above: tidying must never fail a
+      // run that has already been paid for.
+    }
+  }
+
+  /** Tenants present before this lease ran, or undefined when Outpost is off. */
+  private async listOutpostTenants(): Promise<Set<string> | undefined> {
+    const outpost = this.outpostClient;
+    if (!outpost) return undefined;
+    try {
+      return new Set(
+        (await outpost.tenants()).map((t) => t.id).filter(Boolean)
+      );
+    } catch {
+      // Without a baseline, deleting nothing is the only safe move: the
+      // alternative is deleting a tenant this run did not create.
+      return undefined;
     }
   }
 

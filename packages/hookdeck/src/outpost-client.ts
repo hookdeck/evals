@@ -17,6 +17,30 @@ export interface OutpostClientOptions {
   baseUrl?: string;
 }
 
+/**
+ * Unwrap an Outpost list response.
+ *
+ * The paginated shape is `{ pagination, models }`, per `TenantPaginatedResult`
+ * and `AttemptPaginatedResult` in Outpost's OpenAPI spec. Every method here
+ * originally read `data` instead, so all three returned an empty array against
+ * the real API. That is how `outpost-001` came to be unpassable: its tenant
+ * check could never find a tenant and its delivery check was permanently
+ * `0 > 0`. The scorer was fixed on 12 August; this client was the same bug in
+ * a second place, found only because tenant cleanup started depending on it.
+ *
+ * `data` and a bare array stay accepted because they cost nothing and the two
+ * expensive failures here have both been an unrecognised envelope.
+ */
+function listBody<T>(body: unknown): T[] {
+  if (Array.isArray(body)) return body as T[];
+  if (body && typeof body === 'object') {
+    const envelope = body as { models?: unknown; data?: unknown };
+    if (Array.isArray(envelope.models)) return envelope.models as T[];
+    if (Array.isArray(envelope.data)) return envelope.data as T[];
+  }
+  return [];
+}
+
 export class OutpostClient {
   private readonly apiKey: string;
   private readonly baseUrl: string;
@@ -52,19 +76,18 @@ export class OutpostClient {
 
   /** Tenants in the project. The agent's work shows up here first. */
   async tenants(): Promise<{ id: string; topics?: string[] }[]> {
-    const body = await this.request<
-      { id: string; topics?: string[] }[] | { data?: unknown[] }
-    >('GET', '/tenants');
-    return Array.isArray(body)
-      ? body
-      : ((body.data ?? []) as { id: string; topics?: string[] }[]);
+    return listBody<{ id: string; topics?: string[] }>(
+      await this.request('GET', '/tenants')
+    );
   }
 
   async destinations(tenantId: string): Promise<Record<string, unknown>[]> {
-    const body = await this.request<
-      Record<string, unknown>[] | { data?: Record<string, unknown>[] }
-    >('GET', `/tenants/${encodeURIComponent(tenantId)}/destinations`);
-    return Array.isArray(body) ? body : (body.data ?? []);
+    return listBody(
+      await this.request(
+        'GET',
+        `/tenants/${encodeURIComponent(tenantId)}/destinations`
+      )
+    );
   }
 
   /** Publish an event, which is how a scorer exercises what the agent built. */
@@ -85,13 +108,12 @@ export class OutpostClient {
     tenantId: string,
     destinationId: string
   ): Promise<Record<string, unknown>[]> {
-    const body = await this.request<
-      Record<string, unknown>[] | { data?: Record<string, unknown>[] }
-    >(
-      'GET',
-      `/tenants/${encodeURIComponent(tenantId)}/destinations/${encodeURIComponent(destinationId)}/attempts`
+    return listBody(
+      await this.request(
+        'GET',
+        `/tenants/${encodeURIComponent(tenantId)}/destinations/${encodeURIComponent(destinationId)}/attempts`
+      )
     );
-    return Array.isArray(body) ? body : (body.data ?? []);
   }
 
   /** Everything a run created, so a scenario can reset between runs. */

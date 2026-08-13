@@ -162,3 +162,106 @@ describe('FixedProjectSource', () => {
     ).resolves.toBeUndefined();
   });
 });
+
+/**
+ * Outpost is a separate API with separate state, and nothing else resets it.
+ * The distinction that matters is between a tenant that was already there and
+ * one this lease created: deleting the first would destroy someone else's data,
+ * and keeping the second lets `outpost-001` score a previous run's work.
+ */
+describe('FixedProjectSource Outpost cleanup', () => {
+  beforeEach(() => vi.restoreAllMocks());
+
+  function fakeOutpost(tenants: string[]) {
+    const state = new Set(tenants);
+    const deleted: string[] = [];
+    const fetchImpl = vi.fn(async (url: string | URL, init?: RequestInit) => {
+      const u = new URL(String(url));
+      if (u.hostname.includes('outpost')) {
+        const method = init?.method ?? 'GET';
+        if (method === 'DELETE') {
+          const id = u.pathname.split('/').pop() as string;
+          state.delete(id);
+          deleted.push(id);
+          return new Response('', { status: 200 });
+        }
+        return new Response(
+          JSON.stringify({ models: [...state].map((id) => ({ id })) }),
+          { status: 200 }
+        );
+      }
+      return new Response(JSON.stringify({ models: [] }), { status: 200 });
+    });
+    return { fetchImpl, deleted, state };
+  }
+
+  it('deletes tenants the lease created and keeps ones it inherited', async () => {
+    const outpost = fakeOutpost(['pre-existing']);
+    vi.stubGlobal('fetch', outpost.fetchImpl);
+    const source = new FixedProjectSource({
+      apiKey: 'k',
+      outpostApiKey: 'o',
+      snapshotPath: tempSnapshotPath(),
+    });
+
+    const lease = await source.acquire();
+    outpost.state.add('acme'); // the scenario's tenant, created mid-run
+    await source.release(lease);
+
+    expect(outpost.deleted).toEqual(['acme']);
+    expect(outpost.state.has('pre-existing')).toBe(true);
+  });
+
+  it('deletes nothing when no Outpost key is configured', async () => {
+    const outpost = fakeOutpost(['acme']);
+    vi.stubGlobal('fetch', outpost.fetchImpl);
+    const source = new FixedProjectSource({
+      apiKey: 'k',
+      snapshotPath: tempSnapshotPath(),
+    });
+    // The env fallback exists so experiments need not pass the key; unset it
+    // so this asserts the off case rather than the developer's environment.
+    const prior = process.env.OUTPOST_API_KEY;
+    delete process.env.OUTPOST_API_KEY;
+    try {
+      const lease = await source.acquire();
+      await source.release(lease);
+      expect(outpost.deleted).toEqual([]);
+    } finally {
+      if (prior !== undefined) process.env.OUTPOST_API_KEY = prior;
+    }
+  });
+
+  it('deletes nothing when the baseline could not be read', async () => {
+    // Without knowing what was there first, the only safe move is to delete
+    // nothing: the alternative is destroying a tenant this run did not create.
+    const outpost = fakeOutpost([]);
+    let listed = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string | URL, init?: RequestInit) => {
+        const u = new URL(String(url));
+        if (
+          u.hostname.includes('outpost') &&
+          (init?.method ?? 'GET') === 'GET'
+        ) {
+          listed += 1;
+          // Fail the acquire-time listing only.
+          if (listed === 1) return new Response('boom', { status: 500 });
+        }
+        return outpost.fetchImpl(url, init);
+      })
+    );
+    const source = new FixedProjectSource({
+      apiKey: 'k',
+      outpostApiKey: 'o',
+      snapshotPath: tempSnapshotPath(),
+    });
+
+    const lease = await source.acquire();
+    outpost.state.add('acme');
+    await source.release(lease);
+
+    expect(outpost.deleted).toEqual([]);
+  });
+});
