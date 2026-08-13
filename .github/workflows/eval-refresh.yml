@@ -297,15 +297,29 @@ jobs:
         run: |
           set -euo pipefail
 
+          # Tee rather than pipe: `pnpm eval | tee` would report tee's exit
+          # status, so a failing run would pass the job.
+          run_log="$(mktemp)"
           pnpm eval -- \
             --experiment "${{ matrix.experiment }}" \
             --experiment-suite "${{ matrix.experiment_suite }}" \
             --eval "${{ matrix.eval_id }}" \
             --runs "${{ needs.prepare.outputs.runs }}" \
-            --timeout-sec "${{ needs.prepare.outputs.timeout_sec }}"
+            --timeout-sec "${{ needs.prepare.outputs.timeout_sec }}" \
+            2>&1 | tee "$run_log"
+          # With pipefail set, this is the eval's status, not tee's.
 
-          # A skipped experiment (e.g. missing API key) exits 0 without writing results.
+          # Two different things produce no result file and they need opposite
+          # treatment. A scenario declaring `requires:` that the environment
+          # does not satisfy is *meant* to write nothing: that is the gate
+          # working, and failing the job would make a correct skip look like a
+          # broken one. An experiment skipped for a missing agent key, or a run
+          # that died, is a misconfiguration and must fail loudly.
           if [ ! -f "results/${{ matrix.experiment }}/${{ matrix.eval_id }}.json" ]; then
+            if grep -q "SKIP .* x ${{ matrix.eval_id }} (requires " "$run_log"; then
+              echo "::notice::${{ matrix.eval_id }} declares a requirement this environment does not meet; skipped without a result"
+              exit 0
+            fi
             echo "::error::no result written for ${{ matrix.experiment }} x ${{ matrix.eval_id }} (experiment skipped?)"
             exit 1
           fi

@@ -259,6 +259,11 @@ export const evalFrontmatterSchema = z.preprocess((raw) => {
       : undefined,
     projectRunning: data.projectRunning,
     hostedProject: data.hostedProject,
+    // Omitting this from the whitelist dropped `requires` before validation,
+    // so `unmetRequirements()` saw nothing to check and the skip gate could
+    // never fire: the 13 August matrix ran `outpost-001` with no
+    // `OUTPOST_API_KEY` and published six agent failures instead.
+    requires: toTokenList(data.requires),
     // `skills: []` means no pre-installed skills for this eval; an omitted
     // key means "use the experiment's own skill list" (see resolveSkillSources
     // in apps/framework/harness/run-eval.ts).

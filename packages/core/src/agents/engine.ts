@@ -109,16 +109,23 @@ export function createCliAgent<M extends string = string>(
       const { events } = raw ? parser.parseTranscript(raw) : { events: [] };
       const adapted = adaptTranscript(events);
 
-      // Surface run failures that would otherwise be invisible in results
-      // (visible under --debug): the CLI's own error events, or a run that
-      // died before streaming any events at all.
+      // Surface run failures that would otherwise be invisible in results: the
+      // CLI's own error events, or a run that died before streaming any events
+      // at all.
+      //
+      // Written straight to the stream rather than through `console.error`,
+      // which the eval runner stubs out for the whole run unless `--debug` (to
+      // quieten supabase-js). That stub swallowed these: on 13 August every
+      // Codex run after 01:22 UTC failed its turn before making a single tool
+      // call, and all twenty-two were published as agent failures with no trace
+      // of the cause anywhere in the job logs.
       const errorEvents = events.filter((e) => e.type === 'error');
       for (const e of errorEvents) {
-        console.error(`[${runner.displayName}] ${e.content}`);
+        process.stderr.write(`[${runner.displayName}] ${e.content}\n`);
       }
       if (events.length === 0) {
-        console.error(
-          `[${runner.displayName}] produced no transcript events (exit ${command.exitCode}).\nstdout:\n${command.stdout}\nstderr:\n${command.stderr}`
+        process.stderr.write(
+          `[${runner.displayName}] produced no transcript events (exit ${command.exitCode}).\nstdout:\n${command.stdout}\nstderr:\n${command.stderr}\n`
         );
       }
 

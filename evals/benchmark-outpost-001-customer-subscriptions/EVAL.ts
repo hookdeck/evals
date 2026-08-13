@@ -28,18 +28,19 @@ import type {
 const DELIVERY_WAIT_MS = 15_000;
 
 const scorer: ToolScorer = async (ctx) => {
+  // `requires: [outpost]` in the frontmatter should have skipped this scenario
+  // long before scoring, so reaching here means the gate is broken. Throw
+  // rather than score: a scorer's only vocabulary is pass and fail, so asked
+  // about an absent credential it can only answer with a lie, and the lie it
+  // told on 13 August was six agent failures against named vendors.
+  //
+  // A missing row is recoverable. A wrong row is not.
   if (!ctx.outpost) {
-    return {
-      passed: false,
-      checks: [
-        {
-          name: 'an Outpost project is configured for this run',
-          passed: false,
-          notes:
-            'OUTPOST_API_KEY is not set, so this scenario cannot be scored here',
-        },
-      ],
-    };
+    throw new Error(
+      'OUTPOST_API_KEY is not set, so this scenario cannot be scored. It ' +
+        'declares `requires: [outpost]` and should have been skipped by the ' +
+        'harness; reaching the scorer means the requirement gate did not fire.'
+    );
   }
 
   const tenants = await listTenants(ctx);

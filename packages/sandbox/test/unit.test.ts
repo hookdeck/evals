@@ -170,6 +170,42 @@ describe('skills frontmatter', () => {
   });
 });
 
+describe('requires frontmatter', () => {
+  const buildMarkdown = (extra: string) =>
+    [
+      '---',
+      'stage: build',
+      'suite: benchmark',
+      'product: [outpost]',
+      'topic: [sdk]',
+      extra,
+      '---',
+      'body',
+    ].join('\n');
+
+  // The frontmatter preprocessor is a whitelist, and `requires` was missing
+  // from it: the declaration parsed away to undefined, `unmetRequirements()`
+  // had nothing to check, and a scenario whose capability was unconfigured was
+  // scored as an agent failure instead of skipped.
+  it('survives the preprocessor so the runner can gate on it', () => {
+    expect(
+      parseEvalMarkdown(buildMarkdown('requires: [outpost]')).metadata.requires
+    ).toEqual(['outpost']);
+  });
+
+  it('defaults to undefined when omitted', () => {
+    expect(
+      parseEvalMarkdown(buildMarkdown('')).metadata.requires
+    ).toBeUndefined();
+  });
+
+  it('rejects a capability that is not a known requirement', () => {
+    expect(() =>
+      parseEvalMarkdown(buildMarkdown('requires: [nope]'))
+    ).toThrow();
+  });
+});
+
 describe('skipCliInstall frontmatter', () => {
   const buildMarkdown = (extra: string) =>
     [

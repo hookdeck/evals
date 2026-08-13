@@ -431,6 +431,30 @@ async function runOne(
     lastAgentReport = run.agentReport;
     lastStoppedReason = run.stoppedReason;
     lastUsage = run.usage;
+
+    // An agent that errored before emitting a single event did not attempt the
+    // task, so there is nothing to score. Scoring it anyway produces a result
+    // that reads as an agent failure and describes, in the check notes, work
+    // the agent was never given the chance to do.
+    //
+    // This is not hypothetical. On 13 August the Codex CLI began failing its
+    // turn at 01:22 UTC and every Codex run for the next hour and three
+    // quarters died before its first tool call. Twenty-two runs across two
+    // models and both skill arms were published as agent failures. The
+    // scorers were right about the project state every time: nobody had
+    // touched it.
+    //
+    // Throwing rather than returning puts it in `errored`, so no result file
+    // is written and the job fails loudly. A missing row is recoverable; a
+    // wrong row published against a named vendor is not.
+    if (run.stoppedReason === 'error' && run.transcript.length === 0) {
+      throw new Error(
+        `${expName} x ${ev.id}: agent errored before emitting any transcript events ` +
+          '(no tool calls, empty report). Not scored. Check the agent CLI and the ' +
+          'provider key: a quota or spend cap surfaces exactly like this.'
+      );
+    }
+
     last = await (scorer as ToolScorer)({
       ...session.scoringContext,
       toolCalls: run.toolCalls,
