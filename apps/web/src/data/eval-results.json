@@ -632,12 +632,19 @@
       "sdk"
     ],
     "suite": "benchmark",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
-        "name": "an Outpost project is configured for this run",
-        "passed": false,
-        "notes": "OUTPOST_API_KEY is not set, so this scenario cannot be scored here"
+        "name": "created a tenant for the customer",
+        "passed": true
+      },
+      {
+        "name": "the customer has a destination to receive at",
+        "passed": true
+      },
+      {
+        "name": "an order event reaches the customer",
+        "passed": true
       }
     ],
     "skills": {
@@ -656,69 +663,25 @@
       "calls": [
         {
           "source": "web_fetch",
-          "query": "Give me the exact curl commands and API endpoints needed to: 1) check/create a tenant, 2) create a webhook destination for that tenant with a URL, 3) list topics, 4) publish an event to a topic for that tenant. Include headers, auth, base URL, and request bodies exactly as shown.",
+          "query": "Give me the exact curl commands and API endpoints/base URL for: 1) creating/upserting a tenant, 2) creating a destination (webhook/HTTP type) for a tenant, 3) getting a tenant token if needed, 4) publishing an event to a topic. Include header names for auth (API key), request body shapes, and any topic configuration steps.",
           "hasContent": true,
           "pages": [
             {
               "url": "https://hookdeck.com/docs/outpost/quickstarts/hookdeck-outpost-curl"
             }
           ],
-          "resultChars": 1450
+          "resultChars": 1699
         },
         {
           "source": "web_fetch",
-          "query": "Explain how a Hookdeck Cloud (managed) project gets an Outpost API key and base URL. Is the Outpost API key the same as the Hookdeck project API key (HOOKDECK_API_KEY)? Is Outpost automatically enabled for every Hookdeck project, or does it need to be enabled first? What is the correct base URL for a managed Hookdeck Cloud project's Outpost API (not self-hosted)?",
+          "query": "How are topics configured for a managed Hookdeck Outpost project? Is there an API endpoint to create/list topics, or is it purely via dashboard/environment variable config? What is the exact mechanism to add a new topic like \"order.created\"?",
           "hasContent": true,
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/outpost/getting-started"
+              "url": "https://hookdeck.com/docs/outpost/features/topics"
             }
           ],
-          "resultChars": 215
-        },
-        {
-          "source": "web_fetch",
-          "query": "Explain how a Hookdeck Cloud (managed) project gets an Outpost API key and base URL. Is the Outpost API key the same as the Hookdeck project API key (HOOKDECK_API_KEY)? Is Outpost automatically enabled for every Hookdeck project, or does it need to be enabled first via the dashboard? What is the correct base URL for a managed Hookdeck Cloud project's Outpost API?",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost"
-            }
-          ],
-          "resultChars": 840
-        },
-        {
-          "source": "web_fetch",
-          "query": "List all doc page URLs related to: authentication, API keys, getting started, and how a Hookdeck Cloud project enables/uses Outpost.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/llms.txt"
-            }
-          ],
-          "resultChars": 1258
-        },
-        {
-          "source": "web_fetch",
-          "query": "Explain exactly how to enable/configure Outpost for a Hookdeck Cloud project: how to get the Outpost API key/base URL, whether it's the same as the main Hookdeck project API key, and any setup steps required before calling the Outpost API (tenants, destinations, publish).",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/platform/outpost-projects"
-            }
-          ],
-          "resultChars": 1330
-        },
-        {
-          "source": "web_fetch",
-          "query": "Show the full authentication section verbatim, including exact header format, base URL, and any mention of how the API key relates to a \"team\" or project. Also show any error response documentation, especially for 404 NOT_FOUND errors that include a team_id field. Explain what this means and how to resolve it.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api"
-            }
-          ],
-          "resultChars": 1187
+          "resultChars": 954
         }
       ]
     },
@@ -862,41 +825,7 @@
       ]
     },
     "docs": {
-      "calls": [
-        {
-          "source": "web_fetch",
-          "query": "List all API endpoints for transformations, including any endpoint to test/run/execute a transformation against a sample request without deploying it. Include HTTP methods, paths, and request/response body shapes.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api/transformations.md"
-            }
-          ],
-          "resultChars": 215
-        },
-        {
-          "source": "web_fetch",
-          "query": "List all API endpoints for transformations, including any endpoint to test/run/execute a transformation against a sample request without deploying it. Include HTTP methods, paths, and request/response body shapes.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/transformations"
-            }
-          ],
-          "resultChars": 1043
-        },
-        {
-          "source": "web_fetch",
-          "query": "Explain the difference between retrying an event and retrying/replaying a request in the Hookdeck API. Specifically: does retrying an existing event re-run connection transformation rules, or does it redeliver the already-stored (possibly pre-transform) event data? Is there an endpoint to replay a raw Request through the connection pipeline again (so current transformation rules apply)? Give exact endpoint paths and methods.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api/inspect"
-            }
-          ],
-          "resultChars": 1308
-        }
-      ]
+      "calls": []
     },
     "prompt": "Our payment provider changed their payload and our billing service can't read\nit any more. The service expects `amount`, `currency` and `email` at the top\nlevel of the body, and nothing else has to change.\n\nSort it out so the billing service starts working again. I'd rather know it's\nright before it goes anywhere near production.",
     "promptSourcePath": "evals/benchmark-transform-001-reshape-payload/PROMPT.md",
@@ -951,6 +880,7 @@
         "event-gateway"
       ],
       "loaded": [
+        "hookdeck",
         "event-gateway"
       ],
       "selfInstalled": [
@@ -1017,7 +947,8 @@
         "event-gateway"
       ],
       "selfInstalled": [
-        "elevenlabs-webhooks"
+        "elevenlabs-webhooks",
+        "hookdeck/webhook-skills"
       ]
     },
     "docs": {
@@ -1565,9 +1496,9 @@
     "passed": false,
     "checks": [
       {
-        "name": "an Outpost project is configured for this run",
+        "name": "created a tenant for the customer",
         "passed": false,
-        "notes": "OUTPOST_API_KEY is not set, so this scenario cannot be scored here"
+        "notes": "no tenants: nothing was set up for the customer to subscribe with"
       }
     ],
     "skills": {
@@ -1702,7 +1633,30 @@
       "loaded": []
     },
     "docs": {
-      "calls": []
+      "calls": [
+        {
+          "source": "web_fetch",
+          "query": "Show the exact JavaScript handler function signature/format expected for Hookdeck transformations (addHandler pattern), including how to access and modify the request body, and how errors/console logging work. Include a full example.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/transformations"
+            }
+          ],
+          "resultChars": 1335
+        },
+        {
+          "source": "web_fetch",
+          "query": "Is there an API endpoint to test or execute a transformation with a sample payload without attaching it to a live connection? List any endpoints related to testing/running transformations, and their request/response format.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api#transformations"
+            }
+          ],
+          "resultChars": 936
+        }
+      ]
     },
     "prompt": "Our payment provider changed their payload and our billing service can't read\nit any more. The service expects `amount`, `currency` and `email` at the top\nlevel of the body, and nothing else has to change.\n\nSort it out so the billing service starts working again. I'd rather know it's\nright before it goes anywhere near production.",
     "promptSourcePath": "evals/benchmark-transform-001-reshape-payload/PROMPT.md",
@@ -1727,7 +1681,7 @@
       "signature-verification"
     ],
     "suite": "benchmark",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "created a Stripe source",
@@ -1735,7 +1689,7 @@
       },
       {
         "name": "the source accepts a genuine Stripe signature",
-        "passed": false
+        "passed": true
       },
       {
         "name": "the source rejects a forged Stripe signature",
@@ -1747,8 +1701,8 @@
       },
       {
         "name": "the handler rejects a forged signature",
-        "passed": false,
-        "notes": "expected a 4xx, got 200"
+        "passed": true,
+        "notes": "expected a 4xx, got 401"
       }
     ],
     "skills": {
@@ -1756,7 +1710,96 @@
       "loaded": []
     },
     "docs": {
-      "calls": []
+      "calls": [
+        {
+          "source": "web_fetch",
+          "query": "Find the schema for updating a source of type STRIPE, specifically the config.auth object needed to enable Stripe signature verification. What field name holds the Stripe webhook signing secret?",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/sources#update-source"
+            }
+          ],
+          "resultChars": 215
+        },
+        {
+          "source": "web_fetch",
+          "query": "What is the API config schema for enabling Stripe webhook signature verification on a Hookdeck source? What field holds the Stripe webhook signing secret in the source config.auth object?",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/sources/verification/stripe"
+            }
+          ],
+          "resultChars": 215
+        },
+        {
+          "source": "web_fetch",
+          "query": "Find information about source verification for Stripe, and any API reference for setting up webhook signature verification. Provide any links to relevant sub-pages about Stripe source verification or the sources API.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/sources"
+            }
+          ],
+          "resultChars": 1264
+        },
+        {
+          "source": "web_fetch",
+          "query": "Explain how the Hookdeck CLI is used for local development to forward events to a local server, including the CLI destination type, how `hookdeck listen` works, and how it relates to not missing events (queuing/retry) while a local server is offline.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/cli"
+            }
+          ],
+          "resultChars": 1445
+        },
+        {
+          "source": "web_fetch",
+          "query": "Explain exactly how to verify that an incoming request to my server was genuinely forwarded by Hookdeck (HOOKDECK_SIGNATURE auth type): which header holds the signature, the hashing algorithm, whether it's computed on the raw body, and give a minimal Node.js/Express code example.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/destinations/verifying-webhooks"
+            }
+          ],
+          "resultChars": 215
+        },
+        {
+          "source": "web_fetch",
+          "query": "Explain exactly how to verify that an incoming request to my server was genuinely forwarded by Hookdeck: which HTTP header holds the signature, the hashing algorithm used, whether it's computed on the raw request body, and give a minimal Node.js code example for verification.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/verification"
+            }
+          ],
+          "resultChars": 215
+        },
+        {
+          "source": "web_fetch",
+          "query": "Find the page about verifying that requests were sent by Hookdeck (Hookdeck-Signature header). List the exact URL path to that documentation page if you can find it in links.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs"
+            }
+          ],
+          "resultChars": 325
+        },
+        {
+          "source": "web_fetch",
+          "query": "Explain exactly how to verify that an incoming request to my server was genuinely forwarded by Hookdeck: which HTTP header holds the signature, the hashing algorithm used (e.g. HMAC-SHA256), whether it's computed on the raw request body, encoding (hex/base64), and give the minimal Node.js code example for verification, including the header name for secret rotation if present.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/guides/how-to-verify-incoming-webhooks"
+            }
+          ],
+          "resultChars": 1286
+        }
+      ]
     },
     "prompt": "We're taking Stripe payments and I need our orders API to react when a checkout\ncompletes. Right now nothing is wired up.\n\nSet it up so Stripe events reach the `/orders` endpoint, and make sure the\nendpoint only accepts requests that genuinely came through, not anything that\nturns up at the URL. I'm still working on this locally, and I don't want to miss\nevents while I'm developing.",
     "promptSourcePath": "evals/benchmark-verification-001-stripe-express/PROMPT.md",
@@ -1813,7 +1856,18 @@
       "calls": [
         {
           "source": "web_fetch",
-          "query": "What is the verification config type and fields required for an ElevenLabs webhook source in Hookdeck? Give exact JSON schema for the verification object.",
+          "query": "I need the request body schema for creating a Hookdeck Source with type ELEVENLABS, specifically the config.auth fields needed to configure webhook signature verification (what field holds the ElevenLabs webhook secret).",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api#/operations/createSource"
+            }
+          ],
+          "resultChars": 701
+        },
+        {
+          "source": "web_fetch",
+          "query": "Describe how to configure Hookdeck source verification for ElevenLabs webhooks, including the exact config field name for the signing secret.",
           "hasContent": true,
           "pages": [
             {
@@ -1823,81 +1877,62 @@
           "resultChars": 215
         },
         {
+          "source": "web_search",
+          "query": "Hookdeck source verification ElevenLabs config.auth field webhook secret",
+          "hasContent": false,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/sources#create-a-source",
+              "title": "Sources | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/docs/authentication",
+              "title": "Authentication & Verification | Hookdeck Event Gateway Docs"
+            }
+          ],
+          "resultChars": 2778
+        },
+        {
+          "source": "web_search",
+          "query": "hookdeck.com/docs source types ELEVENLABS verification",
+          "hasContent": false,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/sources",
+              "title": "Sources | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/docs/authentication",
+              "title": "Authentication & Verification | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/blog/source-types",
+              "title": "Source Types: A Simpler, Smarter Way to Configure Your Webhook Event Sources"
+            }
+          ],
+          "resultChars": 2373
+        },
+        {
           "source": "web_fetch",
-          "query": "List the supported webhook source verification provider types (e.g. GITHUB, STRIPE, SHOPIFY...) and whether ElevenLabs is one of them. Also give the general HMAC verification config JSON schema fields.",
+          "query": "Find the section about ElevenLabs as a source type, and any example config JSON showing the config.auth field name used to store the webhook signing secret for verification. Also show a generic example of config.auth for any provider with API key/secret based verification.",
           "hasContent": true,
           "pages": [
             {
               "url": "https://hookdeck.com/docs/sources"
             }
           ],
-          "resultChars": 979
+          "resultChars": 967
         },
         {
           "source": "web_fetch",
-          "query": "Give the exact JSON body example for creating a source with ElevenLabs verification (type ELEVENLABS), including the verification object structure and what config fields it needs (e.g. webhook_secret_key).",
+          "query": "Find the section describing how Hookdeck signs outgoing requests to destinations (HOOKDECK_SIGNATURE auth type) so the receiving server can verify the request genuinely came from Hookdeck. Give exact header name(s), the signing algorithm (HMAC SHA256 etc), encoding (hex/base64), what is signed (raw body only, or timestamp+body), and any code example for verification in Node.js.",
           "hasContent": true,
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/api#sources-create-a-source"
+              "url": "https://hookdeck.com/docs/authentication"
             }
           ],
-          "resultChars": 677
-        },
-        {
-          "source": "web_fetch",
-          "query": "Give the exact JSON body example for creating a Hookdeck source with ElevenLabs verification, including the verification type name and config fields required.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/verification/elevenlabs"
-            }
-          ],
-          "resultChars": 215
-        },
-        {
-          "source": "web_fetch",
-          "query": "How does Hookdeck sign the requests it forwards to destinations (outbound webhook signing)? Give the exact header name(s) and algorithm used to compute the signature so a receiving server can verify a request genuinely came from Hookdeck.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/verification"
-            }
-          ],
-          "resultChars": 215
-        },
-        {
-          "source": "web_fetch",
-          "query": "How does Hookdeck sign requests it forwards to destinations? Give the exact header name(s) and HMAC algorithm/encoding used, so a receiving Express server can verify a request genuinely came from Hookdeck using the webhook secret.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/dashboard/verifying-hookdeck-signature"
-            }
-          ],
-          "resultChars": 215
-        },
-        {
-          "source": "web_fetch",
-          "query": "Find the page about verifying that incoming requests to my destination server genuinely came from Hookdeck. What header does Hookdeck add and how is the signature computed?",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs"
-            }
-          ],
-          "resultChars": 606
-        },
-        {
-          "source": "web_fetch",
-          "query": "Give the exact header name(s) Hookdeck adds to forwarded requests and the precise algorithm (HMAC type, encoding, what data is signed) to verify a request came from Hookdeck. Include any code example, especially for Node/Express.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/guides/how-to-verify-incoming-webhooks"
-            }
-          ],
-          "resultChars": 1225
+          "resultChars": 1077
         }
       ]
     },
@@ -2616,9 +2651,9 @@
     "passed": false,
     "checks": [
       {
-        "name": "an Outpost project is configured for this run",
+        "name": "created a tenant for the customer",
         "passed": false,
-        "notes": "OUTPOST_API_KEY is not set, so this scenario cannot be scored here"
+        "notes": "no tenants: nothing was set up for the customer to subscribe with"
       }
     ],
     "skills": {
@@ -2657,17 +2692,15 @@
       "retries"
     ],
     "suite": "benchmark",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "the connection is no longer paused",
-        "passed": false,
-        "notes": "still paused at 2026-08-13T01:35:04.585Z"
+        "passed": true
       },
       {
         "name": "a new checkout event reaches the orders API",
-        "passed": false,
-        "notes": "event created but its status is HOLD"
+        "passed": true
       }
     ],
     "skills": {
@@ -2675,7 +2708,10 @@
         "hookdeck",
         "event-gateway"
       ],
-      "loaded": []
+      "loaded": [
+        "hookdeck",
+        "event-gateway"
+      ]
     },
     "docs": {
       "calls": []
@@ -2771,7 +2807,10 @@
         "hookdeck",
         "event-gateway"
       ],
-      "loaded": []
+      "loaded": [
+        "hookdeck",
+        "event-gateway"
+      ]
     },
     "docs": {
       "calls": []
@@ -2812,7 +2851,13 @@
         "hookdeck",
         "event-gateway"
       ],
-      "loaded": []
+      "loaded": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "selfInstalled": [
+        "stripe-webhooks"
+      ]
     },
     "docs": {
       "calls": []
@@ -2844,8 +2889,24 @@
     "checks": [
       {
         "name": "created an ElevenLabs source",
-        "passed": false,
-        "notes": "no source with type \"ELEVENLABS\""
+        "passed": true
+      },
+      {
+        "name": "the source accepts a genuine ElevenLabs signature",
+        "passed": false
+      },
+      {
+        "name": "the source rejects a forged ElevenLabs signature",
+        "passed": true
+      },
+      {
+        "name": "the service accepts a genuine Hookdeck signature",
+        "passed": true
+      },
+      {
+        "name": "the service rejects a forged signature",
+        "passed": true,
+        "notes": "expected a 4xx, got 401"
       }
     ],
     "skills": {
@@ -2853,10 +2914,27 @@
         "hookdeck",
         "event-gateway"
       ],
-      "loaded": []
+      "loaded": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "selfInstalled": [
+        "elevenlabs-webhooks"
+      ]
     },
     "docs": {
-      "calls": []
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs sources ElevenLabs Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/sources ELEVENLABS hookdeck source type",
+          "pages": []
+        }
+      ]
     },
     "prompt": "We're using ElevenLabs for transcription and they call us back when a job\nfinishes. The callbacks need to reach the transcripts service in this directory,\nand I don't want it accepting anything that didn't genuinely come from them via\nour gateway.\n\nSet that up.",
     "promptSourcePath": "evals/benchmark-verification-002-elevenlabs-callbacks/PROMPT.md",
@@ -3629,11 +3707,19 @@
       "local-dev"
     ],
     "suite": "benchmark",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "created a source to receive events",
-        "passed": false
+        "passed": true
+      },
+      {
+        "name": "routed to a CLI destination rather than an unreachable URL",
+        "passed": true
+      },
+      {
+        "name": "an event posted at the source arrives at the local service",
+        "passed": true
       }
     ],
     "skills": {
@@ -3669,9 +3755,9 @@
     "passed": false,
     "checks": [
       {
-        "name": "an Outpost project is configured for this run",
+        "name": "created a tenant for the customer",
         "passed": false,
-        "notes": "OUTPOST_API_KEY is not set, so this scenario cannot be scored here"
+        "notes": "no tenants: nothing was set up for the customer to subscribe with"
       }
     ],
     "skills": {
@@ -3679,110 +3765,7 @@
       "loaded": []
     },
     "docs": {
-      "calls": [
-        {
-          "source": "web_search",
-          "query": "Hookdeck API list sources destinations connections create connection API endpoint",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/api",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs publish api Hookdeck events send event",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost tenant destination subscription acme order events hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/outpost/api",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost api tenants create tenant outpost",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api list tenants outpost api",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/outpost/api",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api \"GET /tenants\"",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api \"List all tenants with cursor-based pagination\"",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api publish event endpoint /publish outpost",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/publishing events api outpost POST /publish",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api \"GET /api/v1/tenants\"",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api destinations create webhook endpoint /tenants/:tenant_id/destinations",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api \"Create Destination\" \"config.url\" outpost",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost \"api/v1/tenants\"",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs hookdeck gateway request list CLI Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs hookdeck gateway destination delete id or name",
-          "pages": []
-        }
-      ]
+      "calls": []
     },
     "prompt": "We want our customers to be able to subscribe to events from our platform, so\nthey can react when an order is placed rather than polling us for it.\n\nSet that up for our first customer, `acme`, so they receive order events at\ntheir endpoint. Then show me it works by sending one through.",
     "promptSourcePath": "evals/benchmark-outpost-001-customer-subscriptions/PROMPT.md",
@@ -3807,17 +3790,15 @@
       "retries"
     ],
     "suite": "benchmark",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "the connection is no longer paused",
-        "passed": false,
-        "notes": "still paused at 2026-08-13T01:42:58.628Z"
+        "passed": true
       },
       {
         "name": "a new checkout event reaches the orders API",
-        "passed": false,
-        "notes": "event created but its status is HOLD"
+        "passed": true
       }
     ],
     "skills": {
@@ -3825,7 +3806,74 @@
       "loaded": []
     },
     "docs": {
-      "calls": []
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs API Hookdeck destinations events sources list endpoints",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs connection pause resume API patch paused_at Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "'unpause' in https://hookdeck.com/docs/api",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api hookdeck unpause connection api endpoint",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api update connection paused_at Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api \"connections/:id/unpause\" Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api/2024-09-01",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/2024-09-01"
+            }
+          ]
+        }
+      ]
     },
     "prompt": "Checkout events stopped reaching our orders API. Nothing's changed on our side\nthat I know of, and the endpoint is up.\n\nGet them flowing again.",
     "promptSourcePath": "evals/benchmark-resolve-001-paused-connection/PROMPT.md",
@@ -3892,22 +3940,19 @@
       "transformations"
     ],
     "suite": "benchmark",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "amount is at the top level of the delivered body",
-        "passed": false,
-        "notes": "amount is absent from the delivered body"
+        "passed": true
       },
       {
         "name": "currency is at the top level of the delivered body",
-        "passed": false,
-        "notes": "currency is absent from the delivered body"
+        "passed": true
       },
       {
         "name": "email is at the top level of the delivered body",
-        "passed": false,
-        "notes": "email is absent from the delivered body"
+        "passed": true
       }
     ],
     "skills": {
@@ -3915,7 +3960,75 @@
       "loaded": []
     },
     "docs": {
-      "calls": []
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "Hookdeck API list connections endpoints official docs",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api hookdeck connections list api.hookdeck.com",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api/2024-09-01",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/2024-09-01"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api/2024-09-01 connections GET /connections hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api \"api.hookdeck.com\" openapi.json",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api \"connections\" \"api.hookdeck.com\" \"v1\"",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api \"https://api.hookdeck.com/2025\" Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/transformations Hookdeck transformation code event body example",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/transformations \"transformations/run\" Hookdeck",
+          "pages": []
+        }
+      ]
     },
     "prompt": "Our payment provider changed their payload and our billing service can't read\nit any more. The service expects `amount`, `currency` and `email` at the top\nlevel of the body, and nothing else has to change.\n\nSort it out so the billing service starts working again. I'd rather know it's\nright before it goes anywhere near production.",
     "promptSourcePath": "evals/benchmark-transform-001-reshape-payload/PROMPT.md",
@@ -3940,12 +4053,28 @@
       "signature-verification"
     ],
     "suite": "benchmark",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "created a Stripe source",
-        "passed": false,
-        "notes": "no source with type \"STRIPE\""
+        "passed": true
+      },
+      {
+        "name": "the source accepts a genuine Stripe signature",
+        "passed": true
+      },
+      {
+        "name": "the source rejects a forged Stripe signature",
+        "passed": true
+      },
+      {
+        "name": "the handler accepts a genuine Hookdeck signature",
+        "passed": true
+      },
+      {
+        "name": "the handler rejects a forged signature",
+        "passed": true,
+        "notes": "expected a 4xx, got 401"
       }
     ],
     "skills": {
@@ -3953,7 +4082,133 @@
       "loaded": []
     },
     "docs": {
-      "calls": []
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com Hookdeck signature verification header webhook secret forwarded requests",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs x-hookdeck-signature HMAC SHA256 project secret Node",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs Hookdeck API connections create source destination Stripe",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api create connection source destination post 2025-07-01 hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api base URL hookdeck api https://api.hookdeck.com",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/sources POST /2025-07-01/sources request body type stripe",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs Stripe source verification Hookdeck API Stripe source type",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api stripe signing secret source authentication hookdeck api",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/sources",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/sources"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "'STRIPE' in https://hookdeck.com/docs/sources",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/connections",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/connections"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api filter rule connections body event_type Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs filter rule api body path headers json hookdeck connection rules",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "'rules' in https://hookdeck.com/docs/connections",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "'CLI_DISCONNECTED' in https://hookdeck.com/docs/cli",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/filters Hookdeck filter body syntax event type",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs rules.json filter body hookdeck connection upsert example",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api connection rule filter JSON type body rules example",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ]
+        }
+      ]
     },
     "prompt": "We're taking Stripe payments and I need our orders API to react when a checkout\ncompletes. Right now nothing is wired up.\n\nSet it up so Stripe events reach the `/orders` endpoint, and make sure the\nendpoint only accepts requests that genuinely came through, not anything that\nturns up at the URL. I'm still working on this locally, and I don't want to miss\nevents while I'm developing.",
     "promptSourcePath": "evals/benchmark-verification-001-stripe-express/PROMPT.md",
@@ -3978,12 +4233,28 @@
       "signature-verification"
     ],
     "suite": "benchmark",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "created an ElevenLabs source",
-        "passed": false,
-        "notes": "no source with type \"ELEVENLABS\""
+        "passed": true
+      },
+      {
+        "name": "the source accepts a genuine ElevenLabs signature",
+        "passed": true
+      },
+      {
+        "name": "the source rejects a forged ElevenLabs signature",
+        "passed": true
+      },
+      {
+        "name": "the service accepts a genuine Hookdeck signature",
+        "passed": true
+      },
+      {
+        "name": "the service rejects a forged signature",
+        "passed": true,
+        "notes": "expected a 4xx, got 401"
       }
     ],
     "skills": {
@@ -3991,7 +4262,47 @@
       "loaded": []
     },
     "docs": {
-      "calls": []
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com Hookdeck API gateway source destination connection create webhook signature secret docs",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/authentication",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/authentication"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com docs source hmac secret webhook secret generic provider hookdeck webhook signature verification",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/sources hookdeck source authentication hmac basic auth api key generic",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs ELEVENLABS webhook_secret_key hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs sources ELEVENLABS webhook_secret_key hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "'ELEVENLABS' in https://hookdeck.com/docs/sources",
+          "pages": []
+        }
+      ]
     },
     "prompt": "We're using ElevenLabs for transcription and they call us back when a job\nfinishes. The callbacks need to reach the transcripts service in this directory,\nand I don't want it accepting anything that didn't genuinely come from them via\nour gateway.\n\nSet that up.",
     "promptSourcePath": "evals/benchmark-verification-002-elevenlabs-callbacks/PROMPT.md",
@@ -4454,11 +4765,19 @@
       "local-dev"
     ],
     "suite": "benchmark",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "created a source to receive events",
-        "passed": false
+        "passed": true
+      },
+      {
+        "name": "routed to a CLI destination rather than an unreachable URL",
+        "passed": true
+      },
+      {
+        "name": "an event posted at the source arrives at the local service",
+        "passed": true
       }
     ],
     "skills": {
@@ -4466,7 +4785,9 @@
         "hookdeck",
         "event-gateway"
       ],
-      "loaded": []
+      "loaded": [
+        "event-gateway"
+      ]
     },
     "docs": {
       "calls": []
@@ -4494,12 +4815,19 @@
       "sdk"
     ],
     "suite": "benchmark",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
-        "name": "an Outpost project is configured for this run",
-        "passed": false,
-        "notes": "OUTPOST_API_KEY is not set, so this scenario cannot be scored here"
+        "name": "created a tenant for the customer",
+        "passed": true
+      },
+      {
+        "name": "the customer has a destination to receive at",
+        "passed": true
+      },
+      {
+        "name": "an order event reaches the customer",
+        "passed": true
       }
     ],
     "skills": {
@@ -4508,48 +4836,25 @@
         "event-gateway"
       ],
       "loaded": [
-        "hookdeck",
-        "event-gateway"
+        "hookdeck"
       ]
     },
     "docs": {
       "calls": [
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost API create tenant destination subscription publish event Hookdeck Outpost",
+          "query": "site:hookdeck.com/docs/outpost API create tenant destination publish event Hookdeck Outpost",
           "pages": []
         },
         {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/outpost",
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"printf '%s\\\\n' '--- scope ---'; cat /tmp/hookdeck-agent-skills/skills/outpost/references/outpost-scope.md; printf '%s\\\\n' '--- verify ---'; cat /tmp/hookdeck-agent-skills/skills/outpost/references/outpost-verify.md; printf '%s\\\\n' '--- official curl quickstart ---'; curl -fsSL https://hookdeck.com/docs/outpost/quickstarts/hookdeck-outpost-curl.md | sed -n '1,260p'\"",
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/outpost"
+              "url": "https://hookdeck.com/docs/outpost/quickstarts/hookdeck-outpost-curl.md"
             }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/outpost",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/outpost/publishing/events",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/publishing/events"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "site:github.com/hookdeck/outpost openapi tenants destinations publish 2025-07-01",
-          "pages": []
+          ],
+          "resultChars": 6070
         }
       ]
     },
@@ -4580,13 +4885,12 @@
     "checks": [
       {
         "name": "the connection is no longer paused",
-        "passed": false,
-        "notes": "still paused at 2026-08-13T01:36:40.863Z"
+        "passed": true
       },
       {
         "name": "a new checkout event reaches the orders API",
         "passed": false,
-        "notes": "event created but its status is HOLD"
+        "notes": "no event created for the probe: the connection is still not routing"
       }
     ],
     "skills": {
@@ -4594,7 +4898,10 @@
         "hookdeck",
         "event-gateway"
       ],
-      "loaded": []
+      "loaded": [
+        "hookdeck",
+        "event-gateway"
+      ]
     },
     "docs": {
       "calls": []
@@ -4667,22 +4974,19 @@
       "transformations"
     ],
     "suite": "benchmark",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "amount is at the top level of the delivered body",
-        "passed": false,
-        "notes": "amount is absent from the delivered body"
+        "passed": true
       },
       {
         "name": "currency is at the top level of the delivered body",
-        "passed": false,
-        "notes": "currency is absent from the delivered body"
+        "passed": true
       },
       {
         "name": "email is at the top level of the delivered body",
-        "passed": false,
-        "notes": "email is absent from the delivered body"
+        "passed": true
       }
     ],
     "skills": {
@@ -4690,7 +4994,9 @@
         "hookdeck",
         "event-gateway"
       ],
-      "loaded": []
+      "loaded": [
+        "event-gateway"
+      ]
     },
     "docs": {
       "calls": []
@@ -4718,12 +5024,28 @@
       "signature-verification"
     ],
     "suite": "benchmark",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "created a Stripe source",
-        "passed": false,
-        "notes": "no source with type \"STRIPE\""
+        "passed": true
+      },
+      {
+        "name": "the source accepts a genuine Stripe signature",
+        "passed": true
+      },
+      {
+        "name": "the source rejects a forged Stripe signature",
+        "passed": true
+      },
+      {
+        "name": "the handler accepts a genuine Hookdeck signature",
+        "passed": true
+      },
+      {
+        "name": "the handler rejects a forged signature",
+        "passed": true,
+        "notes": "expected a 4xx, got 401"
       }
     ],
     "skills": {
@@ -4731,7 +5053,12 @@
         "hookdeck",
         "event-gateway"
       ],
-      "loaded": []
+      "loaded": [
+        "event-gateway"
+      ],
+      "selfInstalled": [
+        "stripe-webhooks"
+      ]
     },
     "docs": {
       "calls": []
@@ -4763,8 +5090,25 @@
     "checks": [
       {
         "name": "created an ElevenLabs source",
+        "passed": true
+      },
+      {
+        "name": "the source accepts a genuine ElevenLabs signature",
+        "passed": false
+      },
+      {
+        "name": "the source rejects a forged ElevenLabs signature",
+        "passed": true
+      },
+      {
+        "name": "the service accepts a genuine Hookdeck signature",
         "passed": false,
-        "notes": "no source with type \"ELEVENLABS\""
+        "notes": "expected 200, got 401. service said: > transcripts-service@1.0.0 start > node server.js transcripts-service on 5100"
+      },
+      {
+        "name": "the service rejects a forged signature",
+        "passed": true,
+        "notes": "expected a 4xx, got 401"
       }
     ],
     "skills": {
@@ -4772,10 +5116,33 @@
         "hookdeck",
         "event-gateway"
       ],
-      "loaded": []
+      "loaded": [],
+      "selfInstalled": [
+        "elevenlabs-webhooks"
+      ]
     },
     "docs": {
-      "calls": []
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/authentication",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/authentication"
+            }
+          ]
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsS https://api.hookdeck.com/latest/openapi -o /tmp/hookdeck-openapi.json\nnode - <<'NODE'\nconst fs=require('fs'); const s=JSON.parse(fs.readFileSync('/tmp/hookdeck-openapi.json'));\nconsole.log('servers', s.servers);\nfor (const p of ['/connections','/sources','/destinations']) {\n  console.log('\\\\nPATH',p, Object.keys(s.paths[p]||{}));\n  for (const [m,op] of Object.entries(s.paths[p]||{})) {\n    console.log(m, op.operationId, JSON.stringify(op.requestBody?.content?.['application/json']?.schema||null));\n  }\n}\nconsole.log('\\\\npossible source type paths');\nfor(const p of Object.keys(s.paths)) if(/type|source/i.test(p)) console.log(p);\nNODE\nprintf '%s\\\\n' '--- existing connections raw ---'; curl -fsS 'https://api.hookdeck.com/2025-07-01/connections?limit=100' -H \\\"Authorization: Bearer \"'$HOOKDECK_API_KEY\"\nprintf '\"'\\\\n%s\\\\n' '--- source docs markdown ---'; curl -fsS https://hookdeck.com/docs/api/sources.md | sed -n '1,260p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/sources.md"
+            }
+          ],
+          "resultChars": 12327
+        }
+      ]
     },
     "prompt": "We're using ElevenLabs for transcription and they call us back when a job\nfinishes. The callbacks need to reach the transcripts service in this directory,\nand I don't want it accepting anything that didn't genuinely come from them via\nour gateway.\n\nSet that up.",
     "promptSourcePath": "evals/benchmark-verification-002-elevenlabs-callbacks/PROMPT.md",
@@ -5279,7 +5646,18 @@
       "loaded": []
     },
     "docs": {
-      "calls": []
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs API source list webhook URL Hookdeck REST API sources",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:github.com/hookdeck/hookdeck-cli \"api-key\" listen authenticate websocket",
+          "pages": []
+        }
+      ]
     },
     "prompt": "I've written the notifications service in this directory but I've got no way to\ntry it against real traffic. It's not deployed anywhere yet and I'd rather not\npush it somewhere just to find out the handler is wrong.\n\nGet events arriving at it here on my machine so I can watch them come in.",
     "promptSourcePath": "evals/benchmark-localdev-001-listen-locally/PROMPT.md",
@@ -5307,9 +5685,9 @@
     "passed": false,
     "checks": [
       {
-        "name": "an Outpost project is configured for this run",
+        "name": "created a tenant for the customer",
         "passed": false,
-        "notes": "OUTPOST_API_KEY is not set, so this scenario cannot be scored here"
+        "notes": "no tenants: nothing was set up for the customer to subscribe with"
       }
     ],
     "skills": {
@@ -5317,7 +5695,13 @@
       "loaded": []
     },
     "docs": {
-      "calls": []
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs API create connection source destination Hookdeck REST API",
+          "pages": []
+        }
+      ]
     },
     "prompt": "We want our customers to be able to subscribe to events from our platform, so\nthey can react when an order is placed rather than polling us for it.\n\nSet that up for our first customer, `acme`, so they receive order events at\ntheir endpoint. Then show me it works by sending one through.",
     "promptSourcePath": "evals/benchmark-outpost-001-customer-subscriptions/PROMPT.md",
@@ -5342,17 +5726,15 @@
       "retries"
     ],
     "suite": "benchmark",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "the connection is no longer paused",
-        "passed": false,
-        "notes": "still paused at 2026-08-13T01:44:31.990Z"
+        "passed": true
       },
       {
         "name": "a new checkout event reaches the orders API",
-        "passed": false,
-        "notes": "event created but its status is HOLD"
+        "passed": true
       }
     ],
     "skills": {
@@ -5427,22 +5809,19 @@
       "transformations"
     ],
     "suite": "benchmark",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "amount is at the top level of the delivered body",
-        "passed": false,
-        "notes": "amount is absent from the delivered body"
+        "passed": true
       },
       {
         "name": "currency is at the top level of the delivered body",
-        "passed": false,
-        "notes": "currency is absent from the delivered body"
+        "passed": true
       },
       {
         "name": "email is at the top level of the delivered body",
-        "passed": false,
-        "notes": "email is absent from the delivered body"
+        "passed": true
       }
     ],
     "skills": {
@@ -5475,12 +5854,28 @@
       "signature-verification"
     ],
     "suite": "benchmark",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "created a Stripe source",
-        "passed": false,
-        "notes": "no source with type \"STRIPE\""
+        "passed": true
+      },
+      {
+        "name": "the source accepts a genuine Stripe signature",
+        "passed": true
+      },
+      {
+        "name": "the source rejects a forged Stripe signature",
+        "passed": true
+      },
+      {
+        "name": "the handler accepts a genuine Hookdeck signature",
+        "passed": true
+      },
+      {
+        "name": "the handler rejects a forged signature",
+        "passed": true,
+        "notes": "expected a 4xx, got 401"
       }
     ],
     "skills": {
@@ -5488,7 +5883,23 @@
       "loaded": []
     },
     "docs": {
-      "calls": []
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs Hookdeck Stripe source verification webhook signature CLI destination signature x-hookdeck-signature",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs \"HOOKDECK_SIGNATURE\"",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "GitHub Hookdeck x-hookdeck-signature verify",
+          "pages": []
+        }
+      ]
     },
     "prompt": "We're taking Stripe payments and I need our orders API to react when a checkout\ncompletes. Right now nothing is wired up.\n\nSet it up so Stripe events reach the `/orders` endpoint, and make sure the\nendpoint only accepts requests that genuinely came through, not anything that\nturns up at the URL. I'm still working on this locally, and I don't want to miss\nevents while I'm developing.",
     "promptSourcePath": "evals/benchmark-verification-001-stripe-express/PROMPT.md",
@@ -5517,8 +5928,25 @@
     "checks": [
       {
         "name": "created an ElevenLabs source",
+        "passed": true
+      },
+      {
+        "name": "the source accepts a genuine ElevenLabs signature",
+        "passed": true
+      },
+      {
+        "name": "the source rejects a forged ElevenLabs signature",
+        "passed": true
+      },
+      {
+        "name": "the service accepts a genuine Hookdeck signature",
         "passed": false,
-        "notes": "no source with type \"ELEVENLABS\""
+        "notes": "expected 200, got 422. service said: > transcripts-service@1.0.0 start > node server.js transcripts-service on 5100"
+      },
+      {
+        "name": "the service rejects a forged signature",
+        "passed": true,
+        "notes": "expected a 4xx, got 401"
       }
     ],
     "skills": {
@@ -5526,7 +5954,23 @@
       "loaded": []
     },
     "docs": {
-      "calls": []
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs \"Connection\" \"Destination\" API",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs \"Hookdeck-Signature\"",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "github Hookdeck signature verification x-hookdeck-signature",
+          "pages": []
+        }
+      ]
     },
     "prompt": "We're using ElevenLabs for transcription and they call us back when a job\nfinishes. The callbacks need to reach the transcripts service in this directory,\nand I don't want it accepting anything that didn't genuinely come from them via\nour gateway.\n\nSet that up.",
     "promptSourcePath": "evals/benchmark-verification-002-elevenlabs-callbacks/PROMPT.md",
