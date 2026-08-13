@@ -60,7 +60,10 @@ permissions:
   # `publish-results` downloads each matrix job's artifact with `gh run download`,
   # which lists the run's artifacts through the API. Without this the listing is a
   # 403 and the job fails after every eval has already run and been paid for.
-  actions: read
+  # `read` for that artifact listing; `write` so a matrix job can cancel the
+  # run when the provider stops answering, instead of letting every remaining
+  # job fail the same way.
+  actions: write
 
 # Scoring runs against one shared Hookdeck project, so two workflow runs must
 # never overlap. Queue rather than cancel: a cancelled run leaves the project
@@ -222,6 +225,58 @@ jobs:
 
           echo "pairs=$pairs" >> "$GITHUB_OUTPUT"
 
+      # A dead provider key is the cheapest possible thing to detect and the
+      # most expensive thing to discover halfway through. On 13 August the
+      # OpenAI credit balance hit zero and every one of the thirty-seven Codex
+      # jobs ran, failed, and was paid for in wall-clock time before anyone
+      # looked. One request per provider, before the matrix starts, costs
+      # nothing and turns six hours of failure into a thirty-second one.
+      #
+      # Both checks make a real inference call, costing a token or two.
+      # `/v1/models` is not sufficient and this was measured, not assumed: with
+      # the credit balance at zero it still answers 200, and every listed model
+      # comes back. Only an actual completion returns the 429
+      # `credit_balance_exhausted` that stops a run. A liveness check that
+      # cannot see the failure it exists to catch is worse than none, because
+      # it reads as evidence.
+      - name: Check provider keys are live
+        shell: bash
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          set -uo pipefail
+          failed=0
+
+          openai="$(curl -sS -o /tmp/openai.json -w '%{http_code}' \
+            -X POST https://api.openai.com/v1/responses \
+            -H "Authorization: Bearer ${OPENAI_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d '{"model":"gpt-5.4-mini","input":"hi","max_output_tokens":16}' || echo 000)"
+          if [ "$openai" != "200" ]; then
+            echo "::error::OpenAI key check returned HTTP ${openai}. $(head -c 300 /tmp/openai.json 2>/dev/null)"
+            failed=1
+          fi
+
+          # Anthropic has no free liveness endpoint, so spend one token. A
+          # credit or auth problem answers 400/401/429 rather than 200.
+          anthropic="$(curl -sS -o /tmp/anthropic.json -w '%{http_code}' \
+            -X POST https://api.anthropic.com/v1/messages \
+            -H "x-api-key: ${ANTHROPIC_API_KEY}" \
+            -H "anthropic-version: 2023-06-01" \
+            -H "content-type: application/json" \
+            -d '{"model":"claude-haiku-4-5-20251001","max_tokens":1,"messages":[{"role":"user","content":"."}]}' || echo 000)"
+          if [ "$anthropic" != "200" ]; then
+            echo "::error::Anthropic key check returned HTTP ${anthropic}. $(head -c 300 /tmp/anthropic.json 2>/dev/null)"
+            failed=1
+          fi
+
+          if [ "$failed" -ne 0 ]; then
+            echo "::error::Refusing to start the matrix with a provider key that cannot answer. Top up or rotate the key, then re-dispatch."
+            exit 1
+          fi
+          echo "Both provider keys answered."
+
   run-evals:
     needs: prepare
     runs-on: ubuntu-latest
@@ -243,6 +298,10 @@ jobs:
       # on 13 August scored outpost-001 as six agent failures rather than
       # skipping it, which is a false result published against named vendors.
       OUTPOST_API_KEY: ${{ secrets.OUTPOST_API_KEY }}
+      # For `gh run cancel` when a provider stops answering. Needs
+      # `actions: write` at the workflow level, which `publish-results` did
+      # not previously require.
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Checkout
         uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
@@ -300,6 +359,7 @@ jobs:
           # Tee rather than pipe: `pnpm eval | tee` would report tee's exit
           # status, so a failing run would pass the job.
           run_log="$(mktemp)"
+          set +e
           pnpm eval -- \
             --experiment "${{ matrix.experiment }}" \
             --experiment-suite "${{ matrix.experiment_suite }}" \
@@ -308,6 +368,28 @@ jobs:
             --timeout-sec "${{ needs.prepare.outputs.timeout_sec }}" \
             2>&1 | tee "$run_log"
           # With pipefail set, this is the eval's status, not tee's.
+          eval_status=${PIPESTATUS[0]}
+          set -e
+
+          # Stop the whole matrix when the provider is the problem, not this
+          # pair. A quota, credit or auth failure will hit every remaining job
+          # identically, and `fail-fast: false` means nothing else would stop
+          # them: on 13 August thirty-seven Codex jobs each ran, failed and
+          # burned wall-clock after the OpenAI credit balance reached zero,
+          # with the cause sitting in every log.
+          #
+          # Deliberately narrow. A scenario failing its checks does not fail
+          # this step at all, and an ordinary one-off error should not cancel
+          # five hours of other work, so only these patterns abort the run.
+          if [ "$eval_status" -ne 0 ] && grep -qiE "no credits remaining|insufficient_quota|exceeded your current quota|invalid_api_key|incorrect api key|authentication_error|401 unauthorized" "$run_log"; then
+            echo "::error::Provider is refusing requests (credits, quota or auth). Cancelling the run: every remaining job would fail the same way."
+            gh run cancel "${{ github.run_id }}" --repo "${{ github.repository }}" || true
+            exit 1
+          fi
+
+          if [ "$eval_status" -ne 0 ]; then
+            exit "$eval_status"
+          fi
 
           # Two different things produce no result file and they need opposite
           # treatment. A scenario declaring `requires:` that the environment
