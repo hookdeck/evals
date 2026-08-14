@@ -11,6 +11,7 @@
       "**/dist",
       "apps/web",
       ".eval-runs",
+      "results",
       "submodules",
       "skills",
       ".claude",
