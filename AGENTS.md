@@ -134,6 +134,23 @@ A finding that changes what someone should do belongs in an issue. A finding
 that changes how to work here belongs in Conventions or Traps below. Both, if
 it is both.
 
+## Improvement loops
+
+[`LOOPS.md`](LOOPS.md) records what the benchmark found, what was changed because of
+it, and whether the change worked. A loop only counts when it closes: a finding, one
+attributable change, and a re-run that says what the change bought. A finding without
+a re-run is an issue, not a loop.
+
+Two rules that are the whole point of the file:
+
+- **The fix is to the product, the docs or the skills.** Changing a scenario so it
+  passes proves nothing, and is the move this file exists to make visible.
+- **Record the loops that failed.** A change that did not work is more informative
+  than one that did, and omitting them makes the rest less believable.
+
+Re-runs for a loop need at least three attempts. The weekly cadence runs one and
+cannot separate a fix from variance.
+
 ## Releases
 
 A release is how an improvement is published. It is not a calendar event: cut one
