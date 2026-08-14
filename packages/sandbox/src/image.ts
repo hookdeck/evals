@@ -28,7 +28,7 @@ const SANDBOX_IMAGE_REPOSITORY = 'hookdeck-evals-sandbox';
  * `HOOKDECK_API_KEY` at all, so an agent that never ran `hookdeck ci` was
  * working against a guest project without being told.
  */
-export const HOOKDECK_CLI_VERSION = '2.5.0';
+export const HOOKDECK_CLI_VERSION = '2.3.1';
 const REGISTRY_RETRY_DELAYS_MS = [5_000, 30_000, 60_000];
 
 /**
