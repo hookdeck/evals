@@ -1336,7 +1336,8 @@ rather than a field to read.
 trend lines. Also lifted from supabase/evals, which has `append-gh-pages-history.yml`
 doing exactly this. That workflow has been removed for now rather than left pointing
 at a branch that does not exist; restore it from the first commit when there is a
-scoreboard to append to. Nothing is published yet, and both results files are empty.
+scoreboard to append to. Results are published: `results/latest.json` is the
+contract, `results/runs/` the history, and `results/index.json` lists what exists.
 
 **Secrets in a public repo.** Five: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`,
 `AI_GATEWAY_API_KEY`, `HOOKDECK_API_KEY` (the `evals-ci` project; becomes an org-level
@@ -1570,11 +1571,13 @@ actually run, so it fails the selection rule. Revisit at GA if usage grows.
    confirmation. Only matters once `ApiProjectSource` is creating a project per run.
    Platform team, same conversation as (1).
 3. **Secondary models on the scoreboard.** Three models cost about $50 a week, five
-   about $150. Decide after the first stable benchmark run, not before.
+   about $150. The precondition is now met: the 13 August run is the first clean
+   full matrix. Tracked as a GitHub issue rather than here.
 4. **Plugin decision (Q5).** Needs to be made before product marketing freezes the page copy.
-5. **Whether `.plans/` ships publicly.** It is committed and public by default in a
-   public repo. Add to `.gitignore` if the cost numbers and `core` route references
-   should stay internal.
+5. ~~**Whether `.plans/` ships publicly.**~~ Resolved 13 August. The repository is
+   public and `.plans/` ships with it. Private-repo file paths were removed before
+   the switch; run cost is deliberately kept, because cadence decisions rest on it
+   and it was re-derived badly when absent.
 
 ---
 

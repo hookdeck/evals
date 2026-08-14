@@ -76,10 +76,13 @@ reconstructed: a row records whether an agent passed, not what it did.
 Only the benchmark suite is published. The regression suite guards incidents
 already fixed and does not belong on a scoreboard, in any table or any total.
 
-## Plan
+## Plan and current work
+
+[GitHub Issues](https://github.com/hookdeck/evals/issues) tracks what is left to do
+and what is in progress. Start there.
 
 [`.plans/delivery-plan.md`](.plans/delivery-plan.md) covers the phases, the decisions
-and why they were made, cost and cadence, and what is still open.
+and why they were made, and cost and cadence.
 [`AGENTS.md`](AGENTS.md) covers how to work in this repo: conventions, and the traps
 worth knowing before changing anything.
 
