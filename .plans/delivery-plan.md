@@ -66,7 +66,7 @@ on one project.
 
 ## What we build on
 
-The harness is a copy of [supabase/evals](https://github.com/supabase/evals) with the
+The harness is based on [supabase/evals](https://github.com/supabase/evals) with the
 Supabase runtime removed and a Hookdeck project provisioner in its place. Measured
 against the repo, here is what that means concretely.
 

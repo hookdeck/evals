@@ -36,10 +36,10 @@ Failures are published deliberately. A benchmark that only showed the passes
 would not be worth reading, and would not be worth running either: the failures
 are the part that tells us what to fix.
 
-## Derived from supabase/evals
+## Based on supabase/evals
 
-This project is a copy of [supabase/evals](https://github.com/supabase/evals)
-(Apache-2.0), imported verbatim at commit `3672889` and modified from there. Their
+This project is based on [supabase/evals](https://github.com/supabase/evals)
+(Apache-2.0), imported at commit `3672889` and modified from there. Their
 [launch post](https://supabase.com/blog/introducing-supabase-evals) explains the
 design we build on.
 
@@ -80,6 +80,11 @@ already fixed and does not belong on a scoreboard, in any table or any total.
 
 [GitHub Issues](https://github.com/hookdeck/evals/issues) tracks what is left to do
 and what is in progress. Start there.
+
+[Releases](https://github.com/hookdeck/evals/releases) record what changed and what it
+measured: each one is a run, the results delta since the previous release, and the
+changes that produced it. They are the source for the changelog on
+[hookdeck.com/evals](https://hookdeck.com/evals).
 
 [`.plans/delivery-plan.md`](.plans/delivery-plan.md) covers the phases, the decisions
 and why they were made, and cost and cadence.

@@ -134,6 +134,37 @@ A finding that changes what someone should do belongs in an issue. A finding
 that changes how to work here belongs in Conventions or Traps below. Both, if
 it is both.
 
+## Releases
+
+A release is how an improvement is published. It is not a calendar event: cut one
+when there is a measured change to report, not on a schedule.
+
+**A release represents one run and what changed since the last one.** Tag the results
+commit, so the release points at exactly the data it describes, and
+`results/runs/<timestamp>.json` is the immutable snapshot behind it.
+
+The notes carry:
+
+- the run: id, date, and a link to the workflow run
+- the results delta against the previous release, per experiment
+- the issues closed since it, which is where the external changes appear
+- model or scenario additions, called out separately
+
+**The website reads these releases and renders them as a changelog**, so the notes are
+public copy rather than internal shorthand. Write them for someone who has not read
+the issues.
+
+**Every change made elsewhere in response to an eval needs an issue here.** A skills
+PR, a CLI fix, a documentation change: each gets an issue in this repository that the
+release closes. This is the only mechanism that lets a release describe a private
+documentation change without linking to anything private, and it is what keeps the
+changelog honest about cause rather than listing whatever happened to land.
+
+**Adding a model or a scenario changes the denominator.** Totals either side of such a
+release are not comparable, and the notes have to say so rather than showing a delta
+that reads as improvement. The same applies to a sandbox CLI bump, which changes the
+product under test.
+
 ## Plans
 
 `.plans/` holds the planning documents. Start with
@@ -457,7 +488,7 @@ for when per-run drill-down is added.
 
 ## Attribution
 
-This repo is a copy of [supabase/evals](https://github.com/supabase/evals),
+This repo is based on [supabase/evals](https://github.com/supabase/evals),
 Apache-2.0. The first commit is their tree verbatim; the second removes the
 Supabase runtime. Keep `LICENSE` and `NOTICE` intact and record changes in
 `CHANGES.md`.
