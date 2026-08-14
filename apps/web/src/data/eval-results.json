@@ -582,6 +582,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-localdev-001-listen-locally",
+    "ranAt": "2026-08-14T14:35:30.573Z",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -611,6 +612,7 @@
         "event-gateway"
       ],
       "loaded": [
+        "hookdeck",
         "event-gateway"
       ]
     },
@@ -620,8 +622,7 @@
     "prompt": "I've written the notifications service in this directory but I've got no way to\ntry it against real traffic. It's not deployed anywhere yet and I'd rather not\npush it somewhere just to find out the handler is wrong.\n\nGet events arriving at it here on my machine so I can watch them come in.",
     "promptSourcePath": "evals/benchmark-localdev-001-listen-locally/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5/benchmark-localdev-001-listen-locally.json",
-    "ranAt": "2026-08-13T00:00:00.000Z"
+    "sourcePath": "claude-code-sonnet-5/benchmark-localdev-001-listen-locally.json"
   },
   {
     "experiment": "claude-code-sonnet-5",
@@ -855,6 +856,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-verification-001-stripe-express",
+    "ranAt": "2026-08-14T14:55:03.454Z",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -906,8 +908,7 @@
     "prompt": "We're taking Stripe payments and I need our orders API to react when a checkout\ncompletes. Right now nothing is wired up.\n\nSet it up so Stripe events reach the `/orders` endpoint, and make sure the\nendpoint only accepts requests that genuinely came through, not anything that\nturns up at the URL. I'm still working on this locally, and I don't want to miss\nevents while I'm developing.",
     "promptSourcePath": "evals/benchmark-verification-001-stripe-express/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5/benchmark-verification-001-stripe-express.json",
-    "ranAt": "2026-08-13T00:00:00.000Z"
+    "sourcePath": "claude-code-sonnet-5/benchmark-verification-001-stripe-express.json"
   },
   {
     "experiment": "claude-code-sonnet-5",
@@ -919,6 +920,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-verification-002-elevenlabs-callbacks",
+    "ranAt": "2026-08-14T15:33:56.004Z",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -971,8 +973,7 @@
     "prompt": "We're using ElevenLabs for transcription and they call us back when a job\nfinishes. The callbacks need to reach the transcripts service in this directory,\nand I don't want it accepting anything that didn't genuinely come from them via\nour gateway.\n\nSet that up.",
     "promptSourcePath": "evals/benchmark-verification-002-elevenlabs-callbacks/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5/benchmark-verification-002-elevenlabs-callbacks.json",
-    "ranAt": "2026-08-13T00:00:00.000Z"
+    "sourcePath": "claude-code-sonnet-5/benchmark-verification-002-elevenlabs-callbacks.json"
   },
   {
     "experiment": "claude-code-sonnet-5-no-skills",
@@ -1463,6 +1464,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-localdev-001-listen-locally",
+    "ranAt": "2026-08-14T14:43:42.755Z",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -1496,8 +1498,7 @@
     "prompt": "I've written the notifications service in this directory but I've got no way to\ntry it against real traffic. It's not deployed anywhere yet and I'd rather not\npush it somewhere just to find out the handler is wrong.\n\nGet events arriving at it here on my machine so I can watch them come in.",
     "promptSourcePath": "evals/benchmark-localdev-001-listen-locally/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-localdev-001-listen-locally.json",
-    "ranAt": "2026-08-13T00:00:00.000Z"
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-localdev-001-listen-locally.json"
   },
   {
     "experiment": "claude-code-sonnet-5-no-skills",
@@ -1701,6 +1702,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-verification-001-stripe-express",
+    "ranAt": "2026-08-14T15:10:54.892Z",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -1738,102 +1740,12 @@
       "loaded": []
     },
     "docs": {
-      "calls": [
-        {
-          "source": "web_fetch",
-          "query": "Find the schema for updating a source of type STRIPE, specifically the config.auth object needed to enable Stripe signature verification. What field name holds the Stripe webhook signing secret?",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api/sources#update-source"
-            }
-          ],
-          "resultChars": 215
-        },
-        {
-          "source": "web_fetch",
-          "query": "What is the API config schema for enabling Stripe webhook signature verification on a Hookdeck source? What field holds the Stripe webhook signing secret in the source config.auth object?",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/sources/verification/stripe"
-            }
-          ],
-          "resultChars": 215
-        },
-        {
-          "source": "web_fetch",
-          "query": "Find information about source verification for Stripe, and any API reference for setting up webhook signature verification. Provide any links to relevant sub-pages about Stripe source verification or the sources API.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/sources"
-            }
-          ],
-          "resultChars": 1264
-        },
-        {
-          "source": "web_fetch",
-          "query": "Explain how the Hookdeck CLI is used for local development to forward events to a local server, including the CLI destination type, how `hookdeck listen` works, and how it relates to not missing events (queuing/retry) while a local server is offline.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/cli"
-            }
-          ],
-          "resultChars": 1445
-        },
-        {
-          "source": "web_fetch",
-          "query": "Explain exactly how to verify that an incoming request to my server was genuinely forwarded by Hookdeck (HOOKDECK_SIGNATURE auth type): which header holds the signature, the hashing algorithm, whether it's computed on the raw body, and give a minimal Node.js/Express code example.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/destinations/verifying-webhooks"
-            }
-          ],
-          "resultChars": 215
-        },
-        {
-          "source": "web_fetch",
-          "query": "Explain exactly how to verify that an incoming request to my server was genuinely forwarded by Hookdeck: which HTTP header holds the signature, the hashing algorithm used, whether it's computed on the raw request body, and give a minimal Node.js code example for verification.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/verification"
-            }
-          ],
-          "resultChars": 215
-        },
-        {
-          "source": "web_fetch",
-          "query": "Find the page about verifying that requests were sent by Hookdeck (Hookdeck-Signature header). List the exact URL path to that documentation page if you can find it in links.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs"
-            }
-          ],
-          "resultChars": 325
-        },
-        {
-          "source": "web_fetch",
-          "query": "Explain exactly how to verify that an incoming request to my server was genuinely forwarded by Hookdeck: which HTTP header holds the signature, the hashing algorithm used (e.g. HMAC-SHA256), whether it's computed on the raw request body, encoding (hex/base64), and give the minimal Node.js code example for verification, including the header name for secret rotation if present.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/guides/how-to-verify-incoming-webhooks"
-            }
-          ],
-          "resultChars": 1286
-        }
-      ]
+      "calls": []
     },
     "prompt": "We're taking Stripe payments and I need our orders API to react when a checkout\ncompletes. Right now nothing is wired up.\n\nSet it up so Stripe events reach the `/orders` endpoint, and make sure the\nendpoint only accepts requests that genuinely came through, not anything that\nturns up at the URL. I'm still working on this locally, and I don't want to miss\nevents while I'm developing.",
     "promptSourcePath": "evals/benchmark-verification-001-stripe-express/PROMPT.md",
-    "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-verification-001-stripe-express.json",
-    "ranAt": "2026-08-13T00:00:00.000Z"
+    "attempts": 2,
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-verification-001-stripe-express.json"
   },
   {
     "experiment": "claude-code-sonnet-5-no-skills",
@@ -1845,6 +1757,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-verification-002-elevenlabs-callbacks",
+    "ranAt": "2026-08-14T15:58:10.835Z",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -1882,94 +1795,12 @@
       "loaded": []
     },
     "docs": {
-      "calls": [
-        {
-          "source": "web_fetch",
-          "query": "I need the request body schema for creating a Hookdeck Source with type ELEVENLABS, specifically the config.auth fields needed to configure webhook signature verification (what field holds the ElevenLabs webhook secret).",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api#/operations/createSource"
-            }
-          ],
-          "resultChars": 701
-        },
-        {
-          "source": "web_fetch",
-          "query": "Describe how to configure Hookdeck source verification for ElevenLabs webhooks, including the exact config field name for the signing secret.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/sources/verification/elevenlabs"
-            }
-          ],
-          "resultChars": 215
-        },
-        {
-          "source": "web_search",
-          "query": "Hookdeck source verification ElevenLabs config.auth field webhook secret",
-          "hasContent": false,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/sources#create-a-source",
-              "title": "Sources | Hookdeck Event Gateway Docs"
-            },
-            {
-              "url": "https://hookdeck.com/docs/authentication",
-              "title": "Authentication & Verification | Hookdeck Event Gateway Docs"
-            }
-          ],
-          "resultChars": 2778
-        },
-        {
-          "source": "web_search",
-          "query": "hookdeck.com/docs source types ELEVENLABS verification",
-          "hasContent": false,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/sources",
-              "title": "Sources | Hookdeck Event Gateway Docs"
-            },
-            {
-              "url": "https://hookdeck.com/docs/authentication",
-              "title": "Authentication & Verification | Hookdeck Event Gateway Docs"
-            },
-            {
-              "url": "https://hookdeck.com/blog/source-types",
-              "title": "Source Types: A Simpler, Smarter Way to Configure Your Webhook Event Sources"
-            }
-          ],
-          "resultChars": 2373
-        },
-        {
-          "source": "web_fetch",
-          "query": "Find the section about ElevenLabs as a source type, and any example config JSON showing the config.auth field name used to store the webhook signing secret for verification. Also show a generic example of config.auth for any provider with API key/secret based verification.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/sources"
-            }
-          ],
-          "resultChars": 967
-        },
-        {
-          "source": "web_fetch",
-          "query": "Find the section describing how Hookdeck signs outgoing requests to destinations (HOOKDECK_SIGNATURE auth type) so the receiving server can verify the request genuinely came from Hookdeck. Give exact header name(s), the signing algorithm (HMAC SHA256 etc), encoding (hex/base64), what is signed (raw body only, or timestamp+body), and any code example for verification in Node.js.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/authentication"
-            }
-          ],
-          "resultChars": 1077
-        }
-      ]
+      "calls": []
     },
     "prompt": "We're using ElevenLabs for transcription and they call us back when a job\nfinishes. The callbacks need to reach the transcripts service in this directory,\nand I don't want it accepting anything that didn't genuinely come from them via\nour gateway.\n\nSet that up.",
     "promptSourcePath": "evals/benchmark-verification-002-elevenlabs-callbacks/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-verification-002-elevenlabs-callbacks.json",
-    "ranAt": "2026-08-13T00:00:00.000Z"
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-verification-002-elevenlabs-callbacks.json"
   },
   {
     "experiment": "codex-gpt-5.4-mini",
@@ -2627,6 +2458,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-localdev-001-listen-locally",
+    "ranAt": "2026-08-14T14:38:07.202Z",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -2666,8 +2498,7 @@
     "prompt": "I've written the notifications service in this directory but I've got no way to\ntry it against real traffic. It's not deployed anywhere yet and I'd rather not\npush it somewhere just to find out the handler is wrong.\n\nGet events arriving at it here on my machine so I can watch them come in.",
     "promptSourcePath": "evals/benchmark-localdev-001-listen-locally/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini/benchmark-localdev-001-listen-locally.json",
-    "ranAt": "2026-08-13T00:00:00.000Z"
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-localdev-001-listen-locally.json"
   },
   {
     "experiment": "codex-gpt-5.4-mini",
@@ -2875,6 +2706,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-verification-001-stripe-express",
+    "ranAt": "2026-08-14T14:59:03.168Z",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -2883,12 +2715,28 @@
       "signature-verification"
     ],
     "suite": "benchmark",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "created a Stripe source",
-        "passed": false,
-        "notes": "no source with type \"STRIPE\""
+        "passed": true
+      },
+      {
+        "name": "the source accepts a genuine Stripe signature",
+        "passed": true
+      },
+      {
+        "name": "the source rejects a forged Stripe signature",
+        "passed": true
+      },
+      {
+        "name": "the handler accepts a genuine Hookdeck signature",
+        "passed": true
+      },
+      {
+        "name": "the handler rejects a forged signature",
+        "passed": true,
+        "notes": "expected a 4xx, got 401"
       }
     ],
     "skills": {
@@ -2910,8 +2758,7 @@
     "prompt": "We're taking Stripe payments and I need our orders API to react when a checkout\ncompletes. Right now nothing is wired up.\n\nSet it up so Stripe events reach the `/orders` endpoint, and make sure the\nendpoint only accepts requests that genuinely came through, not anything that\nturns up at the URL. I'm still working on this locally, and I don't want to miss\nevents while I'm developing.",
     "promptSourcePath": "evals/benchmark-verification-001-stripe-express/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini/benchmark-verification-001-stripe-express.json",
-    "ranAt": "2026-08-13T00:00:00.000Z"
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-verification-001-stripe-express.json"
   },
   {
     "experiment": "codex-gpt-5.4-mini",
@@ -2923,6 +2770,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-verification-002-elevenlabs-callbacks",
+    "ranAt": "2026-08-14T15:42:47.606Z",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -2931,7 +2779,7 @@
       "signature-verification"
     ],
     "suite": "benchmark",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "created an ElevenLabs source",
@@ -2939,7 +2787,7 @@
       },
       {
         "name": "the source accepts a genuine ElevenLabs signature",
-        "passed": false
+        "passed": true
       },
       {
         "name": "the source rejects a forged ElevenLabs signature",
@@ -2965,28 +2813,17 @@
         "event-gateway"
       ],
       "selfInstalled": [
-        "elevenlabs-webhooks"
+        "elevenlabs-webhooks",
+        "hookdeck/webhook-skills"
       ]
     },
     "docs": {
-      "calls": [
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs sources ElevenLabs Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/sources ELEVENLABS hookdeck source type",
-          "pages": []
-        }
-      ]
+      "calls": []
     },
     "prompt": "We're using ElevenLabs for transcription and they call us back when a job\nfinishes. The callbacks need to reach the transcripts service in this directory,\nand I don't want it accepting anything that didn't genuinely come from them via\nour gateway.\n\nSet that up.",
     "promptSourcePath": "evals/benchmark-verification-002-elevenlabs-callbacks/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini/benchmark-verification-002-elevenlabs-callbacks.json",
-    "ranAt": "2026-08-13T00:00:00.000Z"
+    "sourcePath": "codex-gpt-5.4-mini/benchmark-verification-002-elevenlabs-callbacks.json"
   },
   {
     "experiment": "codex-gpt-5.4-mini-no-skills",
@@ -3754,6 +3591,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-localdev-001-listen-locally",
+    "ranAt": "2026-08-14T14:47:11.526Z",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -3787,8 +3625,7 @@
     "prompt": "I've written the notifications service in this directory but I've got no way to\ntry it against real traffic. It's not deployed anywhere yet and I'd rather not\npush it somewhere just to find out the handler is wrong.\n\nGet events arriving at it here on my machine so I can watch them come in.",
     "promptSourcePath": "evals/benchmark-localdev-001-listen-locally/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-localdev-001-listen-locally.json",
-    "ranAt": "2026-08-13T00:00:00.000Z"
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-localdev-001-listen-locally.json"
   },
   {
     "experiment": "codex-gpt-5.4-mini-no-skills",
@@ -4104,6 +3941,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-verification-001-stripe-express",
+    "ranAt": "2026-08-14T15:21:46.579Z",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -4112,7 +3950,7 @@
       "signature-verification"
     ],
     "suite": "benchmark",
-    "passed": true,
+    "passed": false,
     "checks": [
       {
         "name": "created a Stripe source",
@@ -4120,7 +3958,7 @@
       },
       {
         "name": "the source accepts a genuine Stripe signature",
-        "passed": true
+        "passed": false
       },
       {
         "name": "the source rejects a forged Stripe signature",
@@ -4144,22 +3982,17 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "site:hookdeck.com Hookdeck signature verification header webhook secret forwarded requests",
+          "query": "site:hookdeck.com docs Hookdeck signature header verify request authenticity",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs x-hookdeck-signature HMAC SHA256 project secret Node",
+          "query": "site:hookdeck.com docs Stripe source verification Hookdeck Stripe source verification",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs Hookdeck API connections create source destination Stripe",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api create connection source destination post 2025-07-01 hookdeck",
+          "query": "site:hookdeck.com/docs api create source connection hookdeck",
           "pages": []
         },
         {
@@ -4173,107 +4006,44 @@
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api base URL hookdeck api https://api.hookdeck.com",
+          "query": "site:hookdeck.com/docs/api sources POST connections POST hookdeck api reference",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "https://hookdeck.com/docs/api",
+          "query": "site:hookdeck.com/docs \"POST /2025-07-01/connections\" Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs CLI api key environment variable HOOKDECK_API_KEY",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs verify Hookdeck signature express code example x-hookdeck-signature",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/authentication",
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/api"
+              "url": "https://hookdeck.com/docs/authentication"
             }
           ]
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/sources POST /2025-07-01/sources request body type stripe",
+          "query": "site:hookdeck.com/docs project signing secret api hookdeck",
           "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs Stripe source verification Hookdeck API Stripe source type",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api stripe signing secret source authentication hookdeck api",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/sources",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/sources"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "'STRIPE' in https://hookdeck.com/docs/sources",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/connections",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/connections"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api filter rule connections body event_type Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs filter rule api body path headers json hookdeck connection rules",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "'rules' in https://hookdeck.com/docs/connections",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "'CLI_DISCONNECTED' in https://hookdeck.com/docs/cli",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/filters Hookdeck filter body syntax event type",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs rules.json filter body hookdeck connection upsert example",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api connection rule filter JSON type body rules example",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/api",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api"
-            }
-          ]
         }
       ]
     },
     "prompt": "We're taking Stripe payments and I need our orders API to react when a checkout\ncompletes. Right now nothing is wired up.\n\nSet it up so Stripe events reach the `/orders` endpoint, and make sure the\nendpoint only accepts requests that genuinely came through, not anything that\nturns up at the URL. I'm still working on this locally, and I don't want to miss\nevents while I'm developing.",
     "promptSourcePath": "evals/benchmark-verification-001-stripe-express/PROMPT.md",
-    "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-verification-001-stripe-express.json",
-    "ranAt": "2026-08-13T00:00:00.000Z"
+    "attempts": 3,
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-verification-001-stripe-express.json"
   },
   {
     "experiment": "codex-gpt-5.4-mini-no-skills",
@@ -4285,6 +4055,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-verification-002-elevenlabs-callbacks",
+    "ranAt": "2026-08-14T16:08:57.359Z",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -4314,7 +4085,7 @@
       {
         "name": "the service rejects a forged signature",
         "passed": true,
-        "notes": "expected a 4xx, got 401"
+        "notes": "expected a 4xx, got 403"
       }
     ],
     "skills": {
@@ -4325,7 +4096,36 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "site:hookdeck.com Hookdeck API gateway source destination connection create webhook signature secret docs",
+          "query": "site:docs.hookdeck.com webhook signature verification Hookdeck x-hookdeck-signature",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api source destination connection Hookdeck API create source destination connection",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api destinations POST /2025-07-01/destinations Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs CLI destination Hookdeck destination type CLI",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api DestinationTypeConfigCLI Hookdeck openapi",
           "pages": []
         },
         {
@@ -4336,39 +4136,13 @@
               "url": "https://hookdeck.com/docs/authentication"
             }
           ]
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com docs source hmac secret webhook secret generic provider hookdeck webhook signature verification",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/sources hookdeck source authentication hmac basic auth api key generic",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs ELEVENLABS webhook_secret_key hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs sources ELEVENLABS webhook_secret_key hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "'ELEVENLABS' in https://hookdeck.com/docs/sources",
-          "pages": []
         }
       ]
     },
     "prompt": "We're using ElevenLabs for transcription and they call us back when a job\nfinishes. The callbacks need to reach the transcripts service in this directory,\nand I don't want it accepting anything that didn't genuinely come from them via\nour gateway.\n\nSet that up.",
     "promptSourcePath": "evals/benchmark-verification-002-elevenlabs-callbacks/PROMPT.md",
-    "attempts": 1,
-    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-verification-002-elevenlabs-callbacks.json",
-    "ranAt": "2026-08-13T00:00:00.000Z"
+    "attempts": 2,
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-verification-002-elevenlabs-callbacks.json"
   },
   {
     "experiment": "codex-gpt-5.6",
@@ -4826,6 +4600,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-localdev-001-listen-locally",
+    "ranAt": "2026-08-14T14:41:25.518Z",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -4864,8 +4639,7 @@
     "prompt": "I've written the notifications service in this directory but I've got no way to\ntry it against real traffic. It's not deployed anywhere yet and I'd rather not\npush it somewhere just to find out the handler is wrong.\n\nGet events arriving at it here on my machine so I can watch them come in.",
     "promptSourcePath": "evals/benchmark-localdev-001-listen-locally/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6/benchmark-localdev-001-listen-locally.json",
-    "ranAt": "2026-08-13T00:00:00.000Z"
+    "sourcePath": "codex-gpt-5.6/benchmark-localdev-001-listen-locally.json"
   },
   {
     "experiment": "codex-gpt-5.6",
@@ -5091,6 +4865,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-verification-001-stripe-express",
+    "ranAt": "2026-08-14T15:04:37.267Z",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -5128,9 +4903,7 @@
         "hookdeck",
         "event-gateway"
       ],
-      "loaded": [
-        "event-gateway"
-      ],
+      "loaded": [],
       "selfInstalled": [
         "stripe-webhooks"
       ]
@@ -5141,8 +4914,7 @@
     "prompt": "We're taking Stripe payments and I need our orders API to react when a checkout\ncompletes. Right now nothing is wired up.\n\nSet it up so Stripe events reach the `/orders` endpoint, and make sure the\nendpoint only accepts requests that genuinely came through, not anything that\nturns up at the URL. I'm still working on this locally, and I don't want to miss\nevents while I'm developing.",
     "promptSourcePath": "evals/benchmark-verification-001-stripe-express/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6/benchmark-verification-001-stripe-express.json",
-    "ranAt": "2026-08-13T00:00:00.000Z"
+    "sourcePath": "codex-gpt-5.6/benchmark-verification-001-stripe-express.json"
   },
   {
     "experiment": "codex-gpt-5.6",
@@ -5154,6 +4926,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-verification-002-elevenlabs-callbacks",
+    "ranAt": "2026-08-14T15:52:11.775Z",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -5162,7 +4935,7 @@
       "signature-verification"
     ],
     "suite": "benchmark",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "created an ElevenLabs source",
@@ -5170,7 +4943,7 @@
       },
       {
         "name": "the source accepts a genuine ElevenLabs signature",
-        "passed": false
+        "passed": true
       },
       {
         "name": "the source rejects a forged ElevenLabs signature",
@@ -5178,8 +4951,7 @@
       },
       {
         "name": "the service accepts a genuine Hookdeck signature",
-        "passed": false,
-        "notes": "expected 200, got 401. service said: > transcripts-service@1.0.0 start > node server.js transcripts-service on 5100"
+        "passed": true
       },
       {
         "name": "the service rejects a forged signature",
@@ -5201,30 +4973,15 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "https://hookdeck.com/docs/authentication",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/authentication"
-            }
-          ]
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -fsS https://api.hookdeck.com/latest/openapi -o /tmp/hookdeck-openapi.json\nnode - <<'NODE'\nconst fs=require('fs'); const s=JSON.parse(fs.readFileSync('/tmp/hookdeck-openapi.json'));\nconsole.log('servers', s.servers);\nfor (const p of ['/connections','/sources','/destinations']) {\n  console.log('\\\\nPATH',p, Object.keys(s.paths[p]||{}));\n  for (const [m,op] of Object.entries(s.paths[p]||{})) {\n    console.log(m, op.operationId, JSON.stringify(op.requestBody?.content?.['application/json']?.schema||null));\n  }\n}\nconsole.log('\\\\npossible source type paths');\nfor(const p of Object.keys(s.paths)) if(/type|source/i.test(p)) console.log(p);\nNODE\nprintf '%s\\\\n' '--- existing connections raw ---'; curl -fsS 'https://api.hookdeck.com/2025-07-01/connections?limit=100' -H \\\"Authorization: Bearer \"'$HOOKDECK_API_KEY\"\nprintf '\"'\\\\n%s\\\\n' '--- source docs markdown ---'; curl -fsS https://hookdeck.com/docs/api/sources.md | sed -n '1,260p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api/sources.md"
-            }
-          ],
-          "resultChars": 12327
+          "query": "site:hookdeck.com/docs ElevenLabs source webhook verification Hookdeck",
+          "pages": []
         }
       ]
     },
     "prompt": "We're using ElevenLabs for transcription and they call us back when a job\nfinishes. The callbacks need to reach the transcripts service in this directory,\nand I don't want it accepting anything that didn't genuinely come from them via\nour gateway.\n\nSet that up.",
     "promptSourcePath": "evals/benchmark-verification-002-elevenlabs-callbacks/PROMPT.md",
-    "attempts": 1,
-    "sourcePath": "codex-gpt-5.6/benchmark-verification-002-elevenlabs-callbacks.json",
-    "ranAt": "2026-08-13T00:00:00.000Z"
+    "attempts": 2,
+    "sourcePath": "codex-gpt-5.6/benchmark-verification-002-elevenlabs-callbacks.json"
   },
   {
     "experiment": "codex-gpt-5.6-no-skills",
@@ -5703,6 +5460,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-localdev-001-listen-locally",
+    "ranAt": "2026-08-14T14:51:00.821Z",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -5731,24 +5489,12 @@
       "loaded": []
     },
     "docs": {
-      "calls": [
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs API source list webhook URL Hookdeck REST API sources",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:github.com/hookdeck/hookdeck-cli \"api-key\" listen authenticate websocket",
-          "pages": []
-        }
-      ]
+      "calls": []
     },
     "prompt": "I've written the notifications service in this directory but I've got no way to\ntry it against real traffic. It's not deployed anywhere yet and I'd rather not\npush it somewhere just to find out the handler is wrong.\n\nGet events arriving at it here on my machine so I can watch them come in.",
     "promptSourcePath": "evals/benchmark-localdev-001-listen-locally/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-localdev-001-listen-locally.json",
-    "ranAt": "2026-08-13T00:00:00.000Z"
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-localdev-001-listen-locally.json"
   },
   {
     "experiment": "codex-gpt-5.6-no-skills",
@@ -5951,6 +5697,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-verification-001-stripe-express",
+    "ranAt": "2026-08-14T15:27:58.658Z",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -5991,17 +5738,17 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs Hookdeck Stripe source verification webhook signature CLI destination signature x-hookdeck-signature",
+          "query": "site:hookdeck.com/docs verify Hookdeck signature webhook HMAC x-hookdeck-signature",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs \"HOOKDECK_SIGNATURE\"",
+          "query": "site:hookdeck.com \"x-hookdeck-signature\"",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "GitHub Hookdeck x-hookdeck-signature verify",
+          "query": "github hookdeck signature verify x-hookdeck-signature",
           "pages": []
         }
       ]
@@ -6009,8 +5756,7 @@
     "prompt": "We're taking Stripe payments and I need our orders API to react when a checkout\ncompletes. Right now nothing is wired up.\n\nSet it up so Stripe events reach the `/orders` endpoint, and make sure the\nendpoint only accepts requests that genuinely came through, not anything that\nturns up at the URL. I'm still working on this locally, and I don't want to miss\nevents while I'm developing.",
     "promptSourcePath": "evals/benchmark-verification-001-stripe-express/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-verification-001-stripe-express.json",
-    "ranAt": "2026-08-13T00:00:00.000Z"
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-verification-001-stripe-express.json"
   },
   {
     "experiment": "codex-gpt-5.6-no-skills",
@@ -6022,6 +5768,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-verification-002-elevenlabs-callbacks",
+    "ranAt": "2026-08-14T16:21:07.406Z",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -6030,7 +5777,7 @@
       "signature-verification"
     ],
     "suite": "benchmark",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "created an ElevenLabs source",
@@ -6046,8 +5793,7 @@
       },
       {
         "name": "the service accepts a genuine Hookdeck signature",
-        "passed": false,
-        "notes": "expected 200, got 422. service said: > transcripts-service@1.0.0 start > node server.js transcripts-service on 5100"
+        "passed": true
       },
       {
         "name": "the service rejects a forged signature",
@@ -6063,25 +5809,24 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs \"Connection\" \"Destination\" API",
+          "query": "site:hookdeck.com/docs \"Verification\" HMAC webhook signature ruleset",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs \"Hookdeck-Signature\"",
+          "query": "site:hookdeck.com/docs ElevenLabs webhook Hookdeck",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "github Hookdeck signature verification x-hookdeck-signature",
+          "query": "site:github.com/hookdeck/webhook-skills \"x-hookdeck-signature\" Node Express",
           "pages": []
         }
       ]
     },
     "prompt": "We're using ElevenLabs for transcription and they call us back when a job\nfinishes. The callbacks need to reach the transcripts service in this directory,\nand I don't want it accepting anything that didn't genuinely come from them via\nour gateway.\n\nSet that up.",
     "promptSourcePath": "evals/benchmark-verification-002-elevenlabs-callbacks/PROMPT.md",
-    "attempts": 1,
-    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-verification-002-elevenlabs-callbacks.json",
-    "ranAt": "2026-08-13T00:00:00.000Z"
+    "attempts": 2,
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-verification-002-elevenlabs-callbacks.json"
   }
 ]
