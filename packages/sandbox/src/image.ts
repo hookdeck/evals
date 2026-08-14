@@ -14,8 +14,21 @@ import { dockerCli } from './docker-sandbox.js';
 import { SKILLS_CLI_VERSION } from './skills.js';
 
 const SANDBOX_IMAGE_REPOSITORY = 'hookdeck-evals-sandbox';
-/** Pinned so benchmark runs stay comparable across CLI releases. */
-export const HOOKDECK_CLI_VERSION = '2.3.1';
+/**
+ * Pinned so benchmark runs stay comparable across CLI releases.
+ *
+ * Bumping is a deliberate act, not maintenance: it changes the product under
+ * test, so results either side of a bump are not directly comparable for any
+ * scenario that touches the CLI. Record the bump alongside the re-run.
+ *
+ * 2.3.1 to 2.5.0 on 14 August. 2.5.0 carries "make the CLI safe to run without
+ * a terminal", which addresses the failure shape this benchmark surfaced: the
+ * CLI silently doing something other than what was asked, with missing traffic
+ * as the first symptom rather than an error. At 2.3.1 `listen` did not read
+ * `HOOKDECK_API_KEY` at all, so an agent that never ran `hookdeck ci` was
+ * working against a guest project without being told.
+ */
+export const HOOKDECK_CLI_VERSION = '2.5.0';
 const REGISTRY_RETRY_DELAYS_MS = [5_000, 30_000, 60_000];
 
 /**
