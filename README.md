@@ -6,6 +6,36 @@ operate [Hookdeck](https://hookdeck.com): Event Gateway and Outpost.
 Results are published at [hookdeck.com/evals](https://hookdeck.com/evals), failures
 included.
 
+## Why
+
+Developers increasingly reach for an agent first. If someone asks Claude Code or
+Codex to set up webhook handling, the answer they get is shaped by whether our
+documentation, CLI and skills are legible to a model. That is now part of the
+product, and until this project existed we had no measurement of it: only
+anecdotes, and the occasional support ticket showing an agent had confidently
+invented a feature.
+
+So the benchmark exists to answer three questions with evidence rather than
+opinion:
+
+**Can an agent actually do the job?** Not "does the documentation exist" but does
+a real agent, given a real task and a real project, end up with something that
+works. Scoring reads project state back through the API and sends real events, so
+an agent is judged on what it built rather than what it claimed.
+
+**Does what we ship help?** Every experiment has a twin identical apart from the
+skills list, so the difference between them is attributable to the skills and
+nothing else. That has already produced an uncomfortable answer worth having: our
+skills measurably *hurt* a weaker model on several scenarios.
+
+**Where does the product fail people?** Several findings came out of runs rather
+than speculation, all of them things a human would have worked around without
+reporting. An agent does not work around; it fails, visibly, in a transcript.
+
+Failures are published deliberately. A benchmark that only showed the passes
+would not be worth reading, and would not be worth running either: the failures
+are the part that tells us what to fix.
+
 ## Derived from supabase/evals
 
 This project is a copy of [supabase/evals](https://github.com/supabase/evals)
@@ -21,6 +51,30 @@ complete public API and scoring can query real project state.
 
 `CHANGES.md` states the modifications in full. `LICENSE` and `NOTICE` carry the
 upstream copyright.
+
+## Published results
+
+The page renders whatever is at these paths, fetched per request. They are the
+supported way to consume this data; everything else in the repo is an
+implementation detail that may move.
+
+| Path | |
+|---|---|
+| [`results/latest.json`](results/latest.json) | the most recent successful run |
+| [`results/index.json`](results/index.json) | every snapshot, newest first |
+| `results/runs/<timestamp>.json` | that snapshot, kept |
+
+```bash
+curl -s https://raw.githubusercontent.com/hookdeck/evals/main/results/latest.json
+```
+
+Each snapshot carries `publishedAt`, the `runId` of the workflow run that
+produced it, and `counts`, so a figure can be traced back to the job that
+produced it rather than taken on trust. History is kept because it cannot be
+reconstructed: a row records whether an agent passed, not what it did.
+
+Only the benchmark suite is published. The regression suite guards incidents
+already fixed and does not belong on a scoreboard, in any table or any total.
 
 ## Plan
 
@@ -95,7 +149,11 @@ pnpm eval -- --suite benchmark --experiment-suite benchmark,no-skills
 
 ### View results in the web app
 
-After running evals locally, export their results to `eval-results.json` for the web app:
+A local preview of the results, not the published page. `hookdeck.com/evals`
+reads [`results/latest.json`](#published-results) and does not build from this
+app.
+
+After running evals locally, export their results for it:
 
 ```bash
 pnpm export-results

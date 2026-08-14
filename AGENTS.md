@@ -1,109 +1,112 @@
 # Working in this repo
 
-`README.md` covers what the project is and how a run works. This file covers
-current status, where the plan lives, and the conventions and traps worth
-knowing before you change anything.
+`README.md` is for people: what this project is, why it exists, how to run it,
+and how to consume the published results. This file is for whoever is changing
+the code, human or agent: current status, what things cost, and the conventions
+and traps that were expensive to learn. If a fact is only useful while editing
+this repo, it belongs here; if it is useful to someone reading about the
+benchmark, it belongs in the README.
 
 ## Status
 
-Phase 0 (framework spike) and Phase 1 (the project provisioner) are done.
-Phase 2 is underway and parts of Phase 3 landed early.
+Phases 0 and 1 are done. Phases 2 and 3 are substantially done: eighteen
+scenarios exist, fifteen benchmark and three regression, and every benchmark
+scenario has produced a valid result against all six experiments.
 
-**Scenarios: eighteen.** Three regression, fifteen benchmark.
+**Do not keep a per-scenario status table here.** There was one and it went
+stale within a day, because a run regenerates the same information and this file
+does not. `results/latest.json` is authoritative for what passes what. Query it:
 
-| Suite | Stage | Scenario | Where it stands |
-|---|---|---|---|
-| regression | build | filtering-001-regex-capability | Fails Claude Code, passes Codex. The June 2026 incident reproduced |
-| regression | build | verification-001-generic-hmac | Passes both |
-| regression | investigate | limits-001-oversized-payload | Passes both |
-| benchmark | build | filtering-001-enterprise-orders | Passes everything run against it |
-| benchmark | build | verification-001-stripe-express | Passes Sonnet 5 both arms; fails GPT-5.4-mini 4/5 |
-| benchmark | build | localdev-001-listen-locally | Passes Sonnet 5 both arms; fails GPT-5.4-mini |
-| benchmark | investigate | investigate-001-failing-deliveries | Passes every configuration including GPT-5.4-mini. No signal |
-| benchmark | resolve | resolve-001-paused-connection | Passes every configuration including GPT-5.4-mini. No signal. Fully deterministic |
-| benchmark | investigate | investigate-002-partial-outage | Correlation-shaped and still passes everything, including GPT-5.4-mini in 133s. No signal |
-| benchmark | build | transform-001-reshape-payload | Passes Claude Code and GPT-5.4-mini. No signal |
-| benchmark | build | filtering-002-high-value-retries | Passes Claude Code 3/3, first run. Floor untested |
-| benchmark | build | alerting-001-delivery-alerts | Passes Claude Code 3/3, first run. Floor untested. $2.81, 726s |
-| benchmark | resolve | resolve-002-scoped-redelivery | BM9. Unrun. First user of the seed `after` block |
-| benchmark | build | delivery-001-slow-consumer | BM10. Unrun |
-| benchmark | build | delivery-002-rate-limited-endpoint | BM11. Unrun |
-| benchmark | build | dedupe-001-duplicate-events | BM14. Unrun |
-| benchmark | build | outpost-001-customer-subscriptions | BM12. Unrun. Needs `OUTPOST_API_KEY`; reports a skip without one |
-| benchmark | build | verification-002-elevenlabs-callbacks | Passes Claude Code; GPT-5.4-mini fails, never setting `webhook_secret_key`. Signal |
+```bash
+python3 -c "
+import json
+from collections import defaultdict
+rows=json.load(open('results/latest.json'))['results']
+m=defaultdict(dict)
+for r in rows: m[r['eval']][r['experiment']]=r['passed']
+for e in sorted(m): print(e, sum(1 for v in m[e].values() if v), '/', len(m[e]))
+"
+```
 
-**Experiments: five.** `claude-code-sonnet-5` and `codex-gpt-5.6` with
+**Experiments: six.** `claude-code-sonnet-5` and `codex-gpt-5.6` with
 `['hookdeck', 'event-gateway']`, `-no-skills` twins of each, and
-`codex-gpt-5.4-mini-no-skills` as a deliberately weaker model.
+`codex-gpt-5.4-mini` in both arms as a deliberately weaker model.
 
-**What the numbers say so far.** Skills changed no outcome on either build
-scenario and cost 39% and 56% more. The build scenarios are flat across the
-frontier and discriminating below it, so they are a floor rather than dead
-weight. The only scenario that splits two frontier agents is a regression one,
-and it asks a capability question rather than for work. On this evidence agents
-build with Hookdeck from documentation alone and fail when stating what it
-cannot do, which is not the headline the proposal assumed. See the plan.
+**What the numbers say.** Eight of fifteen scenarios discriminate, which is a
+healthy benchmark rather than a flat one. The frontier agents pass nearly
+everything; the weak model is where most failures live, which is the floor
+working as intended.
 
-**Three product findings, all from runs rather than speculation**, and all about
+The skills axis is the interesting result and it is not uniform. Claude gains
+one scenario from skills, GPT-5.6 nets zero, and the weak model is **three
+worse with skills than without**, losing four scenarios it otherwise passes.
+That direction is a finding about our documentation rather than about the
+model, and there is a known mechanism: a skill that lists example values is read
+as an exhaustive list, which once led a weak model to conclude a supported
+provider was unsupported. Do not report the skills delta as a single number; it
+has a different sign at different capability levels.
+
+**Product findings come from runs, not speculation.** Several concern
 `hookdeck listen`: it crashes without a TTY unless given `--output compact`; a
 CLI destination with no connected session has its requests ignored with cause
 `CLI_DISCONNECTED` rather than queued, so nothing retries; and it falls back to
-an unauthenticated guest Console session even with `HOOKDECK_API_KEY` in the
-environment, which let a weaker model report success while bypassing the project
-entirely. The plan has the detail.
+an unauthenticated guest Console session even with `HOOKDECK_API_KEY` set, which
+let a weaker model report success while bypassing the project entirely. The plan
+has the detail.
+
+**The repository is public**, as of 13 August. Results are published to
+`results/` as a contract, and `raw-results-*` artifacts keep transcripts, tool
+calls and agent reports for 90 days. Those artifacts are the only record of
+*why* an agent did something; a published row cannot tell you.
 
 CI runs formatting, typecheck, unit tests and build on pull requests. It ran
 only formatting until 12 August, and two defects reached main that any of the
 others would have caught.
 
-`eval-refresh` runs on two schedules and on manual dispatch, with
-`HOOKDECK_API_KEY`, `HOOKDECK_WEBHOOK_SECRET`, `ANTHROPIC_API_KEY`,
-`OPENAI_API_KEY` and `OUTPOST_API_KEY` as repository secrets, so it spends.
-`OUTPOST_API_KEY` was listed here before it existed: it was added as a secret
-and wired into the workflow on 13 August, after the first full matrix run
-scored `outpost-001` as six agent failures rather than skipping it. Check
-`gh secret list` against the workflow env rather than trusting this list.
-Weekly (Monday 06:00 UTC) runs the frontier agents and the weak pair, about $185
-a month. Monthly (1st, 08:00 UTC) adds the `-no-skills` twins for a full matrix.
-Everything weekly would be $279 against a $200 budget, and the twins are what
-gets cut because their delta has measured zero four times. It has completed end
-to end including publishing, and the regression suite scored identically in CI
-and locally.
+`eval-refresh` runs weekly (Monday 06:00 UTC, frontier agents plus the weak
+pair) and monthly (1st, 08:00 UTC, adding the `-no-skills` twins for a full
+matrix), plus manual dispatch. Check `gh secret list` against the workflow env
+rather than trusting any list written here: `OUTPOST_API_KEY` was documented as
+a secret before it existed, and the first full matrix run scored `outpost-001`
+as six agent failures because of it.
 
-**`apps/web/src/data/eval-results.json` holds 39 real rows, and has since 12
-August.** This file said "still empty in git" until the website build read it
-and found otherwise. It went in as a side effect of the CI commit, not as a
-decision to publish, and it is the file any consumer of this repo will render.
+## What this costs, and what it has cost
 
-**Thirteen of those 39 rows were scored by scorers that have since been
-fixed**, so they are not publishable as they stand. Two are worse than stale:
-`outpost-001` records a failure that was the scorer misreading Outpost's list
-shape, and `resolve-002` records one from the delivery race. Both attribute a
-harness bug to an agent, by name. `verification-001` shows 2 of 4 and its
-failures may be the probe rather than the agent.
+Runs bill per token and the numbers matter, because cadence is chosen against
+them and the choice is otherwise re-derived from scratch every time.
 
-The next full run supersedes all of them. Until then, treat this file as
-diagnostic rather than as a scoreboard, and do not publish a page built on it.
-The web app itself is now Hookdeck-branded rather than Supabase's.
+Measured per full pass of fifteen scenarios:
 
-A scorer review pass over all eighteen scenarios ran on 12 August. It found
-three defects, all of which would have shown as agent failures rather than
-scorer bugs. `outpost-001` parsed Outpost list responses as `{ data }` when the
-shape is `{ pagination, models }`, so its tenant check could never pass and its
-delivery check was always `0 > 0`: two permanent false negatives that had never
-surfaced because BM12 has never run against live credentials.
-`alerting-001` missed a third silent-failure path, `channels: {}`, which passes
-the API's required-field validation and produces a trigger that is enabled,
-correctly scoped and completely silent. And `resolve-002` self-healed on a
-delivery race, now fixed in `applySeed`.
+| | |
+|---|---|
+| `claude-code-sonnet-5` | about $20 |
+| `codex-gpt-5.6` (resolves to `gpt-5.6-sol`) | about $7 |
+| `codex-gpt-5.4-mini` | about $4 |
+| LLM judge (`gpt-5.5`) | about $0.10 |
+| Full matrix, six experiments | about $64 |
 
-**Next:** run BM9 through BM14, none of which have produced a valid result yet.
-BM12 additionally needs `OutpostClient.deleteTenant` wired into
-`FixedProjectSource.release`, or tenants leak between runs.
+Weekly frontier plus weak pair is roughly $185 a month. Everything weekly would
+be $279 against a $200 budget, and the `-no-skills` twins are what gets cut to
+monthly, because their delta moves slowly.
 
-Also unrun: BM7 and BM8 against `-no-skills` and the weak model, which is what
-tells us whether the investigate and resolve scenarios discriminate or are
-another floor.
+**Failed runs cost the same as successful ones.** On 13 August the OpenAI credit
+balance reached zero mid-run; thirty-seven Codex jobs then started, failed and
+were paid for in wall-clock time, and a further twenty-two runs from earlier
+that night were scored as agent failures despite the agent never making a tool
+call. A separate full matrix was cancelled 27 jobs in. Somewhere around $50 was
+spent producing nothing usable, across a single day.
+
+That is what the guards are for, and why they are worth keeping:
+
+- a preflight makes one real inference call per provider before the matrix
+  starts, turning six hours of failure into thirty seconds
+- a credit, quota or auth failure in any job cancels the whole run
+- a run that errors before emitting a transcript event throws rather than being
+  scored
+
+Two of those exist because the cheap version was tried first and did not work.
+`/v1/models` answers 200 with a zero credit balance, so a liveness check built
+on it passes while every real call fails; only an actual completion sees it.
 
 ## Plans
 
@@ -116,9 +119,17 @@ The plan is the source of truth for *what we are doing and why*. This file is
 the source of truth for *how to work here*. When they disagree, the plan wins on
 direction and this file wins on mechanics.
 
-Everything in `.plans/` is published. Keep it that way: no internal repository
-paths, no customer or business figures, no unannounced product plans. Anything
-failing that test belongs in a private note elsewhere.
+Everything in this repository is published; it has been public since 13 August.
+Keep it that way: no internal repository paths, no customer names or figures, no
+unannounced product plans. Anything failing that test belongs in a private note
+elsewhere.
+
+What this benchmark costs to run is explicitly *not* in that category and is
+recorded above. It is a fact about this project rather than about the business,
+it is what cadence decisions rest on, and leaving it out meant it was re-derived
+badly more than once: the judge was at one point reported as costing thirty
+times its real price because a figure was inferred from a residual rather than
+measured.
 
 ## Setup
 
