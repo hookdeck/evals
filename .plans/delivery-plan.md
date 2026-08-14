@@ -1,8 +1,8 @@
 # Hookdeck Evals: delivery plan
 
 **Owner:** Phil
-**Status:** Draft for review
-**Date:** 5 August 2026
+**Status:** Phases 0 to 3 substantially delivered; first improvement loop open
+**Date:** 5 August 2026, last reviewed 14 August 2026
 **Builds on:** [Hookdeck Evals proposal v2](https://app.notion.com/p/3b1783a05de281e19b68f6f77e8e9b65) (3 August 2026)
 **Repo:** https://github.com/hookdeck/evals
 
@@ -30,30 +30,37 @@ from the proposal, the divergences are listed at the end.
 Roughly 20 working days of Phil's time to launch-ready, plus the page and launch blog
 running in parallel from the end of Phase 3.
 
-**Status 11 Aug: Phases 0 and 1 done, Phase 2 underway, parts of Phase 3 landed
-early.** Seven scenarios (three regression, four benchmark), five experiments, and a
-CI workflow that has run end to end including publishing. Build, formatting and 231
-unit tests are green. `AGENTS.md` carries the scenario-by-scenario state.
+**Status 14 Aug: phases 0 to 3 substantially delivered.** Eighteen scenarios
+(fifteen benchmark, three regression), six experiments, 242 unit tests, and a public
+repository publishing results to `results/` on a weekly and monthly schedule. The
+scoreboard is built and open as a pull request on the website. Phase 4, the first
+improvement loop, is the live phase.
 
-Two things changed the shape of the plan today, both from measurement rather than
-argument.
+**Do not read scenario-by-scenario state from this file or from `AGENTS.md`.** Both
+carried such a table and both went stale within a day. `results/latest.json` is
+authoritative, and GitHub Issues carries what is left to do.
 
-**The aided delta is zero so far, and that is not an anomaly.** Skills changed no
-outcome on either build scenario and cost 39% and 56% more. supabase/evals' own
-published results show the same picture at larger sample: twelve of their nineteen
-benchmark scenarios are passed by every agent, and their skills delta is +3, +1, +1, 0
-and -1 across five agents. The proposal's primary metric may simply not be where the
-signal is, and the regression suite already produces a cleaner one.
+**The aided delta is not zero, and it is not one number.** This section previously
+recorded it as zero on the evidence then available. The first clean full matrix, on
+13 August, measures it as **+1 for Claude Sonnet 5, 0 for GPT-5.6, and -3 for
+GPT-5.4-mini**, which loses four scenarios with our skills that it passes without
+them. A skills delta reported as a single figure hides a sign change, and the negative
+one is a finding about our documentation rather than about the model. Tracked as an
+issue.
 
-**Investigate and resolve move up.** They were scheduled last because they are hardest
-to seed. Supabase's data says they are where discrimination lives, and the
-`?status=` trick against the mock destination makes seeding failure states cheap. BM7
-is written and its first run found a scorer bug rather than an agent one; BM8 and BM9
-are next.
+For scale, supabase/evals' own published results show +3, +1, +1, 0 and -1 across five
+agents, so a mixed and occasionally negative delta is not anomalous. What is new is
+that ours is negative *specifically on the weakest model*, which points at a mechanism
+rather than at noise.
 
-Still open and unchanged: `evals-local`, and the org-key questions for the platform
-team. The concurrency one now has a number behind it, since six pairs took 22 minutes
-serialised on one project.
+**Investigate and resolve moved up and are now the thin part.** They were scheduled
+last because they are hardest to seed. They now hold two scenarios each against
+eleven for build, so a single flip moves a published stage score by fifty points.
+Tracked as an issue.
+
+Still open: `evals-local`, and the org-key questions for the platform team. The
+concurrency one has a number behind it: ninety pairs take about six hours serialised
+on one project.
 
 ---
 
@@ -1294,14 +1301,19 @@ This is supabase/evals' `eval-refresh.yml` model: a `prepare` job discovers
 pair. Lift it, change the schedule block and the suite defaults, and add the shard
 loop from Phase 1 until the org key lands.
 
-**Where this stands today.** The table above is the Phase 3 target. What runs now is
-formatting and unit tests on pull requests, plus `eval-refresh` on manual dispatch
-only. Lifting the file wholesale turned out to carry more than the schedule: it
-arrived live on supabase/evals' nightly cron and fired against a half-built suite, and
-its matrix ran pairs concurrently, which one shared project cannot support. It is now
-`max-parallel: 1` behind a queueing concurrency group. An automatic trigger should
-arrive with the scoreboard, not before it, so that every run until then is one a
-person chose to pay for.
+**Where this stands today.** Pull requests run formatting, typecheck, unit tests and
+build. `eval-refresh` runs on two schedules, weekly for the frontier agents plus the
+weak pair and monthly for the full matrix, and on manual dispatch. Lifting the file
+wholesale turned out to carry more than the schedule: it arrived live on
+supabase/evals' nightly cron and fired against a half-built suite, and its matrix ran
+pairs concurrently, which one shared project cannot support. It is now
+`max-parallel: 1` behind a queueing concurrency group.
+
+Three guards were added after a run cost money and produced nothing: a preflight makes
+one real inference call per provider before the matrix starts, a credit or auth
+failure in any job cancels the run, and a run that errors before emitting a transcript
+event throws rather than being scored. The last one matters most: without it, an
+outage is published as agent failure.
 
 **It has run end to end, and the scores match local.** Claude Code fails
 `regression-filtering-001-regex-capability` and passes the other two; Codex passes all
@@ -1318,26 +1330,28 @@ lesson generalises past CI. A pipeline whose expensive work happens before its f
 step should be exercised end to end before it is trusted, because the cheap failure
 and the expensive one arrive together.
 
-**The results app has not been retargeted.** Worth stating plainly because the
-opposite is easy to assume: we kept it, it renders our data, and the numbers in it are
-ours. Everything around them is not. The logo, the "Back to Supabase" header, the "with
-a Supabase project" footer, the hero reading "across Supabase", and a `supabase.com`
-hostname check that decides the base path are all upstream's, and the journey-stage
-descriptions were too until they were rewritten, one of them advertising a `deploy`
-stage no scenario of ours can ever be filed under.
+**The results app in this repo is a local preview, not the published page.** It was
+retargeted from upstream's branding on 12 August. The published page lives in the
+website repository, is built natively there, and fetches `results/latest.json` per
+request so a fresh run appears without a deploy. `/evals.md` serves the same data as
+markdown tables.
 
-This is Phase 3 work, and it gates the page design rather than following it: a mock
-taken from the app as it stands copies Supabase's branding and copy. The exported row
-also carries no cost or token data, so a cost column is a decision about what to export
-rather than a field to read.
+The exported row still carries no cost or token data, so a cost column remains a
+decision about what to export rather than a field to read.
 
-**Results storage:** results committed to the repo as JSON, exported by
-`export-results.ts`, with a `gh-pages` branch appending history so the site can show
-trend lines. Also lifted from supabase/evals, which has `append-gh-pages-history.yml`
-doing exactly this. That workflow has been removed for now rather than left pointing
-at a branch that does not exist; restore it from the first commit when there is a
-scoreboard to append to. Results are published: `results/latest.json` is the
-contract, `results/runs/` the history, and `results/index.json` lists what exists.
+**Results storage:** `results/latest.json` is the published contract,
+`results/runs/<timestamp>.json` the history, and `results/index.json` lists what
+exists. Each snapshot carries `publishedAt`, the `runId` that produced it, and counts,
+so a figure can be traced to its job rather than taken on trust.
+
+History is kept in the repository rather than on a `gh-pages` branch as upstream does,
+because it cannot be reconstructed: a row records whether an agent passed, not what it
+did, so overwriting `latest.json` destroys the previous answer. `append-gh-pages-history.yml`
+was removed rather than left pointing at a branch that does not exist.
+
+Raw per-run output, which does carry transcripts, tool calls and agent reports, stays
+in Actions artifacts for 90 days. That window has to exceed the run cadence or it
+cannot answer a comparative question, and most real questions are comparative.
 
 **Secrets in a public repo.** Five: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`,
 `AI_GATEWAY_API_KEY`, `HOOKDECK_API_KEY` (the `evals-ci` project; becomes an org-level
@@ -1371,6 +1385,13 @@ thinly documented relative to how often people ask for it.
 
 Being specific about the prediction is the point. If the first failure lands somewhere
 else, that is itself a finding worth writing down.
+
+**It landed somewhere else, twice over.** Verification did produce failures, but the
+reproducible competence gap across models was authentication rather than header
+format, and the largest single effect measured so far is that our skills make the
+weakest model *worse* on four scenarios. Neither was predicted here. The prediction
+was not wasted: being wrong about it is what made the skills result worth chasing
+rather than filing as noise.
 
 **How the fix gets made.** The fix has to be a docs, MCP, or skills change. Changing
 the scenario to make it pass proves nothing.
