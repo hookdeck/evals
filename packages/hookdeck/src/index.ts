@@ -23,3 +23,5 @@ export type { HookdeckRuntimeOptions } from './runtime.js';
 export { collectEnvSecretValues, redactSecrets } from './redact.js';
 export { OutpostClient, OUTPOST_API_BASE } from './outpost-client.js';
 export type { OutpostClientOptions } from './outpost-client.js';
+export { waitFor, waitForOrLast, WaitTimeoutError } from './wait-for.js';
+export type { WaitForOptions } from './wait-for.js';

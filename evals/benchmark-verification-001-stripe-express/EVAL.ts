@@ -4,6 +4,7 @@ import type {
   ToolEvalContext,
   ToolScorer,
 } from '@hookdeck-evals/core';
+import { waitForOrLast } from '@hookdeck-evals/hookdeck';
 
 /**
  * BM1, the vendor golden path: Stripe events reach an Express handler, and the
@@ -51,7 +52,9 @@ import type {
 const STRIPE_WEBHOOK_SECRET = 'whsec_51KzQmTestSecretForEvalsOnly0xA9';
 const PORT = 3100;
 /** Ingestion is not synchronous with the POST. */
-const INGEST_WAIT_MS = 8_000;
+/** Polling ceiling, not a sleep. Reached only when ingestion is genuinely
+ *  slow or nothing arrives; a healthy run settles in a second or two. */
+const INGEST_WAIT_MS = 45_000;
 /** Long enough for `npm install` on a cold workspace. */
 const BOOT_TIMEOUT_MS = 180_000;
 
@@ -115,17 +118,32 @@ async function checkSourceAcceptsStripe(
 
   await postToSource(sourceUrl, body, stripeSignature(body));
   await postToSource(sourceUrl, body, 't=1,v1=deadbeef');
-  await new Promise((resolve) => setTimeout(resolve, INGEST_WAIT_MS));
 
   // Newest first and explicitly so: this project accumulates requests across
   // every run forever (they cannot be deleted), so an unordered or
   // oldest-first `limit=100` risks never reaching the two just sent once the
   // project's history passes a hundred rows. Same hazard BM3 hit on `/events`.
-  const { models } = await ctx.api<{
-    models?: { created_at?: string; verified?: boolean }[];
-  }>('GET', '/requests?limit=100&order_by=created_at&dir=desc');
-  const mine = (models ?? []).filter(
-    (r) => r.created_at && new Date(r.created_at) >= sentAt
+  // Poll rather than sleep. Ingestion is asynchronous and `verified` is set
+  // after the request lands, so a fixed wait scores whatever happened to have
+  // arrived: this check failed a correct agent whenever the platform was slower
+  // than the sleep, and which cell lost depended on when its job ran. Both
+  // requests are expected, so wait for both rather than for the first.
+  const mine = await waitForOrLast(
+    async () => {
+      const { models } = await ctx.api<{
+        models?: { created_at?: string; verified?: boolean }[];
+      }>('GET', '/requests?limit=100&order_by=created_at&dir=desc');
+      return (models ?? []).filter(
+        (r) => r.created_at && new Date(r.created_at) >= sentAt
+      );
+    },
+    (rows) =>
+      rows.some((r) => r.verified === true) &&
+      rows.some((r) => r.verified === false),
+    {
+      timeoutMs: INGEST_WAIT_MS,
+      description: 'both probe requests to be recorded and verified',
+    }
   );
 
   return [
