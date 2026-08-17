@@ -31,7 +31,7 @@ it passes proves nothing, and is the one move this file exists to make visible.
 
 ## Loop 1: the CLI was not safe to run without a terminal
 
-**Status:** in progress. Before-state pinned, re-run under way.
+**Status:** closed. No measurable improvement; the failures were variance.
 
 ### What the benchmark found
 
@@ -89,9 +89,69 @@ only regress here, which makes it the useful control.
 
 ### After
 
-_Pending: run [31809988720](https://github.com/hookdeck/evals/actions/runs/31809988720),
-CLI 2.5.0, three attempts per pair, skill unchanged._
+Two runs, both three attempts per pair. One on the new CLI, one on the old, so the
+CLI is the only difference between them.
+
+| Scenario | Original, 1 attempt, 2.3.1 | 3 attempts, **2.3.1** | 3 attempts, **2.5.0** |
+|---|---|---|---|
+| `localdev-001-listen-locally` | 6/6 | not re-run | 6/6 |
+| `verification-001-stripe-express` | 5/6 | 5/6 | 5/6 |
+| `verification-002-elevenlabs-callbacks` | 3/6 | **6/6** | **6/6** |
+
+Runs: [31809988720](https://github.com/hookdeck/evals/actions/runs/31809988720) on
+2.5.0, [31819501415](https://github.com/hookdeck/evals/actions/runs/31819501415) on
+2.3.1.
 
 ### What it bought
 
-_Pending._
+**Nothing this benchmark can measure.** Every failure the CLI fix was supposed to
+address recovers on the old CLI too, once the scenario is run more than once.
+
+The four cells that failed originally:
+
+| Cell | On old CLI, 3 attempts |
+|---|---|
+| `verification-001` x `mini+` | passes, attempt 1 |
+| `verification-002` x `5.6+` | passes, attempt 1 |
+| `verification-002` x `5.6-` | passes, attempt 2 |
+| `verification-002` x `mini+` | passes, attempt 1 |
+
+The prediction recorded before the run was that two of these were the CLI and two were
+variance. All four were variance.
+
+**`verification-001` is worse than flaky, it is unstable.** It scores 5/6 on both CLI
+versions with a *different* cell failing each time, and a third culprit in the
+original run. Three runs, three different "failing models", one scenario. Both
+failures are `attempts=3`, so the agent tried three times and failed all three: this
+does not average out at n=3. Tracked as #14.
+
+### What this loop actually found
+
+The change was right and the evidence for it was not. The CLI defect is real,
+documented upstream at
+[hookdeck-cli#340](https://github.com/hookdeck/hookdeck-cli/issues/340), and worth
+fixing on its own terms: an agent operating inside a guest project while reporting
+success is a genuine product problem, and one this benchmark surfaced.
+
+What this benchmark cannot do is show that fixing it improved anything, because the
+failures used to justify the loop were manufactured by single-attempt measurement.
+The transcript that made the case, an agent reporting that its API key failed
+authentication, was one attempt out of a distribution nobody had sampled.
+
+Three consequences, all more useful than the improvement would have been:
+
+1. **Single-attempt results are not evidence.** Every conclusion drawn from a
+   single-attempt run before 14 August is suspect, including the skills delta in #2
+   and the Codex concentration in #4.
+2. **The published page presents single attempts as settled results.** It runs
+   `runs=1` weekly, on a page comparing named vendors. #14.
+3. **A loop needs its control run.** The isolation run cost about $5 and half an hour,
+   and it is the only reason this entry says "variance" rather than "the CLI fix
+   worked".
+
+The skill change ([agent-skills#27](https://github.com/hookdeck/agent-skills/pull/27))
+is unaffected in substance: the skill genuinely never documented `hookdeck ci`. But it
+cannot be justified by these four failures either, and needs its own controlled
+measurement before being called a fix.
+
+**Status: closed, no measurable improvement.**
