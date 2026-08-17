@@ -101,7 +101,12 @@ jobs:
             experiment_suite="benchmark,no-skills"
             runs="1"
             timeout_sec="900"
-            do_merge="false"
+            # Merge, never overwrite. The weekly run covers four experiments and
+            # the monthly covers six, so an overwriting weekly deletes the
+            # -no-skills twins the monthly produced and the published page loses
+            # the skills comparison for three weeks in four. It did exactly that
+            # on 17 August, dropping the scoreboard from six columns to four.
+            do_merge="true"
           else
             experiments="${{ inputs.experiments }}"
             eval_id="${{ inputs.eval }}"
