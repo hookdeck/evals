@@ -374,6 +374,14 @@ const evalResultShape = {
    * only thing that can answer how old a given cell is.
    */
   ranAt: z.string().optional(),
+  /**
+   * The workflow run that produced this row. Optional: rows exported before
+   * 17 August predate it, and a locally-run eval has none.
+   *
+   * Per row rather than per snapshot, because a `--merge` export carries rows
+   * from several runs and the snapshot header can only name one.
+   */
+  runId: z.string().optional(),
   stage: evalStageSchema.optional(),
   product: z.array(evalProductSchema).optional(),
   topic: z.array(evalTopicSchema).optional(),

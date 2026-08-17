@@ -175,6 +175,7 @@ async function readResultFile(
     // page's alternative is describing the refresh schedule, which answers a
     // different question from how old a cell is.
     ranAt: parsedResult.ranAt ?? (await fileModifiedAt(filePath)),
+    runId: parsedResult.runId,
     stage: promptData?.stage ?? parsedResult.stage,
     product: promptData?.product ?? parsedResult.product,
     topic: promptData?.topic ?? parsedResult.topic,

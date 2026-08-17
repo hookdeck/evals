@@ -734,6 +734,17 @@ async function main() {
               // the page can only describe the schedule, which is not the same
               // question as how old a number is.
               ranAt: new Date().toISOString(),
+              // Which workflow run produced this row. Undefined locally, which
+              // is correct: a local run is not a published one.
+              //
+              // Per row rather than per snapshot. A snapshot's header names one
+              // run, but `--merge` means a published file carries rows from
+              // several, so the header attributes all of them to the newest and
+              // counting rows across snapshots double-counts. Neither can answer
+              // "how many runs are on record", and neither lets a reader trace a
+              // single number back to the job that produced it, which the page
+              // claims they can.
+              runId: process.env.GITHUB_RUN_ID,
               ...ev.metadata,
               ...res,
             },

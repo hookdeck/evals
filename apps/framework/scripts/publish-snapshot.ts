@@ -45,6 +45,7 @@ interface Row {
   eval: string;
   passed: boolean;
   ranAt?: string;
+  runId?: string;
 }
 
 interface IndexEntry {
@@ -55,6 +56,7 @@ interface IndexEntry {
   experiments: number;
   evals: number;
   passed: number;
+  runs: number;
 }
 
 function readFlag(args: string[], name: string): string | undefined {
@@ -95,6 +97,15 @@ async function main() {
       experiments: new Set(rows.map((r) => r.experiment)).size,
       evals: new Set(rows.map((r) => r.eval)).size,
       passed: rows.filter((r) => r.passed).length,
+      /**
+       * How many distinct workflow runs are represented here. A merged
+       * snapshot carries rows from several, so this is not always 1 and the
+       * header's own `runId` names only the run that published it.
+       *
+       * Rows without a `runId` predate the field or were produced locally, and
+       * are not counted rather than being bundled into an "unknown" run.
+       */
+      runs: new Set(rows.map((r) => r.runId).filter(Boolean)).size,
     },
     results: rows,
   };
