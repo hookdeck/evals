@@ -45,6 +45,7 @@ import type {
   TranscriptPart,
 } from './types.js';
 import { serializeRedacted } from './redact.js';
+import { discoverEvals, loadExperiments } from '../lib/discovery.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..', '..', '..');
@@ -76,19 +77,6 @@ const CONCURRENCY = Number(readFlag('concurrency') ?? 1);
 const STOP_ON_PASS = !args.has('--run-all-attempts');
 const DEBUG = args.has('--debug');
 
-async function loadExperiments() {
-  const dir = join(ROOT, 'experiments');
-  const out: Array<{ name: string; config: ExperimentConfig }> = [];
-  for (const f of readdirSync(dir).filter((f) => f.endsWith('.ts'))) {
-    const mod = await import(pathToFileURL(join(dir, f)).href);
-    out.push({
-      name: f.replace(/\.ts$/, ''),
-      config: mod.default as ExperimentConfig,
-    });
-  }
-  return out;
-}
-
 function readFlag(name: string): string | undefined {
   const prefix = `--${name}=`;
   const inline = rawArgs.find((arg) => arg.startsWith(prefix));
@@ -103,52 +91,6 @@ function readFlag(name: string): string | undefined {
     return value;
   }
   return undefined;
-}
-
-/**
- * Every run is what upstream called tools mode. The local-stack branch went
- * with the Supabase runtime, so the distinction no longer exists, and this
- * returning `local-stack` for any scenario shipping a `local/` directory was a
- * leftover that quietly suppressed skill loading for in-process agents.
- *
- * `interface` remains a benchmark dimension, not a runtime switch.
- */
-function resolveEvalMode(): EvalMode {
-  return 'tools';
-}
-
-function discoverEvals(): EvalManifest[] {
-  const dir = join(ROOT, 'evals');
-  if (!existsSync(dir)) return [];
-  const out: EvalManifest[] = [];
-  for (const id of readdirSync(dir)) {
-    const evalDir = join(dir, id);
-    if (!statSync(evalDir).isDirectory()) continue;
-    const localDir = join(evalDir, 'local');
-    const promptPath = join(evalDir, 'PROMPT.md');
-    const evalPath = join(evalDir, 'EVAL.ts');
-    const metadata = parseEvalMarkdown(
-      readFileSync(promptPath, 'utf8'),
-      `evals/${id}/PROMPT.md`
-    ).metadata;
-    const hasLocal = existsSync(localDir) && statSync(localDir).isDirectory();
-    const mode = resolveEvalMode();
-    out.push({
-      id,
-      mode,
-      metadata,
-      stage: metadata.stage,
-      product: metadata.product,
-      suite: metadata.suite,
-      topic: metadata.topic,
-      dir: evalDir,
-      localDir: hasLocal ? localDir : undefined,
-      promptPath,
-      evalPath,
-      remoteDir: join(evalDir, 'remote'),
-    });
-  }
-  return out;
 }
 
 /**
