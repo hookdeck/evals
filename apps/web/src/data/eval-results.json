@@ -123,7 +123,7 @@
       "calls": [
         {
           "source": "web_fetch",
-          "query": "What unit is the \"window\" field for the deduplicate rule in \u2014 milliseconds or seconds? Also describe include_fields/exclude_fields default behavior and any recommended defaults.",
+          "query": "What unit is the \"window\" field for the deduplicate rule in — milliseconds or seconds? Also describe include_fields/exclude_fields default behavior and any recommended defaults.",
           "hasContent": true,
           "pages": [
             {
@@ -390,7 +390,7 @@
         }
       ]
     },
-    "prompt": "Only orders above \u00a3500 should go to the manual review queue. Everything smaller\nis handled automatically and shouldn't reach it.\n\nAlso, review's endpoint goes down occasionally and we've lost orders that way.\nIf a delivery fails, keep trying for a while rather than giving up.",
+    "prompt": "Only orders above £500 should go to the manual review queue. Everything smaller\nis handled automatically and shouldn't reach it.\n\nAlso, review's endpoint goes down occasionally and we've lost orders that way.\nIf a delivery fails, keep trying for a while rather than giving up.",
     "promptSourcePath": "evals/benchmark-filtering-002-high-value-retries/PROMPT.md",
     "attempts": 1,
     "sourcePath": "claude-code-sonnet-5/benchmark-filtering-002-high-value-retries.json"
@@ -767,7 +767,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-verification-001-stripe-express",
-    "ranAt": "2026-08-17T08:36:28.393Z",
+    "ranAt": "2026-08-18T08:25:02.310Z",
+    "runId": "32115700571",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -806,7 +807,6 @@
         "event-gateway"
       ],
       "loaded": [
-        "hookdeck",
         "event-gateway"
       ],
       "selfInstalled": [
@@ -1274,7 +1274,7 @@
         }
       ]
     },
-    "prompt": "Only orders above \u00a3500 should go to the manual review queue. Everything smaller\nis handled automatically and shouldn't reach it.\n\nAlso, review's endpoint goes down occasionally and we've lost orders that way.\nIf a delivery fails, keep trying for a while rather than giving up.",
+    "prompt": "Only orders above £500 should go to the manual review queue. Everything smaller\nis handled automatically and shouldn't reach it.\n\nAlso, review's endpoint goes down occasionally and we've lost orders that way.\nIf a delivery fails, keep trying for a while rather than giving up.",
     "promptSourcePath": "evals/benchmark-filtering-002-high-value-retries/PROMPT.md",
     "attempts": 1,
     "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-filtering-002-high-value-retries.json",
@@ -1624,6 +1624,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-verification-001-stripe-express",
+    "ranAt": "2026-08-18T08:47:19.243Z",
+    "runId": "32115700571",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -1632,7 +1634,7 @@
       "signature-verification"
     ],
     "suite": "benchmark",
-    "passed": true,
+    "passed": false,
     "checks": [
       {
         "name": "created a Stripe source",
@@ -1640,7 +1642,7 @@
       },
       {
         "name": "the source accepts a genuine Stripe signature",
-        "passed": true
+        "passed": false
       },
       {
         "name": "the source rejects a forged Stripe signature",
@@ -1652,8 +1654,8 @@
       },
       {
         "name": "the handler rejects a forged signature",
-        "passed": true,
-        "notes": "expected a 4xx, got 401"
+        "passed": false,
+        "notes": "expected a 4xx, got 200"
       }
     ],
     "skills": {
@@ -1661,102 +1663,12 @@
       "loaded": []
     },
     "docs": {
-      "calls": [
-        {
-          "source": "web_fetch",
-          "query": "Find the schema for updating a source of type STRIPE, specifically the config.auth object needed to enable Stripe signature verification. What field name holds the Stripe webhook signing secret?",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api/sources#update-source"
-            }
-          ],
-          "resultChars": 215
-        },
-        {
-          "source": "web_fetch",
-          "query": "What is the API config schema for enabling Stripe webhook signature verification on a Hookdeck source? What field holds the Stripe webhook signing secret in the source config.auth object?",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/sources/verification/stripe"
-            }
-          ],
-          "resultChars": 215
-        },
-        {
-          "source": "web_fetch",
-          "query": "Find information about source verification for Stripe, and any API reference for setting up webhook signature verification. Provide any links to relevant sub-pages about Stripe source verification or the sources API.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/sources"
-            }
-          ],
-          "resultChars": 1264
-        },
-        {
-          "source": "web_fetch",
-          "query": "Explain how the Hookdeck CLI is used for local development to forward events to a local server, including the CLI destination type, how `hookdeck listen` works, and how it relates to not missing events (queuing/retry) while a local server is offline.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/cli"
-            }
-          ],
-          "resultChars": 1445
-        },
-        {
-          "source": "web_fetch",
-          "query": "Explain exactly how to verify that an incoming request to my server was genuinely forwarded by Hookdeck (HOOKDECK_SIGNATURE auth type): which header holds the signature, the hashing algorithm, whether it's computed on the raw body, and give a minimal Node.js/Express code example.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/destinations/verifying-webhooks"
-            }
-          ],
-          "resultChars": 215
-        },
-        {
-          "source": "web_fetch",
-          "query": "Explain exactly how to verify that an incoming request to my server was genuinely forwarded by Hookdeck: which HTTP header holds the signature, the hashing algorithm used, whether it's computed on the raw request body, and give a minimal Node.js code example for verification.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/verification"
-            }
-          ],
-          "resultChars": 215
-        },
-        {
-          "source": "web_fetch",
-          "query": "Find the page about verifying that requests were sent by Hookdeck (Hookdeck-Signature header). List the exact URL path to that documentation page if you can find it in links.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs"
-            }
-          ],
-          "resultChars": 325
-        },
-        {
-          "source": "web_fetch",
-          "query": "Explain exactly how to verify that an incoming request to my server was genuinely forwarded by Hookdeck: which HTTP header holds the signature, the hashing algorithm used (e.g. HMAC-SHA256), whether it's computed on the raw request body, encoding (hex/base64), and give the minimal Node.js code example for verification, including the header name for secret rotation if present.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/guides/how-to-verify-incoming-webhooks"
-            }
-          ],
-          "resultChars": 1286
-        }
-      ]
+      "calls": []
     },
     "prompt": "We're taking Stripe payments and I need our orders API to react when a checkout\ncompletes. Right now nothing is wired up.\n\nSet it up so Stripe events reach the `/orders` endpoint, and make sure the\nendpoint only accepts requests that genuinely came through, not anything that\nturns up at the URL. I'm still working on this locally, and I don't want to miss\nevents while I'm developing.",
     "promptSourcePath": "evals/benchmark-verification-001-stripe-express/PROMPT.md",
-    "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-verification-001-stripe-express.json",
-    "ranAt": "2026-08-13T00:00:00.000Z"
+    "attempts": 3,
+    "sourcePath": "claude-code-sonnet-5-no-skills/benchmark-verification-001-stripe-express.json"
   },
   {
     "experiment": "claude-code-sonnet-5-no-skills",
@@ -2224,7 +2136,7 @@
     "docs": {
       "calls": []
     },
-    "prompt": "Only orders above \u00a3500 should go to the manual review queue. Everything smaller\nis handled automatically and shouldn't reach it.\n\nAlso, review's endpoint goes down occasionally and we've lost orders that way.\nIf a delivery fails, keep trying for a while rather than giving up.",
+    "prompt": "Only orders above £500 should go to the manual review queue. Everything smaller\nis handled automatically and shouldn't reach it.\n\nAlso, review's endpoint goes down occasionally and we've lost orders that way.\nIf a delivery fails, keep trying for a while rather than giving up.",
     "promptSourcePath": "evals/benchmark-filtering-002-high-value-retries/PROMPT.md",
     "attempts": 1,
     "sourcePath": "codex-gpt-5.4-mini/benchmark-filtering-002-high-value-retries.json"
@@ -2594,7 +2506,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-verification-001-stripe-express",
-    "ranAt": "2026-08-17T08:41:21.962Z",
+    "ranAt": "2026-08-18T08:33:43.170Z",
+    "runId": "32115700571",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -2645,7 +2558,7 @@
     },
     "prompt": "We're taking Stripe payments and I need our orders API to react when a checkout\ncompletes. Right now nothing is wired up.\n\nSet it up so Stripe events reach the `/orders` endpoint, and make sure the\nendpoint only accepts requests that genuinely came through, not anything that\nturns up at the URL. I'm still working on this locally, and I don't want to miss\nevents while I'm developing.",
     "promptSourcePath": "evals/benchmark-verification-001-stripe-express/PROMPT.md",
-    "attempts": 1,
+    "attempts": 2,
     "sourcePath": "codex-gpt-5.4-mini/benchmark-verification-001-stripe-express.json"
   },
   {
@@ -3417,7 +3330,7 @@
         }
       ]
     },
-    "prompt": "Only orders above \u00a3500 should go to the manual review queue. Everything smaller\nis handled automatically and shouldn't reach it.\n\nAlso, review's endpoint goes down occasionally and we've lost orders that way.\nIf a delivery fails, keep trying for a while rather than giving up.",
+    "prompt": "Only orders above £500 should go to the manual review queue. Everything smaller\nis handled automatically and shouldn't reach it.\n\nAlso, review's endpoint goes down occasionally and we've lost orders that way.\nIf a delivery fails, keep trying for a while rather than giving up.",
     "promptSourcePath": "evals/benchmark-filtering-002-high-value-retries/PROMPT.md",
     "attempts": 1,
     "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-filtering-002-high-value-retries.json"
@@ -3450,7 +3363,7 @@
       {
         "name": "identified the failing destination and that it is rejecting",
         "passed": false,
-        "judgeNotes": "Identifies analytics-api/orders-to-analytics and HTTP 422 rejection, but attributes the root cause to a bad Hookdeck destination URL/configuration and changes it, contrary to the rubric\u2019s requirement that Hookdeck is not misconfigured."
+        "judgeNotes": "Identifies analytics-api/orders-to-analytics and HTTP 422 rejection, but attributes the root cause to a bad Hookdeck destination URL/configuration and changes it, contrary to the rubric’s requirement that Hookdeck is not misconfigured."
       },
       {
         "name": "did not invent a cause it could not have observed",
@@ -3901,7 +3814,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-verification-001-stripe-express",
-    "ranAt": "2026-08-17T08:53:17.423Z",
+    "ranAt": "2026-08-18T08:53:30.181Z",
+    "runId": "32115700571",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -3942,17 +3856,36 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs Hookdeck API create source connection local development webhook secret",
+          "query": "site:docs.hookdeck.com Hookdeck API create connection source destination Stripe webhook secret local development",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "'connections' in https://hookdeck.com/docs/api",
+          "query": "Hookdeck docs Stripe local development source destination connection signature",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api create connection endpoint Hookdeck",
+          "query": "https://hookdeck.com/docs/guides/how-to-test-webhooks-locally",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/guides/how-to-test-webhooks-locally"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "'connection upsert' in https://hookdeck.com/docs/cli",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "'POST /connections' in https://hookdeck.com/docs/api",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api connection create Hookdeck API source destination",
           "pages": []
         },
         {
@@ -3966,22 +3899,17 @@
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api hookdeck connection create source destination source_webhook_secret destination_url",
+          "query": "site:hookdeck.com/docs api key authentication Hookdeck API Authorization Bearer",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api \"POST /connections\" Hookdeck source destination JSON",
+          "query": "site:hookdeck.com/docs/api CLI destination Hookdeck API destination type CLI",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api Hookdeck connection object source destination destination_id source_id",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api \"source_id\" \"destination_id\" hookdeck",
+          "query": "site:hookdeck.com/docs/api \"destination type\" CLI path config Hookdeck",
           "pages": []
         },
         {
@@ -3995,12 +3923,57 @@
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api \"POST /sources\" Hookdeck webhook_secret STRIPE",
+          "query": "site:hookdeck.com/docs filter Stripe event type connection rules Hookdeck checkout.session.completed",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/authentication Hookdeck Signature header secret destination verification",
+          "query": "site:hookdeck.com/docs Stripe source type Hookdeck webhook_secret connection create source-config",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api upsert connection Hookdeck API",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "'--rule-filter-body' in https://hookdeck.com/docs/cli",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api GET /connections Hookdeck list connections",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api connections list name filter hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api \"config.path\" CLI destination Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs stripe source webhook_secret authenticated false Hookdeck API",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs \"webhook_secret\" \"STRIPE\" Hookdeck API config",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api STRIPE webhook_secret auth_type Hookdeck source config",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs \"rule-filter-body\" JSON filter syntax eq Hookdeck",
           "pages": []
         }
       ]
@@ -4520,7 +4493,7 @@
     "docs": {
       "calls": []
     },
-    "prompt": "Only orders above \u00a3500 should go to the manual review queue. Everything smaller\nis handled automatically and shouldn't reach it.\n\nAlso, review's endpoint goes down occasionally and we've lost orders that way.\nIf a delivery fails, keep trying for a while rather than giving up.",
+    "prompt": "Only orders above £500 should go to the manual review queue. Everything smaller\nis handled automatically and shouldn't reach it.\n\nAlso, review's endpoint goes down occasionally and we've lost orders that way.\nIf a delivery fails, keep trying for a while rather than giving up.",
     "promptSourcePath": "evals/benchmark-filtering-002-high-value-retries/PROMPT.md",
     "attempts": 1,
     "sourcePath": "codex-gpt-5.6/benchmark-filtering-002-high-value-retries.json"
@@ -4932,7 +4905,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-verification-001-stripe-express",
-    "ranAt": "2026-08-17T08:48:30.440Z",
+    "ranAt": "2026-08-18T08:40:53.151Z",
+    "runId": "32115700571",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -4971,6 +4945,7 @@
         "event-gateway"
       ],
       "loaded": [
+        "hookdeck",
         "event-gateway"
       ],
       "selfInstalled": [
@@ -5409,7 +5384,7 @@
         }
       ]
     },
-    "prompt": "Only orders above \u00a3500 should go to the manual review queue. Everything smaller\nis handled automatically and shouldn't reach it.\n\nAlso, review's endpoint goes down occasionally and we've lost orders that way.\nIf a delivery fails, keep trying for a while rather than giving up.",
+    "prompt": "Only orders above £500 should go to the manual review queue. Everything smaller\nis handled automatically and shouldn't reach it.\n\nAlso, review's endpoint goes down occasionally and we've lost orders that way.\nIf a delivery fails, keep trying for a while rather than giving up.",
     "promptSourcePath": "evals/benchmark-filtering-002-high-value-retries/PROMPT.md",
     "attempts": 1,
     "sourcePath": "codex-gpt-5.6-no-skills/benchmark-filtering-002-high-value-retries.json",
@@ -5780,6 +5755,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-verification-001-stripe-express",
+    "ranAt": "2026-08-18T09:01:42.857Z",
+    "runId": "32115700571",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -5809,7 +5786,7 @@
       {
         "name": "the handler rejects a forged signature",
         "passed": true,
-        "notes": "expected a 4xx, got 401"
+        "notes": "expected a 4xx, got 403"
       }
     ],
     "skills": {
@@ -5820,26 +5797,30 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs Hookdeck Stripe source verification webhook signature CLI destination signature x-hookdeck-signature",
+          "query": "site:hookdeck.com/docs Stripe Hookdeck source verification webhook signature connection CLI listen local development",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs \"HOOKDECK_SIGNATURE\"",
+          "query": "site:hookdeck.com/docs destination Hookdeck signature x-hookdeck-signature verify Node.js",
           "pages": []
         },
         {
-          "source": "web_search",
-          "query": "GitHub Hookdeck x-hookdeck-signature verify",
-          "pages": []
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/sitemap.xml | rg -o 'https://hookdeck.com[\"'^<]+'\"' | rg -i 'sign|auth|security|verify|destination' | sed -n '1,120p'; echo '--- docs index probes ---'; for u in https://hookdeck.com/docs/security https://hookdeck.com/docs/destinations https://hookdeck.com/docs/authentication https://hookdeck.com/docs/verification https://hookdeck.com/docs/webhooks/verify; do echo \\\"### \"'$u\"; curl -fsSL \"$u\" | rg -io '\"'.{0,100}(x-hookdeck|signature|webhook secret).{0,180}' | sed -n '1,8p'; done\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/sitemap.xml"
+            }
+          ],
+          "resultChars": 4639
         }
       ]
     },
     "prompt": "We're taking Stripe payments and I need our orders API to react when a checkout\ncompletes. Right now nothing is wired up.\n\nSet it up so Stripe events reach the `/orders` endpoint, and make sure the\nendpoint only accepts requests that genuinely came through, not anything that\nturns up at the URL. I'm still working on this locally, and I don't want to miss\nevents while I'm developing.",
     "promptSourcePath": "evals/benchmark-verification-001-stripe-express/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-verification-001-stripe-express.json",
-    "ranAt": "2026-08-13T00:00:00.000Z"
+    "sourcePath": "codex-gpt-5.6-no-skills/benchmark-verification-001-stripe-express.json"
   },
   {
     "experiment": "codex-gpt-5.6-no-skills",
