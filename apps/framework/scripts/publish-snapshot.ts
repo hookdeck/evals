@@ -30,6 +30,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { computeRunTotals } from '../lib/run-totals.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..', '..', '..');
@@ -137,11 +138,22 @@ async function main() {
 
   await writeFile(indexPath, `${JSON.stringify(index, null, 2)}\n`);
 
+  // Cumulative, and written after the new snapshot lands so it includes it.
+  // The page's top counter is a claim about the whole record rather than this
+  // run, and neither `latest.json` nor a sum over `index.json` can answer it:
+  // snapshots overlap, so summing rows counts the same run several times.
+  const totals = computeRunTotals(RUNS_DIR);
+  await writeFile(
+    join(PUBLISHED_DIR, 'totals.json'),
+    `${JSON.stringify({ ...totals, updatedAt: publishedAt }, null, 2)}\n`
+  );
+
   console.log(
     `Published ${rows.length} rows to results/latest.json and results/${file}\n` +
       `  ${snapshot.counts.passed}/${rows.length} passed across ` +
       `${snapshot.counts.experiments} experiments and ${snapshot.counts.evals} evals\n` +
-      `  index now lists ${index.length} snapshot(s)`
+      `  index now lists ${index.length} snapshot(s)\n` +
+      `  ${totals.runsRecorded} runs recorded across ${totals.snapshots} snapshot(s)`
   );
 }
 
