@@ -489,6 +489,23 @@ unreliable, and delete tenants by hand between runs.
 default issue triggers. The first acquire snapshots what the project contains,
 and every reset deletes only what a run added.
 
+**Never sleep for ingestion, poll for it.** Every scorer that sends something
+and reads it back used a fixed `setTimeout`, 8 or 12 seconds. Ingestion is
+asynchronous, so when the platform is slower than the sleep the scorer reads too
+early and records a correct agent as broken. It presents as a scenario failing a
+*different* cell every run, because which cell loses depends on when its job
+happened to run: `verification-001` failed three different cells across three
+runs before this was found, and each looked like a model failure. Use `waitFor`
+or `waitForOrLast` from `@hookdeck-evals/hookdeck`. Polling costs nothing when
+the platform is quick and buys a far longer ceiling when it is not.
+
+**A flaky-looking scenario is not all flake.** The two failures that exposed the
+sleep above had different causes: one was the race, the other was an agent
+inventing an `x-hookdeck-webhook-secret` header and comparing hashes of the
+secret itself, which is not Hookdeck's scheme, so the handler correctly rejected
+a correctly signed probe. Same symptom, opposite conclusions. Read each failure
+before generalising from a pair.
+
 **Scope scorer queries to `ctx.acquiredAt`.** Events and requests cannot be
 deleted through the API, so a shared project accumulates history, and a scorer
 that just asks "did an event arrive?" will eventually say yes because of an
