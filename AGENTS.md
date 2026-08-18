@@ -171,6 +171,45 @@ The notes carry:
 public copy rather than internal shorthand. Write them for someone who has not read
 the issues.
 
+The parsed format is three sections of one-line items:
+
+```markdown
+## Shipped
+- <title> · <where> · #<issue>
+
+## Benchmark
+- <title> · #<issue>
+
+## Discovered
+- <title> · #<issue>
+```
+
+`Shipped` is a change to the product, the docs or the skills. `Benchmark` is a repair
+to our own instrument. `Discovered` is found but not yet explained. The page renders
+Shipped and Discovered and counts only those; Benchmark stays in the notes as the
+record. Anything outside those three headings is preamble and is not an item, which is
+how the run summary and the delta stay out of the changelog.
+
+**The title is the whole entry, so it has to carry the finding alone.** No description
+is rendered. A reader sees one line and an issue number, and decides from that line
+whether to click. Rules, in order of how often they are broken:
+
+1. **State the observed behaviour, not the work.** "The CLI created a guest account
+   instead of using your credentials", not "Track the CLI agent-safety work". An issue
+   title names a task for us; a changelog title names a thing that happened to them.
+2. **Write it from the reader's side.** What would a developer have noticed? They did
+   not lose a scenario, they lost their configuration into a project they could not
+   see.
+3. **No internal shorthand.** No scenario ids, no experiment names, no `-no-skills`,
+   no "BM6". These mean nothing outside this repository.
+4. **One line, and no trailing detail.** If it needs a clause explaining the
+   consequence, the consequence is usually the title.
+5. **Past tense for Shipped, present for Discovered.** Shipped describes something
+   that was true and is not any more; Discovered describes something still true.
+
+Issue titles and changelog titles are different artefacts, and a good issue title is
+often a poor changelog title. Rewrite rather than paste.
+
 **Every change made elsewhere in response to an eval needs an issue here.** A skills
 PR, a CLI fix, a documentation change: each gets an issue in this repository that the
 release closes. This is the only mechanism that lets a release describe a private
