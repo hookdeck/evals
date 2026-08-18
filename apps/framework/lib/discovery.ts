@@ -61,6 +61,21 @@ export function discoverEvals(root: string = EVALS_ROOT): EvalManifest[] {
   return out;
 }
 
+/**
+ * Seed arguments for a session, matching what the runner passes.
+ *
+ * Only `remoteDir` seeds the project. `localDir` is the sandbox working
+ * directory an agent gets and has nothing to do with project state — passing it
+ * here instead leases a pristine project with none of the scenario's starting
+ * data, so every scorer that reads seeded history fails for a reason that has
+ * nothing to do with the scorer.
+ */
+export function readSessionSeedArgs(ev: EvalManifest) {
+  return {
+    remoteDir: existsSync(ev.remoteDir) ? ev.remoteDir : undefined,
+  };
+}
+
 export async function loadExperiments(
   root: string = EVALS_ROOT
 ): Promise<Array<{ name: string; config: ExperimentConfig }>> {

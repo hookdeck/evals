@@ -45,7 +45,11 @@ import type {
   TranscriptPart,
 } from './types.js';
 import { serializeRedacted } from './redact.js';
-import { discoverEvals, loadExperiments } from '../lib/discovery.js';
+import {
+  discoverEvals,
+  loadExperiments,
+  readSessionSeedArgs,
+} from '../lib/discovery.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..', '..', '..');
@@ -246,12 +250,6 @@ function copyWithheldTests(ev: EvalManifest, workspace: string) {
   if (existsSync(testsDir)) {
     cpSync(testsDir, join(workspace, 'tests'), { recursive: true });
   }
-}
-
-function readSessionSeedArgs(ev: EvalManifest) {
-  return {
-    remoteDir: existsSync(ev.remoteDir) ? ev.remoteDir : undefined,
-  };
 }
 
 function basePromptFor(_mode: EvalMode): string {

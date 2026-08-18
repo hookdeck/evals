@@ -1,6 +1,10 @@
 import { pathToFileURL } from 'node:url';
 import type { ToolScorer } from '@hookdeck-evals/core';
-import { discoverEvals, loadExperiments } from '../lib/discovery.js';
+import {
+  discoverEvals,
+  loadExperiments,
+  readSessionSeedArgs,
+} from '../lib/discovery.js';
 import type { EvalManifest } from '../harness/types.js';
 
 /**
@@ -22,9 +26,27 @@ import type { EvalManifest } from '../harness/types.js';
  * Anything but N identical verdicts is the scorer disagreeing with itself, and
  * there is nowhere else for the disagreement to have come from.
  *
- * What it cannot tell you: whether the scorer is *right*. A scorer that
- * consistently fails a correct configuration is stable and wrong, and this will
- * call it stable. Use it to catch flake, not to check correctness.
+ * ## What this does not cover, which matters
+ *
+ * No agent runs, so the project holds only what the seed put there. For a build
+ * scenario that means the configuration under test does not exist and the
+ * scorer fails every iteration. Identical failures are still a real result —
+ * they rule out the "scorer finds nothing on one run and something on the next"
+ * class — but they exercise the *failing* path only.
+ *
+ * The race this was built to chase lived on the other path. A fixed sleep
+ * against asynchronous ingestion produced false *failures* against *correct*
+ * configurations, and nothing here ever builds one. So a clean sweep is
+ * evidence the scorers are self-consistent, not proof the polling conversion
+ * worked.
+ *
+ * Closing that gap needs a known-good configuration per scenario — a
+ * `SOLUTION.ts` the harness applies before scoring, so the scorer meets the
+ * state a correct agent would have left. That is the next step and it is
+ * tracked in #14.
+ *
+ * It also cannot tell you a scorer is *right*: one that consistently fails a
+ * correct configuration is stable and wrong, and this calls it stable.
  *
  * ```
  * pnpm --filter @hookdeck-evals/framework score-only \
@@ -80,9 +102,10 @@ async function scoreRepeatedly(
   const scorer = (await import(pathToFileURL(ev.evalPath).href))
     .default as ToolScorer;
 
-  const session = await runtime.startSession(
-    ev.localDir ? { localDir: ev.localDir } : undefined
-  );
+  // Seeded exactly as the runner seeds it, so the scorer reads the scenario's
+  // real starting state. Without this the project is pristine and every scorer
+  // that reads seeded delivery history fails for reasons unrelated to itself.
+  const session = await runtime.startSession(readSessionSeedArgs(ev));
 
   const verdicts: Verdict[] = [];
   try {
