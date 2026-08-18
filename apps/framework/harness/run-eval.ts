@@ -44,6 +44,7 @@ import type {
   ToolCallRecord,
   TranscriptPart,
 } from './types.js';
+import { serializeRedacted } from './redact.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..', '..', '..');
@@ -718,39 +719,38 @@ async function main() {
         const res = await runOne(name, config, ev);
         mkdirSync(dirname(out), { recursive: true });
         const experimentDisplay = getExperimentDisplayMetadata(config);
+        // Redacted, not raw. Agents run `env` while exploring and the dump
+        // lands in the transcript below; these artifacts are downloadable by
+        // any GitHub account on a public repository. See `redact.ts`.
         writeFileSync(
           out,
-          JSON.stringify(
-            {
-              experiment: name,
-              experimentSuite: SELECTED_EXPERIMENT_SUITE ?? config.suite?.[0],
-              experimentDisplay,
-              eval: ev.id,
-              // When this run finished. Recorded per run rather than per
-              // refresh, because the published grid is not one snapshot: the
-              // `-no-skills` twins refresh monthly and everything else weekly,
-              // and a targeted re-run replaces some pairs and leaves the rest,
-              // so two cells side by side can be a month apart. Without this
-              // the page can only describe the schedule, which is not the same
-              // question as how old a number is.
-              ranAt: new Date().toISOString(),
-              // Which workflow run produced this row. Undefined locally, which
-              // is correct: a local run is not a published one.
-              //
-              // Per row rather than per snapshot. A snapshot's header names one
-              // run, but `--merge` means a published file carries rows from
-              // several, so the header attributes all of them to the newest and
-              // counting rows across snapshots double-counts. Neither can answer
-              // "how many runs are on record", and neither lets a reader trace a
-              // single number back to the job that produced it, which the page
-              // claims they can.
-              runId: process.env.GITHUB_RUN_ID,
-              ...ev.metadata,
-              ...res,
-            },
-            null,
-            2
-          )
+          serializeRedacted({
+            experiment: name,
+            experimentSuite: SELECTED_EXPERIMENT_SUITE ?? config.suite?.[0],
+            experimentDisplay,
+            eval: ev.id,
+            // When this run finished. Recorded per run rather than per
+            // refresh, because the published grid is not one snapshot: the
+            // `-no-skills` twins refresh monthly and everything else weekly,
+            // and a targeted re-run replaces some pairs and leaves the rest,
+            // so two cells side by side can be a month apart. Without this
+            // the page can only describe the schedule, which is not the same
+            // question as how old a number is.
+            ranAt: new Date().toISOString(),
+            // Which workflow run produced this row. Undefined locally, which
+            // is correct: a local run is not a published one.
+            //
+            // Per row rather than per snapshot. A snapshot's header names one
+            // run, but `--merge` means a published file carries rows from
+            // several, so the header attributes all of them to the newest and
+            // counting rows across snapshots double-counts. Neither can answer
+            // "how many runs are on record", and neither lets a reader trace a
+            // single number back to the job that produced it, which the page
+            // claims they can.
+            runId: process.env.GITHUB_RUN_ID,
+            ...ev.metadata,
+            ...res,
+          })
         );
         const elapsed = Math.round((Date.now() - start) / 1000);
         console.log(
