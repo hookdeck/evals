@@ -3,6 +3,7 @@ import type {
   ToolEvalContext,
   ToolScorer,
 } from '@hookdeck-evals/core';
+import { waitForOrLast } from '@hookdeck-evals/hookdeck';
 
 /**
  * BM8, resolve: the connection is paused and nothing else is wrong.
@@ -23,7 +24,8 @@ import type {
  * the game away by pointing at the connection, and the scenario is about
  * noticing an absence rather than reading a list of errors.
  */
-const INGEST_WAIT_MS = 12_000;
+/** Polling ceiling, not a sleep. */
+const INGEST_WAIT_MS = 45_000;
 
 const scorer: ToolScorer = async (ctx) => {
   const connection = await findConnection(ctx);
@@ -75,15 +77,30 @@ async function checkEventsFlowAgain(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ reference, total: 2400 }),
   });
-  await new Promise((resolve) => setTimeout(resolve, INGEST_WAIT_MS));
-
-  const { models } = await ctx.api<{
-    models?: { id?: string; status?: string }[];
-  }>(
-    'GET',
-    `/events?limit=20&include=data&order_by=created_at&dir=desc&search_term=${encodeURIComponent(reference)}`
+  // Two things have to happen and neither is synchronous with the POST: the
+  // event has to be created, and its delivery has to reach a terminal state.
+  // Waiting only for the row would read a status of QUEUED and score a working
+  // connection as broken, so wait for the status to settle. Terminal rather
+  // than SUCCESSFUL specifically: a genuinely failing delivery should be
+  // reported as one, not sit here burning the whole ceiling first.
+  const event = await waitForOrLast(
+    async () => {
+      const { models } = await ctx.api<{
+        models?: { id?: string; status?: string }[];
+      }>(
+        'GET',
+        `/events?limit=20&include=data&order_by=created_at&dir=desc&search_term=${encodeURIComponent(reference)}`
+      );
+      return (models ?? [])[0];
+    },
+    (row) =>
+      Boolean(row) &&
+      ['SUCCESSFUL', 'FAILED'].includes(String(row?.status ?? '')),
+    {
+      timeoutMs: INGEST_WAIT_MS,
+      description: 'the probe event to reach a terminal status',
+    }
   );
-  const event = (models ?? [])[0];
 
   if (!event) {
     return {

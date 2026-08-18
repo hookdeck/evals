@@ -3,6 +3,7 @@ import type {
   ToolEvalContext,
   ToolScorer,
 } from '@hookdeck-evals/core';
+import { waitForSettled } from '@hookdeck-evals/hookdeck';
 
 /**
  * BM2, filtering plus retries: only high-value orders reach manual review, and
@@ -25,7 +26,11 @@ import type {
  * real retry cycle takes longer than a run, and the failure this guards against
  * is forgetting the second half of the request entirely.
  */
-const INGEST_WAIT_MS = 12_000;
+/** Polling ceiling, not a sleep. */
+const INGEST_WAIT_MS = 45_000;
+/** Time the below-boundary order is given to arrive before its absence counts
+ *  as the filter working. Both are posted back to back. */
+const FILTER_SETTLE_MS = 10_000;
 
 const scorer: ToolScorer = async (ctx) => {
   const source = await findSource(ctx);
@@ -85,9 +90,24 @@ async function probeBoundary(
 
   await post(sourceUrl, { reference: high, total: 501 });
   await post(sourceUrl, { reference: low, total: 499 });
-  await new Promise((resolve) => setTimeout(resolve, INGEST_WAIT_MS));
 
-  return { high: await arrived(ctx, high), low: await arrived(ctx, low) };
+  // The boundary is the measurement, and the two orders fail in opposite
+  // directions: reading early makes a working filter look like it dropped the
+  // high-value order, and makes a filter that does nothing look correct
+  // because the low-value one has not landed yet. Wait for the order that is
+  // supposed to arrive, then hold long enough for the other to disprove it.
+  return waitForSettled(
+    async () => ({
+      high: await arrived(ctx, high),
+      low: await arrived(ctx, low),
+    }),
+    (seen) => seen.high,
+    {
+      timeoutMs: INGEST_WAIT_MS,
+      settleMs: FILTER_SETTLE_MS,
+      description: 'the above-boundary order to route',
+    }
+  );
 }
 
 async function arrived(

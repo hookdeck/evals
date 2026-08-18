@@ -3,6 +3,7 @@ import type {
   ToolEvalContext,
   ToolScorer,
 } from '@hookdeck-evals/core';
+import { waitForSettled } from '@hookdeck-evals/hookdeck';
 
 /**
  * BM9, resolve: redeliver what failed, for one source only.
@@ -32,15 +33,35 @@ import type {
  * asked a clarifying question and did nothing, and two inventory events were
  * delivered anyway.
  */
-const RETRY_SETTLE_MS = 20_000;
+/** Polling ceiling, not a sleep. Redelivery is asynchronous and an agent may
+ *  have triggered it moments before finishing. */
+const RETRY_WAIT_MS = 60_000;
+/** Once the checkout events are through, how long the inventory events are
+ *  given to prove they were redelivered too. */
+const RETRY_SETTLE_MS = 15_000;
 
 const scorer: ToolScorer = async (ctx) => {
   // Retries are asynchronous, and an agent may have triggered them moments
-  // before finishing.
-  await new Promise((resolve) => setTimeout(resolve, RETRY_SETTLE_MS));
-
-  const checkout = await eventsForSource(ctx, 'checkout');
-  const inventory = await eventsForSource(ctx, 'inventory');
+  // before finishing. The two sources fail in opposite directions: reading
+  // early reports a correct redelivery as incomplete, and reports an
+  // over-broad one as correctly scoped because the inventory events have not
+  // finished being redelivered yet. So wait for the checkout events to come
+  // through, then hold long enough for the inventory events to give themselves
+  // away.
+  const { checkout, inventory } = await waitForSettled(
+    async () => ({
+      checkout: await eventsForSource(ctx, 'checkout'),
+      inventory: await eventsForSource(ctx, 'inventory'),
+    }),
+    (seen) =>
+      seen.checkout.length > 0 &&
+      seen.checkout.every((e) => e.status === 'SUCCESSFUL'),
+    {
+      timeoutMs: RETRY_WAIT_MS,
+      settleMs: RETRY_SETTLE_MS,
+      description: 'the checkout events to be redelivered',
+    }
+  );
 
   if (checkout.length === 0) {
     return {

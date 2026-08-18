@@ -5,7 +5,14 @@ import {
   type ToolEvalContext,
   type ToolScorer,
 } from '@hookdeck-evals/core';
+import { waitForSettled } from '@hookdeck-evals/hookdeck';
 import { stripIndent } from 'common-tags';
+
+/** Polling ceiling, not a sleep. */
+const INGEST_WAIT_MS = 45_000;
+/** Time the filtered-out reference is given to show up before its absence is
+ *  treated as the filter working. Both are posted back to back. */
+const FILTER_SETTLE_MS = 10_000;
 
 /**
  * A build task: filter a payload field by prefix so only the current reference
@@ -49,8 +56,6 @@ async function checkFilteringWorks(
   const probeAt = new Date();
   await post(url, { reference: 'ORD-2026-ZZ-9001', total: 500 });
   await post(url, { reference: 'LEGACY-99002', total: 500 });
-  // Ingestion and rule evaluation are not synchronous with the POST.
-  await new Promise((resolve) => setTimeout(resolve, 8000));
 
   // `include=data` is required: the list response omits the payload without
   // it, so matching on the reference silently finds nothing. Verified against
@@ -64,8 +69,25 @@ async function checkFilteringWorks(
       (e) => e.created_at && new Date(String(e.created_at)) >= probeAt
     ).length;
   };
-  const current = await seen('ORD-2026-ZZ-9001');
-  const legacy = await seen('LEGACY-99002');
+
+  // Ingestion and rule evaluation are not synchronous with the POST, and the
+  // two references fail in opposite directions: reading early makes the
+  // current reference look filtered out and the legacy one look filtered.
+  // Wait for the one that is supposed to arrive, then give the one that is not
+  // its chance to disprove the filter.
+  const counts = await waitForSettled(
+    async () => ({
+      current: await seen('ORD-2026-ZZ-9001'),
+      legacy: await seen('LEGACY-99002'),
+    }),
+    (c) => c.current > 0,
+    {
+      timeoutMs: INGEST_WAIT_MS,
+      settleMs: FILTER_SETTLE_MS,
+      description: 'the current-format order to route',
+    }
+  );
+  const { current, legacy } = counts;
 
   return [
     {

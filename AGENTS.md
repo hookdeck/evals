@@ -499,6 +499,17 @@ runs before this was found, and each looked like a model failure. Use `waitFor`
 or `waitForOrLast` from `@hookdeck-evals/hookdeck`. Polling costs nothing when
 the platform is quick and buys a far longer ceiling when it is not.
 
+**Do not poll for a positive when a negative shares the read.** Four scenarios
+assert that one thing routed *and* another did not: a filter passes the matching
+order and drops the legacy one, a deduplicate rule admits the first payment and
+suppresses the second. Returning the moment the positive lands reads the
+negative before it has had any chance to arrive, so a rule that does nothing at
+all scores as a pass. That is worse than the sleep it replaces, which was at
+least even-handed. Use `waitForSettled`: the positive arriving starts a settle
+window rather than ending the wait, and the value returned is the last one seen,
+so anything landing during that window is counted. Reserve plain `waitFor` for
+reads where every assertion points the same way.
+
 **A flaky-looking scenario is not all flake.** The two failures that exposed the
 sleep above had different causes: one was the race, the other was an agent
 inventing an `x-hookdeck-webhook-secret` header and comparing hashes of the

@@ -73,6 +73,54 @@ export async function waitFor<T>(
 }
 
 /**
+ * Poll until `ready` holds, then keep polling for `settleMs` and return the
+ * final observation.
+ *
+ * For the shape several scenarios share: one thing must happen and another must
+ * *not*. A filter routes the matching order and drops the legacy one; a
+ * deduplicate rule lets the first payment through and suppresses the second.
+ *
+ * Waiting for the positive alone is not enough, and is actively worse than the
+ * sleep it replaces. Both probes are sent together, so returning the moment the
+ * positive lands reads the negative before it has had any chance to arrive, and
+ * a rule that does nothing at all scores as a pass. A fixed sleep was at least
+ * even-handed about it.
+ *
+ * So the positive arriving starts the clock rather than stopping it: it proves
+ * ingestion has caught up, and `settleMs` past that is the window in which a
+ * negative that was going to arrive would have. The value returned is the last
+ * one seen, not the one that satisfied `ready`, so anything landing during the
+ * settle is counted.
+ *
+ * Returns the last observation rather than throwing if `ready` never holds. By
+ * then the full timeout has elapsed, which is more settle time than the happy
+ * path gets, and "nothing arrived" is a result to score rather than an error:
+ * it is how "the rule suppressed the original too" is caught.
+ */
+export async function waitForSettled<T>(
+  probe: () => Promise<T>,
+  ready: (value: T) => boolean,
+  options: WaitForOptions & { settleMs?: number } = {}
+): Promise<T> {
+  const { settleMs = 5_000, intervalMs = 1_000 } = options;
+
+  const first = await waitForOrLast(probe, ready, options);
+  if (!ready(first)) return first;
+
+  let last = first;
+  const settleUntil = Date.now() + settleMs;
+  while (Date.now() < settleUntil) {
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    try {
+      last = await probe();
+    } catch {
+      // Keep the previous observation; a transient read is not evidence.
+    }
+  }
+  return last;
+}
+
+/**
  * Like `waitFor`, but returns the last observed value on timeout instead of
  * throwing.
  *

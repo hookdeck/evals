@@ -3,6 +3,7 @@ import type {
   ToolEvalContext,
   ToolScorer,
 } from '@hookdeck-evals/core';
+import { waitForOrLast } from '@hookdeck-evals/hookdeck';
 
 /**
  * BM12, Outpost: outbound webhooks so a customer can subscribe to your events.
@@ -25,7 +26,8 @@ import type {
  * suite has come from. The scorer publishes an order event itself, so an agent
  * that built the subscription correctly but demonstrated it badly still passes.
  */
-const DELIVERY_WAIT_MS = 15_000;
+/** Polling ceiling, not a sleep. */
+const DELIVERY_WAIT_MS = 45_000;
 
 const scorer: ToolScorer = async (ctx) => {
   // `requires: [outpost]` in the frontmatter should have skipped this scenario
@@ -114,8 +116,17 @@ async function checkOrderEventDelivered(
     topic,
     data: { order_id: 'ord_scored', total: 4200, currency: 'GBP' },
   });
-  await new Promise((resolve) => setTimeout(resolve, DELIVERY_WAIT_MS));
-  const after = await attemptCount(ctx, tenantId, destinations);
+  // Publishing is accepted before the delivery is attempted, so poll the
+  // attempt count rather than sleeping and reading once. A single positive
+  // assertion, so the first observation that satisfies it is the answer.
+  const after = await waitForOrLast(
+    () => attemptCount(ctx, tenantId, destinations),
+    (count) => count > before,
+    {
+      timeoutMs: DELIVERY_WAIT_MS,
+      description: "a delivery attempt to the customer's destination",
+    }
+  );
 
   return {
     name,

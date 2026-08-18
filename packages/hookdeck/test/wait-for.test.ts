@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { waitFor, waitForOrLast, WaitTimeoutError } from '../src/wait-for.js';
+import {
+  waitFor,
+  waitForOrLast,
+  waitForSettled,
+  WaitTimeoutError,
+} from '../src/wait-for.js';
 
 describe('waitFor', () => {
   it('returns as soon as the predicate holds, without waiting out the timeout', async () => {
@@ -54,5 +59,42 @@ describe('waitFor', () => {
       }
     );
     expect(value).toEqual([]);
+  });
+});
+
+describe('waitForSettled', () => {
+  /** The bug this exists to prevent: a negative assertion scored before the
+   *  thing it denies has had a chance to arrive. */
+  it('counts what arrives after the condition is first met', async () => {
+    let count = 0;
+    const value = await waitForSettled(
+      async () => ++count,
+      (v) => v >= 1,
+      { intervalMs: 5, settleMs: 40, timeoutMs: 200 }
+    );
+    expect(value).toBeGreaterThan(1);
+  });
+
+  it('returns the last observation when the condition never holds', async () => {
+    const value = await waitForSettled(
+      async () => [],
+      (v: unknown[]) => v.length > 0,
+      { intervalMs: 5, settleMs: 20, timeoutMs: 40 }
+    );
+    expect(value).toEqual([]);
+  });
+
+  it('keeps the previous observation when a probe throws mid-settle', async () => {
+    let calls = 0;
+    const value = await waitForSettled(
+      async () => {
+        calls += 1;
+        if (calls > 1) throw new Error('transient');
+        return 'first';
+      },
+      (v) => v === 'first',
+      { intervalMs: 5, settleMs: 20, timeoutMs: 40 }
+    );
+    expect(value).toBe('first');
   });
 });

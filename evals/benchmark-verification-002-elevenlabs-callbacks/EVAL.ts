@@ -4,6 +4,7 @@ import type {
   ToolEvalContext,
   ToolScorer,
 } from '@hookdeck-evals/core';
+import { waitForOrLast } from '@hookdeck-evals/hookdeck';
 
 /**
  * BM5, provider webhooks: the same shape as BM1 against a provider that is not
@@ -39,7 +40,9 @@ import type {
  */
 const ELEVENLABS_SECRET = 'wsec_e11_7Qm2vB9xLpTestOnly';
 const PORT = 5100;
-const INGEST_WAIT_MS = 8_000;
+/** Polling ceiling, not a sleep. At 8 seconds this was the shortest wait in
+ *  the suite and the one that produced the most false failures. */
+const INGEST_WAIT_MS = 45_000;
 const BOOT_TIMEOUT_MS = 180_000;
 
 const scorer: ToolScorer = async (ctx) => {
@@ -80,17 +83,31 @@ async function checkSourceVerifies(
 
   await postToSource(sourceUrl, body, elevenLabsSignature(body));
   await postToSource(sourceUrl, body, 't=1,v0=deadbeef');
-  await new Promise((resolve) => setTimeout(resolve, INGEST_WAIT_MS));
-
   // Newest first and explicitly so: this project accumulates requests across
   // every run forever (they cannot be deleted), so an unordered or
   // oldest-first `limit=100` risks never reaching the two just sent once the
   // project's history passes a hundred rows. Same hazard BM3 hit on `/events`.
-  const { models } = await ctx.api<{
-    models?: { created_at?: string; verified?: boolean }[];
-  }>('GET', '/requests?limit=100&order_by=created_at&dir=desc');
-  const mine = (models ?? []).filter(
-    (r) => r.created_at && new Date(r.created_at) >= sentAt
+  //
+  // Poll rather than sleep, and wait for both probes rather than the first:
+  // `verified` is set after the request lands, so a fixed wait scored whatever
+  // had arrived and failed correct agents whenever the platform was slower
+  // than the sleep.
+  const mine = await waitForOrLast(
+    async () => {
+      const { models } = await ctx.api<{
+        models?: { created_at?: string; verified?: boolean }[];
+      }>('GET', '/requests?limit=100&order_by=created_at&dir=desc');
+      return (models ?? []).filter(
+        (r) => r.created_at && new Date(r.created_at) >= sentAt
+      );
+    },
+    (rows) =>
+      rows.some((r) => r.verified === true) &&
+      rows.some((r) => r.verified === false),
+    {
+      timeoutMs: INGEST_WAIT_MS,
+      description: 'both probe requests to be recorded and verified',
+    }
   );
 
   return [

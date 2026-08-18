@@ -3,6 +3,7 @@ import type {
   ToolEvalContext,
   ToolScorer,
 } from '@hookdeck-evals/core';
+import { waitForOrLast } from '@hookdeck-evals/hookdeck';
 
 /**
  * BM3, transformations: reshape a provider payload into what the destination
@@ -32,7 +33,10 @@ import type {
 const SOURCE_NAME = 'payments';
 /** Ingestion is not synchronous with the POST, so the probe polls for its event. */
 const POLL_INTERVAL_MS = 2_000;
-const POLL_TIMEOUT_MS = 20_000;
+/** Polling ceiling. Already a poll rather than a sleep; raised to match the
+ *  other scenarios and moved onto the shared helper so there is one place
+ *  where waiting for ingestion is implemented. */
+const POLL_TIMEOUT_MS = 45_000;
 
 const scorer: ToolScorer = async (ctx) => {
   const source = await findSource(ctx);
@@ -133,15 +137,16 @@ async function deliverProbe(
   });
   const requestId = await ingestedRequestId(res);
 
-  const deadline = Date.now() + POLL_TIMEOUT_MS;
-  while (Date.now() < deadline) {
-    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
-    const body = requestId
-      ? await bodyForRequest(ctx, requestId)
-      : await bodyAfter(ctx, sentAt);
-    if (body) return { body };
-  }
-  return undefined;
+  const body = await waitForOrLast(
+    () => (requestId ? bodyForRequest(ctx, requestId) : bodyAfter(ctx, sentAt)),
+    (found) => Boolean(found),
+    {
+      timeoutMs: POLL_TIMEOUT_MS,
+      intervalMs: POLL_INTERVAL_MS,
+      description: 'the transformed event body',
+    }
+  );
+  return body ? { body } : undefined;
 }
 
 /** The ingest endpoint answers with the id of the request it recorded. */

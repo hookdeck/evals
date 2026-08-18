@@ -3,6 +3,7 @@ import type {
   ToolEvalContext,
   ToolScorer,
 } from '@hookdeck-evals/core';
+import { waitForSettled } from '@hookdeck-evals/hookdeck';
 
 /**
  * BM14, deduplication: the same event twice within seconds must reach the
@@ -20,7 +21,12 @@ import type {
  * consumer and everybody knows it; this scenario is about what to do when that
  * is not available, which is the situation people are actually in when they ask.
  */
-const INGEST_WAIT_MS = 12_000;
+/** Polling ceiling, not a sleep: reached only when the first payment never
+ *  routes at all, which is itself a scored outcome. */
+const INGEST_WAIT_MS = 45_000;
+/** How long a suppressed duplicate is given to prove it was not suppressed.
+ *  The two are posted back to back, so this is generous. */
+const DUPLICATE_SETTLE_MS = 10_000;
 
 const scorer: ToolScorer = async (ctx) => {
   const source = await findSource(ctx);
@@ -43,13 +49,28 @@ const scorer: ToolScorer = async (ctx) => {
   // timeout actually sends.
   await post(String(source.url), body);
   await post(String(source.url), body);
-  await new Promise((resolve) => setTimeout(resolve, INGEST_WAIT_MS));
 
-  const { models } = await ctx.api<{ models?: unknown[] }>(
-    'GET',
-    `/events?limit=50&include=data&search_term=${encodeURIComponent(reference)}`
+  // Both checks below read the same number, and they fail in opposite
+  // directions, so when this reads matters more here than anywhere else.
+  // Returning the moment one event exists would score a rule that does nothing
+  // as a pass, because the second event would still be in flight. Waiting for
+  // the first to land and then holding for the settle window is what makes
+  // "the duplicate did not reach the ledger" mean anything.
+  const routed = await waitForSettled(
+    async () => {
+      const { models } = await ctx.api<{ models?: unknown[] }>(
+        'GET',
+        `/events?limit=50&include=data&search_term=${encodeURIComponent(reference)}`
+      );
+      return (models ?? []).length;
+    },
+    (count) => count >= 1,
+    {
+      timeoutMs: INGEST_WAIT_MS,
+      settleMs: DUPLICATE_SETTLE_MS,
+      description: 'the payment to route at least once',
+    }
   );
-  const routed = (models ?? []).length;
 
   const checks: CheckResult[] = [
     {

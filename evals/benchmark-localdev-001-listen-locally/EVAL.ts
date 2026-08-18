@@ -3,6 +3,7 @@ import type {
   ToolEvalContext,
   ToolScorer,
 } from '@hookdeck-evals/core';
+import { waitForOrLast } from '@hookdeck-evals/hookdeck';
 
 /**
  * BM6, the activation motion: get real events arriving at code running on the
@@ -34,9 +35,10 @@ import type {
  */
 const PORT = 4100;
 const RECEIVED_LOG = '/tmp/bm6-received.log';
-/** Tunnel connect, then cloud delivery. Neither is synchronous with the POST. */
-const TUNNEL_BOOT_MS = 12_000;
-const DELIVERY_WAIT_MS = 15_000;
+/** Tunnel connect, then cloud delivery. Neither is synchronous with the POST,
+ *  and both are polled: these are ceilings, not sleeps. */
+const TUNNEL_BOOT_MS = 45_000;
+const DELIVERY_WAIT_MS = 45_000;
 /** Long enough for `npm install` on a cold workspace. */
 const INSTALL_TIMEOUT_MS = 180_000;
 
@@ -98,6 +100,8 @@ async function checkEventArrivesLocally(
   if (!ctx.sandbox) {
     return { name, passed: false, notes: 'no sandbox to run the service in' };
   }
+  // Bound once: the polling closures below outlive the narrowing above.
+  const sandbox = ctx.sandbox;
 
   const dir = await serviceDir(ctx);
   if (!dir) {
@@ -151,8 +155,36 @@ async function checkEventArrivesLocally(
     `hookdeck listen ${PORT} ${shellArg(sourceName)} --output compact` +
     (path && path !== '/' ? ` --path ${shellArg(path)}` : '');
   await ctx.sandbox.exec(
-    `nohup ${listen} > /tmp/bm6-listen.log 2>&1 & sleep ${TUNNEL_BOOT_MS / 1000}; echo listening`,
-    { timeoutMs: 120_000 }
+    `nohup ${listen} > /tmp/bm6-listen.log 2>&1 & echo started`,
+    {
+      timeoutMs: 120_000,
+    }
+  );
+
+  // Wait for the tunnel to announce itself rather than assuming it connects
+  // within a fixed boot time. This one is not merely slow when it loses the
+  // race, it is silent: a CLI destination with no connected session has its
+  // requests ignored rather than queued, so a probe posted before the tunnel is
+  // up is discarded outright and the retry that would have saved it never
+  // happens. The agent then fails a check for the scorer's timing.
+  //
+  // Matched permissively, and not fatal if it never matches. The readiness line
+  // is CLI output, not an API contract, and it has changed wording before;
+  // asserting on an exact string would convert a reworded banner into a failed
+  // scenario for every agent at once. If nothing matches we post anyway and let
+  // the delivery check be the judge, which is the pre-existing behaviour.
+  await waitForOrLast(
+    async () => {
+      const log = await sandbox.exec(
+        `cat /tmp/bm6-listen.log 2>/dev/null || true`
+      );
+      return log.stdout;
+    },
+    (out) => /ready|connected|listening|https?:\/\//i.test(out),
+    {
+      timeoutMs: TUNNEL_BOOT_MS,
+      description: 'the hookdeck listen tunnel to connect',
+    }
   );
 
   try {
@@ -164,12 +196,22 @@ async function checkEventArrivesLocally(
         kind: 'notification.created',
       }),
     });
-    await new Promise((resolve) => setTimeout(resolve, DELIVERY_WAIT_MS));
 
-    const received = await ctx.sandbox.exec(
-      `grep -c evt_bm6_probe ${RECEIVED_LOG} 2>/dev/null || echo 0`
+    // Poll the log the local service writes to. Delivery crosses the cloud and
+    // then the tunnel, so it is slower than a plain ingest and more variable.
+    const arrived = await waitForOrLast(
+      async () => {
+        const received = await sandbox.exec(
+          `grep -c evt_bm6_probe ${RECEIVED_LOG} 2>/dev/null || echo 0`
+        );
+        return Number.parseInt(received.stdout.trim(), 10) > 0;
+      },
+      (seen) => seen,
+      {
+        timeoutMs: DELIVERY_WAIT_MS,
+        description: 'the probe to reach the local service',
+      }
     );
-    const arrived = Number.parseInt(received.stdout.trim(), 10) > 0;
 
     if (arrived) return { name, passed: true };
 
