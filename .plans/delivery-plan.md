@@ -30,11 +30,35 @@ from the proposal, the divergences are listed at the end.
 Roughly 20 working days of Phil's time to launch-ready, plus the page and launch blog
 running in parallel from the end of Phase 3.
 
-**Status 14 Aug: phases 0 to 3 substantially delivered.** Eighteen scenarios
-(fifteen benchmark, three regression), six experiments, 242 unit tests, and a public
-repository publishing results to `results/` on a weekly and monthly schedule. The
-scoreboard is built and open as a pull request on the website. Phase 4, the first
-improvement loop, is the live phase.
+**Status 18 Aug: phases 0 to 3 delivered. Phase 4 is live and has produced one closed
+loop, a negative one.** Eighteen scenarios (fifteen benchmark, three regression), six
+experiments, a public repository publishing to `results/` weekly and monthly, and the
+first release ([v0.1.0](https://github.com/hookdeck/evals/releases/tag/v0.1.0)) packaging
+a run. The scoreboard is open as a pull request on the website, green, carrying the
+results table, the three counters and a changelog read from releases.
+
+Loop 1 closed with **no measurable improvement**: the CLI defect was real and shipped in
+2.5.0, but a control run showed the four failures used to justify it were variance. See
+`LOOPS.md`. That is the most useful thing this project has produced so far, because it
+invalidates every single-attempt conclusion drawn before 14 August.
+
+What Phase 4 exposed, in order of how much it changes the work:
+
+- **Measurement was not trustworthy.** All ten scored scenarios slept for a fixed 8-12
+  seconds against asynchronous ingestion, so a slow platform failed a correct agent and a
+  different cell lost each run. Converted to polling; not yet validated, because
+  validating it needs a correct configuration to score against and nothing builds one.
+- **The judge samples at default temperature**, so judge-backed checks disagree with
+  themselves on identical input. A second variance source, independent of the first, and
+  one no amount of polling fixes.
+- **Live credentials reached public artifacts.** Agents run `env` while exploring and the
+  dump was captured in transcripts we upload from a public repository. Redaction shipped;
+  rotation is outstanding.
+
+`score-only` was added so a scorer change can be checked for about the price of some API
+calls rather than the $50-64 a matrix costs. It is also the answer to the pattern this
+phase kept hitting: reaching for an expensive run to answer a question a cheaper method
+could settle.
 
 **Do not read scenario-by-scenario state from this file or from `AGENTS.md`.** Both
 carried such a table and both went stale within a day. `results/latest.json` is
@@ -61,6 +85,18 @@ Tracked as an issue.
 Still open: `evals-local`, and the org-key questions for the platform team. The
 concurrency one has a number behind it: ninety pairs take about six hours serialised
 on one project.
+
+**What launch now waits on**, which is a different list from the one this plan started
+with. None of it is scenario authoring:
+
+1. rotate the leaked credentials (#20) — the only item with a security clock on it
+2. merge the website pull request, which closes #15, #17 and #18
+3. validate the polling conversion (#14), which needs a per-scenario known-good
+   configuration so the correct-config path can be scored at no agent cost
+4. set the judge to temperature 0 (#22)
+5. cut the second release, which is the first one able to carry a measured delta (#13)
+
+Phase 5 is product marketing's and is not blocked by any of it.
 
 ---
 
