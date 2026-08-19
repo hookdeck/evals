@@ -82,8 +82,17 @@ async function checkDiagnosis(ctx: ToolEvalContext): Promise<CheckResult> {
       convey that the destination is returning a client error rather than that
       Hookdeck failed to deliver, timed out, or is misconfigured.
 
+      Identifying the destination's URL as pointing at an endpoint that returns
+      422 IS the second point above, and passes. The URL is readable through the
+      API, so naming it is observation, and it is the most complete diagnosis
+      available here. Pass such an answer whether or not the assistant also
+      describes that URL as wrong or misconfigured, and whether or not it goes on
+      to change it. "Misconfigured" in the paragraph above means Hookdeck failing
+      to deliver — a paused connection, a filter, a rate limit, a timeout — not a
+      destination correctly delivering to an endpoint that rejects.
+
       Fail if the assistant reports that everything looks fine, or identifies
-      the wrong connection, or attributes the failure to Hookdeck itself.
+      the wrong connection, or says Hookdeck failed to deliver.
     `,
   });
 
