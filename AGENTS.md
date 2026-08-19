@@ -110,9 +110,14 @@ on it passes while every real call fails; only an actual completion sees it.
 
 ## What to work on next
 
-**GitHub Issues is the source of truth for work.** Before starting anything,
-read the open issues; when you finish something, close its issue or say what
-changed. Do not keep a to-do list in this file or in the plan: one was kept
+**GitHub Issues is the source of truth for work, and #24 is the order to do it
+in.** Before starting anything, read [#24](https://github.com/hookdeck/evals/issues/24):
+it is pinned, it carries the reasoning for the sequence, and the
+[milestones](https://github.com/hookdeck/evals/milestones) carry what is in each
+phase. Picking the top of `gh issue list` instead will usually pick something
+that depends on work not done yet.
+
+When you finish something, close its issue or say what changed. Do not keep a to-do list in this file or in the plan: one was kept
 here as a per-scenario status table and went stale within a day, because a run
 regenerates that information and a markdown file does not.
 
@@ -127,8 +132,14 @@ The division of labour between the three places, so nothing is duplicated:
 | | |
 |---|---|
 | GitHub Issues | what is left to do, and what is in progress |
+| #24 and milestones | what order to do it in, and why |
 | `.plans/delivery-plan.md` | why the project is shaped the way it is |
 | this file | how to work here, and what is expensive to relearn |
+
+**The roadmap carries reasoning, milestones carry contents.** Do not list issues
+in #24 and do not put ordering in a markdown file: a list kept in two places goes
+stale in one of them, which this repo has already learned twice from
+per-scenario status tables.
 
 A finding that changes what someone should do belongs in an issue. A finding
 that changes how to work here belongs in Conventions or Traps below. Both, if

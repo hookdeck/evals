@@ -86,15 +86,11 @@ Still open: `evals-local`, and the org-key questions for the platform team. The
 concurrency one has a number behind it: ninety pairs take about six hours serialised
 on one project.
 
-**What launch now waits on**, which is a different list from the one this plan started
-with. None of it is scenario authoring:
-
-1. rotate the leaked credentials (#20) — the only item with a security clock on it
-2. merge the website pull request, which closes #15, #17 and #18
-3. validate the polling conversion (#14), which needs a per-scenario known-good
-   configuration so the correct-config path can be scored at no agent cost
-4. set the judge to temperature 0 (#22)
-5. cut the second release, which is the first one able to carry a measured delta (#13)
+**What launch now waits on is no longer tracked here.** It went stale within a day of
+being written, which is the third time a list in a markdown file has done that in this
+repository. [#24](https://github.com/hookdeck/evals/issues/24) is the roadmap and is
+pinned; milestones hold the contents. This file keeps the reasoning for the *project's*
+shape, not the sequencing of current work.
 
 Phase 5 is product marketing's and is not blocked by any of it.
 

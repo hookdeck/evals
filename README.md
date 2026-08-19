@@ -79,7 +79,10 @@ already fixed and does not belong on a scoreboard, in any table or any total.
 ## Plan and current work
 
 [GitHub Issues](https://github.com/hookdeck/evals/issues) tracks what is left to do
-and what is in progress. Start there.
+and what is in progress. [#24](https://github.com/hookdeck/evals/issues/24) is the
+roadmap: the order and the reasoning for it, with
+[milestones](https://github.com/hookdeck/evals/milestones) holding each phase. Start
+there rather than at the top of the issue list.
 
 [Releases](https://github.com/hookdeck/evals/releases) record what changed and what it
 measured: each one is a run, the results delta since the previous release, and the
