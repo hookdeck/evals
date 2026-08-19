@@ -222,10 +222,22 @@ Issue titles and changelog titles are different artefacts, and a good issue titl
 often a poor changelog title. Rewrite rather than paste.
 
 **Every change made elsewhere in response to an eval needs an issue here.** A skills
-PR, a CLI fix, a documentation change: each gets an issue in this repository that the
-release closes. This is the only mechanism that lets a release describe a private
-documentation change without linking to anything private, and it is what keeps the
-changelog honest about cause rather than listing whatever happened to land.
+PR, a CLI fix, a documentation change: each gets an issue in this repository. It is the
+only mechanism that lets a release describe a private documentation change without
+linking to anything private, and it is what keeps the changelog honest about cause
+rather than listing whatever happened to land.
+
+**A mapping issue is closed by the release that measures the change, not the one that
+ships it.** Those are usually different releases and often far apart. A skills change
+merges upstream and reaches no run until the submodule pin moves; a documentation change
+alters what an agent reads only once a run reads it. Closing on merge marks as done
+something nobody has measured, which is Loop 1's mistake wearing different clothes: there
+the change was real, shipped, and bought nothing the benchmark could detect.
+
+So the shipping release *references* the mapping issue and says the effect is not yet
+measured. The measuring release closes it, and carries the delta. An issue sitting open
+between the two is the correct state and is the only visible record that a shipped change
+is still unproven.
 
 **Adding a model or a scenario changes the denominator.** Totals either side of such a
 release are not comparable, and the notes have to say so rather than showing a delta
