@@ -35,28 +35,44 @@ import type {
 const scorer: ToolScorer = async (ctx) => {
   const connection = await findConnection(ctx);
   const triggers = await deliveryTriggers(ctx);
-  const seeded = await seededTriggerIds(ctx);
-  // A new project ships with default issue triggers, so "a delivery trigger
-  // exists" is true before the agent does anything. Only ones it created count.
-  const created = triggers.filter((t) => !seeded.has(String(t.id)));
 
-  if (created.length === 0) {
+  /**
+   * Every delivery trigger, not only ones created during the run.
+   *
+   * This used to exclude anything whose `created_at` predated the lease, on the
+   * reasoning that a project ships with defaults and only the agent's own work
+   * should count. That was wrong, and it failed the best answer any agent gave
+   * in this scenario.
+   *
+   * The project carried an orphaned delivery trigger from an early run —
+   * enabled, with an email channel, scoped to a connection that had since been
+   * deleted, so alerting looked configured and could never fire. Claude Code
+   * found it, diagnosed exactly that, and repointed it at the live connection.
+   * The right answer: it repaired silent alerting instead of leaving a broken
+   * trigger in place and adding a duplicate beside it. Updating does not change
+   * `created_at`, so the scorer recorded no alert and failed it.
+   *
+   * The scenario asks whether an alert can fire and reach someone. That is a
+   * question about the end state, and it does not care who created the trigger
+   * or when. A scorer asserting *how* the outcome was reached rewards the
+   * duplicate and punishes the repair — and it gets harder as agents get better
+   * at inspecting existing state, which is how this scenario fell from 4/6 to
+   * 1/6 without anything about it changing.
+   */
+  if (triggers.length === 0) {
     return {
       passed: false,
       checks: [
         {
-          name: 'created an alert for delivery failures',
+          name: 'an alert exists for delivery failures',
           passed: false,
-          notes:
-            triggers.length > 0
-              ? 'only the project default triggers are present'
-              : 'no delivery issue trigger at all',
+          notes: 'no delivery issue trigger at all',
         },
       ],
     };
   }
 
-  const enabled = created.filter((t) => !t.disabled_at);
+  const enabled = triggers.filter((t) => !t.disabled_at);
   const covering = enabled.filter((t) =>
     coversConnection(
       t,
@@ -69,7 +85,7 @@ const scorer: ToolScorer = async (ctx) => {
   return {
     passed: notifying.length > 0,
     checks: [
-      { name: 'created an alert for delivery failures', passed: true },
+      { name: 'an alert exists for delivery failures', passed: true },
       {
         name: 'the alert is enabled',
         passed: enabled.length > 0,
@@ -158,23 +174,6 @@ async function deliveryTriggers(
     '/issue-triggers?limit=100'
   );
   return (models ?? []).filter((t) => t.type === 'delivery');
-}
-
-/**
- * Triggers that existed before the agent ran, identified by having been created
- * at or before the project was leased.
- */
-async function seededTriggerIds(ctx: ToolEvalContext): Promise<Set<string>> {
-  const { models } = await ctx.api<{
-    models?: { id?: string; created_at?: string }[];
-  }>('GET', '/issue-triggers?limit=100');
-  const seeded = new Set<string>();
-  for (const trigger of models ?? []) {
-    if (trigger.created_at && new Date(trigger.created_at) < ctx.acquiredAt) {
-      seeded.add(String(trigger.id));
-    }
-  }
-  return seeded;
 }
 
 async function findConnection(
