@@ -19,9 +19,17 @@ import { waitFor, waitForConsistent } from './wait-for.js';
  * acknowledgement nor a read-back nor a single correct rejection is sufficient.
  * See hookdeck/evals#25.
  *
- * The only check available, absent a readiness signal from the product, is
+ * The best check available, absent a readiness signal from the product, is
  * behavioural and repeated: send something the rule should reject and require it
  * to be rejected several times in a row.
+ *
+ * **This reduces the risk, it does not remove it.** Requests are served by more
+ * than one ingest node, and consecutive rejections only demonstrate that the
+ * nodes those particular requests reached have taken the change. Nothing here
+ * samples the rest, and the guarantee gets weaker as fan-out grows. Treat a
+ * solution that passes this as probably-applied, not as applied — and if a
+ * scenario built on it starts failing intermittently again, suspect this before
+ * suspecting the scorer.
  */
 
 interface Api {
@@ -106,6 +114,10 @@ export async function setConnectionRules(
   // observation that misleads: measured propagation rejected at +2.5s and
   // admitted at +4.5s, so the first correct answer can arrive before the rule
   // is uniformly applied.
+  //
+  // Three is a compromise rather than a derived number. More is strictly safer
+  // and strictly slower, and no achievable count makes this sound — see the
+  // note at the top of the file.
   await waitForConsistent(
     async () => {
       await probe.send();

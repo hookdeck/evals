@@ -571,6 +571,13 @@ non-monotonic use `waitForConsistent`, which requires the condition to hold
 across several consecutive observations. A single correct answer is exactly the
 observation that misleads.
 
+**`waitForConsistent` reduces that risk rather than removing it.** Where the
+thing being observed is served by more than one node, consecutive agreeing
+observations only cover the nodes those observations reached. It is the best
+check available without a readiness signal, and it is not a guarantee — so when
+a scenario built on one starts failing intermittently, suspect the wait before
+suspecting the scorer.
+
 **Do not poll for a positive when a negative shares the read.** Four scenarios
 assert that one thing routed *and* another did not: a filter passes the matching
 order and drops the legacy one, a deduplicate rule admits the first payment and
