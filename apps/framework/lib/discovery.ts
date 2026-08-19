@@ -56,6 +56,9 @@ export function discoverEvals(root: string = EVALS_ROOT): EvalManifest[] {
       promptPath,
       evalPath,
       remoteDir: join(evalDir, 'remote'),
+      solutionPath: existsSync(join(evalDir, 'SOLUTION.ts'))
+        ? join(evalDir, 'SOLUTION.ts')
+        : undefined,
     });
   }
   return out;

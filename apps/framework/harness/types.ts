@@ -55,4 +55,11 @@ export interface EvalManifest {
    * platform-lite (project.sql, logs.jsonl, functions/).
    */
   remoteDir: string;
+  /**
+   * A known-good configuration, applied by `score-only` before scoring so the
+   * scorer meets the state a correct agent would have left. Absent for
+   * scenarios whose deliverable is code rather than project configuration:
+   * `score-only` has no sandbox, so it cannot stand up an agent's handler.
+   */
+  solutionPath?: string;
 }

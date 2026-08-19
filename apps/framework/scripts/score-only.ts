@@ -20,32 +20,42 @@ import type { EvalManifest } from '../harness/types.js';
  * measures the scorer alone, costs API calls, and can be run as often as it
  * takes.
  *
- * The measurement is deliberately harsher than a real run. One session is
- * leased and the scorer runs against it N times *without re-provisioning*, so
- * the project is not merely equivalent between iterations, it is identical.
- * Anything but N identical verdicts is the scorer disagreeing with itself, and
- * there is nowhere else for the disagreement to have come from.
+ * Each iteration leases its own session, seeds it, applies the solution if there
+ * is one, and scores once. That is one project per iteration rather than one per
+ * scenario, which is slower and costs more leases — and it is necessary.
  *
- * ## What this does not cover, which matters
+ * The first version reused a single session, on the reasoning that identical
+ * state is a harsher test than merely equivalent state. It is, for a scorer that
+ * only reads. Most of these scorers *send traffic*, and a second run against the
+ * same project is not a repeat: `dedupe-001` derives its probe reference from
+ * `acquiredAt`, which is fixed per session, so every iteration reused the same
+ * reference and piled more events behind it. It passed once and then failed,
+ * and the failure was the harness accumulating state, not the scorer moving.
  *
- * No agent runs, so the project holds only what the seed put there. For a build
- * scenario that means the configuration under test does not exist and the
- * scorer fails every iteration. Identical failures are still a real result —
- * they rule out the "scorer finds nothing on one run and something on the next"
- * class — but they exercise the *failing* path only.
+ * Fresh per iteration is also what a real run looks like, so a verdict that
+ * changes here is a verdict that could change in production.
  *
- * The race this was built to chase lived on the other path. A fixed sleep
- * against asynchronous ingestion produced false *failures* against *correct*
- * configurations, and nothing here ever builds one. So a clean sweep is
- * evidence the scorers are self-consistent, not proof the polling conversion
- * worked.
+ * ## Which path gets exercised
  *
- * Closing that gap needs a known-good configuration per scenario — a
- * `SOLUTION.ts` the harness applies before scoring, so the scorer meets the
- * state a correct agent would have left. That is the next step and it is
- * tracked in #14.
+ * With no agent, the project holds only what the seed put there, so a build
+ * scenario's configuration does not exist and its scorer fails every iteration.
+ * Identical failures rule out one flake class — the scorer finding nothing on
+ * one run and something on the next — but only on the *failing* path.
  *
- * It also cannot tell you a scorer is *right*: one that consistently fails a
+ * The race this chases lived on the other path: a fixed sleep against
+ * asynchronous ingestion produced false *failures* against *correct*
+ * configurations. So a scenario with a `SOLUTION.ts` gets it applied after
+ * seeding, and the scorer then meets the state a correct agent would have left.
+ * Those are the runs that actually test the polling conversion, and for the
+ * paired-assertion scenarios they test something sharper still: `waitForSettled`
+ * can produce a false *pass* if a negative probe lands after the settle window,
+ * which is a worse failure than the sleep it replaced.
+ *
+ * Scenarios without a `SOLUTION.ts` still run, on the failing path only. Ones
+ * whose deliverable is code cannot have one: there is no sandbox here to stand
+ * an agent's handler up in.
+ *
+ * It still cannot tell you a scorer is *right*: one that consistently fails a
  * correct configuration is stable and wrong, and this calls it stable.
  *
  * ```
@@ -101,48 +111,54 @@ async function scoreRepeatedly(
 ): Promise<Verdict[]> {
   const scorer = (await import(pathToFileURL(ev.evalPath).href))
     .default as ToolScorer;
-
-  // Seeded exactly as the runner seeds it, so the scorer reads the scenario's
-  // real starting state. Without this the project is pristine and every scorer
-  // that reads seeded delivery history fails for reasons unrelated to itself.
-  const session = await runtime.startSession(readSessionSeedArgs(ev));
+  const solution = ev.solutionPath
+    ? ((await import(pathToFileURL(ev.solutionPath).href)).default as (
+        ctx: unknown
+      ) => Promise<void>)
+    : undefined;
 
   const verdicts: Verdict[] = [];
-  try {
-    for (let i = 0; i < REPEAT; i += 1) {
-      try {
-        const result = await scorer({
-          ...session.scoringContext,
-          // No agent ran, so there is nothing to inspect. Scorers that read
-          // these get empty collections rather than undefined, which is what
-          // they would see from an agent that did nothing.
-          toolCalls: [],
-          transcript: [],
-          agentReport: '',
-        } as never);
-        verdicts.push({
-          passed: result.passed,
-          checks: Object.fromEntries(
-            (result.checks ?? []).map((c) => [c.name, Boolean(c.passed)])
-          ),
-        });
-      } catch (error) {
-        // A throwing scorer is itself a stability result, so record it as a
-        // verdict rather than ending the sweep.
-        verdicts.push({
-          passed: false,
-          checks: {},
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-      const latest = verdicts[verdicts.length - 1];
-      process.stdout.write(
-        `  ${ev.id} ${i + 1}/${REPEAT}: ${latest.passed ? 'pass' : 'fail'}` +
-          `${latest.error ? ` (threw: ${latest.error.slice(0, 60)})` : ''}\n`
-      );
+
+  for (let i = 0; i < REPEAT; i += 1) {
+    // Seeded exactly as the runner seeds it, so the scorer reads the scenario's
+    // real starting state. Without this the project is pristine and every
+    // scorer reading seeded history fails for reasons unrelated to itself.
+    const session = await runtime.startSession(readSessionSeedArgs(ev));
+    try {
+      if (solution) await solution(session.scoringContext);
+
+      const result = await scorer({
+        ...session.scoringContext,
+        // No agent ran, so there is nothing to inspect. Scorers that read these
+        // get empty collections rather than undefined, which is what they would
+        // see from an agent that did nothing.
+        toolCalls: [],
+        transcript: [],
+        agentReport: '',
+      } as never);
+      verdicts.push({
+        passed: result.passed,
+        checks: Object.fromEntries(
+          (result.checks ?? []).map((c) => [c.name, Boolean(c.passed)])
+        ),
+      });
+    } catch (error) {
+      // A throwing scorer is itself a stability result, so record it as a
+      // verdict rather than ending the sweep.
+      verdicts.push({
+        passed: false,
+        checks: {},
+        error: error instanceof Error ? error.message : String(error),
+      });
+    } finally {
+      await session[Symbol.asyncDispose]?.();
     }
-  } finally {
-    await session[Symbol.asyncDispose]?.();
+
+    const latest = verdicts[verdicts.length - 1];
+    process.stdout.write(
+      `  ${ev.id}${solution ? ' [solution]' : ''} ${i + 1}/${REPEAT}: ${latest.passed ? 'pass' : 'fail'}` +
+        `${latest.error ? ` (threw: ${latest.error.slice(0, 60)})` : ''}\n`
+    );
   }
 
   return verdicts;
@@ -204,10 +220,18 @@ async function main() {
     console.log('');
   }
 
+  const withSolution = evals.filter((e) => e.solutionPath).length;
   console.log(
     unstable.length === 0
       ? `All ${evals.length} scorer(s) agreed with themselves across ${REPEAT} runs.`
       : `${unstable.length} unstable: ${unstable.join(', ')}`
+  );
+  // Stated every time, including on a clean sweep. Without it, "all stable"
+  // reads as "the conversion is validated" when most scenarios only exercised
+  // the failing path.
+  console.log(
+    `${withSolution} of ${evals.length} scenario(s) had a SOLUTION.ts and tested ` +
+      'the correct-configuration path; the rest tested the failing path only.'
   );
 
   // Non-zero on instability, so this is usable as a CI gate on scorer changes.
