@@ -549,6 +549,28 @@ runs before this was found, and each looked like a model failure. Use `waitFor`
 or `waitForOrLast` from `@hookdeck-evals/hookdeck`. Polling costs nothing when
 the platform is quick and buys a far longer ceiling when it is not.
 
+**A new kind of wait is a product finding before it is a harness change.** Three
+times now the benchmark has needed a new way to wait, and each time the reason
+was that Hookdeck offers no signal for the thing being waited on: no signal that
+a request has been processed, and none that a rule is in force. The second is
+worse than absent — `GET /connections` returns the rule while the ingest path is
+still admitting traffic it should reject, so the API answers a question adjacent
+to the one being asked without distinguishing them (#25).
+
+If a scorer cannot tell whether a filter is working, neither can a customer's
+integration test, nor an agent checking its own work. We only noticed because we
+run it hundreds of times. So when you reach for a new wait, open an issue for the
+missing signal first, then write the wait.
+
+**Three waits, and they are not interchangeable.** `waitFor` and
+`waitForSettled` assume the condition is *monotonic* — once true it stays true —
+which holds for ingestion, because an event that exists does not stop existing.
+It does not hold for rule enforcement, which alternates while it propagates: a
+request at +2.5s was filtered and a later one at +4.5s was not. For anything
+non-monotonic use `waitForConsistent`, which requires the condition to hold
+across several consecutive observations. A single correct answer is exactly the
+observation that misleads.
+
 **Do not poll for a positive when a negative shares the read.** Four scenarios
 assert that one thing routed *and* another did not: a filter passes the matching
 order and drops the legacy one, a deduplicate rule admits the first payment and

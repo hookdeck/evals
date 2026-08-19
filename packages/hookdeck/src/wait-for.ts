@@ -121,6 +121,64 @@ export async function waitForSettled<T>(
 }
 
 /**
+ * Poll until `predicate` has held for `consecutive` observations in a row.
+ *
+ * For conditions that are not monotonic — where holding once is not evidence it
+ * will hold again. `waitFor` and `waitForSettled` both assume that once a thing
+ * is true it stays true, which is safe for ingestion: an event that exists does
+ * not stop existing, so the first sighting can be acted on.
+ *
+ * Rule enforcement is not like that. A filter written to a connection is
+ * readable through the API before the ingest path applies it, and while it
+ * propagates, enforcement alternates: measured on 19 August, a request at +2.5s
+ * was filtered and a later one at +4.5s was not. A canary that gets rejected
+ * once therefore proves nothing, and a scorer that trusts it records a verdict
+ * on a rule that is still coming into force. See hookdeck/evals#25.
+ *
+ * So the question is not "has it started" but "has it stopped changing", and the
+ * only answer available without a readiness signal from the product is
+ * agreement across repeated observation.
+ *
+ * `consecutive` is a confidence dial, not a duration: three agreeing
+ * observations at a one-second interval is a weaker claim than three at five
+ * seconds, because the failure being guarded against is periodic rather than
+ * random. Set `intervalMs` wider than the period you expect to be wrong about.
+ */
+export async function waitForConsistent<T>(
+  probe: () => Promise<T>,
+  predicate: (value: T) => boolean,
+  options: WaitForOptions & { consecutive?: number } = {}
+): Promise<T> {
+  const {
+    consecutive = 3,
+    timeoutMs = 30_000,
+    intervalMs = 2_000,
+    description = 'condition',
+  } = options;
+  const deadline = Date.now() + timeoutMs;
+  let run = 0;
+  let last: T | undefined;
+
+  for (;;) {
+    try {
+      last = await probe();
+      run = predicate(last) ? run + 1 : 0;
+      if (run >= consecutive) return last;
+    } catch {
+      // A failed observation is not a disagreement, but it is not agreement
+      // either: hold the streak rather than counting or resetting it.
+    }
+    if (Date.now() >= deadline) {
+      throw new WaitTimeoutError(
+        `${description} (held ${run} of ${consecutive} required)`,
+        timeoutMs
+      );
+    }
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+}
+
+/**
  * Like `waitFor`, but returns the last observed value on timeout instead of
  * throwing.
  *

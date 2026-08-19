@@ -26,6 +26,7 @@ export type { OutpostClientOptions } from './outpost-client.js';
 export { setConnectionRules } from './solutions.js';
 export {
   waitFor,
+  waitForConsistent,
   waitForOrLast,
   waitForSettled,
   WaitTimeoutError,

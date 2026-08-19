@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   waitFor,
+  waitForConsistent,
   waitForOrLast,
   waitForSettled,
   WaitTimeoutError,
@@ -96,5 +97,56 @@ describe('waitForSettled', () => {
       { intervalMs: 5, settleMs: 20, timeoutMs: 40 }
     );
     expect(value).toBe('first');
+  });
+});
+
+describe('waitForConsistent', () => {
+  /** The bug this exists for: a condition that holds once, then stops. */
+  it('does not return on a single lucky observation', async () => {
+    // filtered, not filtered, then filtered from here on — the real shape
+    // measured on rule propagation.
+    const sequence = [true, false, true, true, true];
+    let i = 0;
+    const seen: boolean[] = [];
+    await waitForConsistent(
+      async () => {
+        const v = sequence[Math.min(i, sequence.length - 1)];
+        i += 1;
+        seen.push(v);
+        return v;
+      },
+      (v) => v,
+      { consecutive: 3, intervalMs: 1, timeoutMs: 500 }
+    );
+    // Had it returned on the first `true` it would have stopped at one
+    // observation and scored against a rule that was not yet in force.
+    expect(seen.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it('resets the streak when the condition stops holding', async () => {
+    const sequence = [true, true, false, true, true, true];
+    let i = 0;
+    await waitForConsistent(
+      async () => sequence[Math.min(i++, sequence.length - 1)],
+      (v) => v,
+      { consecutive: 3, intervalMs: 1, timeoutMs: 500 }
+    );
+    // Six observations minimum: two, the reset, then three in a row.
+    expect(i).toBeGreaterThanOrEqual(6);
+  });
+
+  it('reports how far it got when it times out', async () => {
+    await expect(
+      waitForConsistent(
+        async () => false,
+        (v) => v,
+        {
+          consecutive: 3,
+          intervalMs: 5,
+          timeoutMs: 40,
+          description: 'the filter to be enforced',
+        }
+      )
+    ).rejects.toThrow(/the filter to be enforced \(held 0 of 3 required\)/);
   });
 });
