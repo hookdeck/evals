@@ -209,6 +209,15 @@ about the product. Mixing the two inflates the findings count with our own bugs 
 same reason Benchmark items are excluded from the counters. Anything outside those three headings is preamble and is not an item, which is
 how the run summary and the delta stay out of the changelog.
 
+**The release title says what the release found, not what kind of release it is.**
+It renders beside the version on the page and in the release list, so it is read on
+its own, next to a version number that already says where it sits in the sequence.
+"Corrections", "maintenance", "first packaged run" are categories: they are true of
+many releases and tell a reader nothing about this one. Prefer the most surprising
+true thing in it — "Eight of twenty published failures were our own scoring" is a
+title; "corrections" is a label for a filing cabinet. Same test as the item titles
+below: could this sit unchanged on a different release? Then it is not a title.
+
 **The title is the whole entry, so it has to carry the finding alone.** No description
 is rendered. A reader sees one line and an issue number, and decides from that line
 whether to click. Rules, in order of how often they are broken:
