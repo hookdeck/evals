@@ -259,7 +259,10 @@ async function main() {
     const same = verdict.passed === c.expected;
     if (same) agree++;
     else {
-      const line = `${c.evalId} | ${c.check} | gpt-5.5 said ${c.expected ? 'pass' : 'FAIL'}, ${modelId} said ${verdict.passed ? 'pass' : 'FAIL'}`;
+      // The experiment belongs here: a disagreement names a rubric and a
+      // scenario, but the thing anyone needs to look at is the cell, and
+      // without the experiment there is no way to find which of six it was.
+      const line = `${c.experiment} | ${c.evalId} | ${c.check} | stored ${c.expected ? 'pass' : 'FAIL'}, ${modelId} said ${verdict.passed ? 'pass' : 'FAIL'}`;
       disagreements.push(line);
       // The disqualifying direction: a real catch that the cheaper model waves through.
       if (c.expected === false && verdict.passed === true)
