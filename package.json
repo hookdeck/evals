@@ -10,6 +10,7 @@
     "eval:smoke": "pnpm --filter @hookdeck-evals/framework eval:smoke",
     "eval:force": "pnpm --filter @hookdeck-evals/framework eval:force",
     "score-only": "pnpm --filter @hookdeck-evals/framework score-only",
+    "compare-snapshots": "pnpm --filter @hookdeck-evals/framework compare-snapshots",
     "test:framework": "pnpm --filter @hookdeck-evals/framework test:framework",
     "export-results": "pnpm --filter @hookdeck-evals/framework export-results",
     "typecheck": "pnpm --filter @hookdeck-evals/framework typecheck && pnpm --filter @hookdeck-evals/web typecheck",
