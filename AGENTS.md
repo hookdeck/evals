@@ -196,9 +196,17 @@ The parsed format is three sections of one-line items:
 ```
 
 `Shipped` is a change to the product, the docs or the skills. `Benchmark` is a repair
-to our own instrument. `Discovered` is found but not yet explained. The page renders
-Shipped and Discovered and counts only those; Benchmark stays in the notes as the
-record. Anything outside those three headings is preamble and is not an item, which is
+to our own instrument, and only ones that have shipped. `Discovered` is a **product**
+finding — something true of Hookdeck, its docs or its skills that we do not yet
+understand or have not yet fixed. The page renders Shipped and Discovered and counts only
+those; Benchmark stays in the notes as the record.
+
+**An open defect in our own instrument goes in neither.** It is not a product finding, so
+it is not Discovered, and it has not shipped, so it is not Benchmark. It lives in an issue
+until it is fixed, and appears in the release that fixes it. A reader of the changelog
+has no stake in our harness being broken; they have every stake in knowing what we found
+about the product. Mixing the two inflates the findings count with our own bugs — the
+same reason Benchmark items are excluded from the counters. Anything outside those three headings is preamble and is not an item, which is
 how the run summary and the delta stay out of the changelog.
 
 **The title is the whole entry, so it has to carry the finding alone.** No description
