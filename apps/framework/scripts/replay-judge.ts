@@ -16,7 +16,7 @@
  * Usage:
  *   pnpm --filter @hookdeck-evals/framework exec tsx scripts/replay-judge.ts gpt-5.4-mini
  */
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openai } from '@ai-sdk/openai';
@@ -26,7 +26,20 @@ import { stripIndent } from 'common-tags';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..', '..', '..');
-const RESULTS = join(ROOT, 'results');
+/**
+ * Raw run output, which is where transcripts live.
+ *
+ * This read `results/` until 19 August. That directory used to hold raw runs and
+ * now holds the published contract — scored rows with no `transcript` field — so
+ * the loader's `if (!result.transcript) continue` fired on every file and the
+ * script reported an empty comparison as agreement. A comparison tool that says
+ * "no disagreements" having compared nothing is worse than one that crashes, and
+ * it had been doing that silently since the rename. See #23.
+ *
+ * Overridable, because the other place transcripts exist is a downloaded
+ * artifact tree, and after 90 days that is the only place they exist at all.
+ */
+const RAW_RUNS = process.env.RAW_RUNS_DIR ?? join(ROOT, '.eval-runs');
 
 /**
  * The rubrics, keyed by `<eval id>::<check name>`.
@@ -152,26 +165,54 @@ type Case = {
   transcript: TranscriptPart[];
 };
 
+/** Every `.json` beneath `dir`, at any depth. */
+function walkJson(dir: string): string[] {
+  return readdirSync(dir).flatMap((entry) => {
+    const p = join(dir, entry);
+    return statSync(p).isDirectory()
+      ? walkJson(p)
+      : p.endsWith('.json')
+        ? [p]
+        : [];
+  });
+}
+
+/**
+ * Walks recursively and takes the experiment from the row rather than from the
+ * directory name, so this works on both layouts transcripts arrive in:
+ * `.eval-runs/<experiment>/<eval>.json` from a local run, and
+ * `<run>/raw-results-<experiment>__<eval>/<eval>.json` from a downloaded
+ * artifact. The second is the only layout available once the 90-day retention
+ * has taken the originals.
+ */
 function loadCases(): Case[] {
   const cases: Case[] = [];
-  for (const experiment of readdirSync(RESULTS)) {
-    const dir = join(RESULTS, experiment);
-    if (!statSync(dir).isDirectory()) continue;
-    for (const file of readdirSync(dir)) {
-      if (!file.endsWith('.json')) continue;
-      const result = JSON.parse(readFileSync(join(dir, file), 'utf8'));
-      if (!result.transcript) continue;
-      for (const check of result.checks ?? []) {
-        const key = `${result.eval}::${check.name}`;
-        if (!check.judgeNotes || !RUBRICS[key]) continue;
-        cases.push({
-          experiment,
-          evalId: result.eval,
-          check: check.name,
-          expected: check.passed,
-          transcript: result.transcript,
-        });
-      }
+  if (!existsSync(RAW_RUNS)) return cases;
+
+  for (const file of walkJson(RAW_RUNS)) {
+    let result: {
+      experiment?: string;
+      eval?: string;
+      transcript?: TranscriptPart[];
+      checks?: { name: string; passed: boolean; judgeNotes?: string }[];
+    };
+    try {
+      result = JSON.parse(readFileSync(file, 'utf8'));
+    } catch {
+      continue;
+    }
+    if (!result?.transcript || !result.eval) continue;
+
+    for (const check of result.checks ?? []) {
+      const key = `${result.eval}::${check.name}`;
+      if (!check.judgeNotes || !RUBRICS[key]) continue;
+      cases.push({
+        experiment: result.experiment ?? 'unknown',
+        evalId: result.eval,
+        check: check.name,
+        expected: check.passed,
+        transcript: result.transcript,
+      });
     }
   }
   return cases;
@@ -182,8 +223,23 @@ async function main() {
   const effort = (process.argv[3] ?? 'low') as 'low' | 'medium' | 'high';
   const cases = loadCases();
 
+  // Refuse to report agreement having compared nothing. This is the failure
+  // mode #23 was filed for: the loader silently found zero cases and the script
+  // exited 0, which reads as "no disagreements" rather than "no data". A
+  // comparison tool has to distinguish those.
+  if (cases.length === 0) {
+    console.error(
+      `No judged checks found under ${RAW_RUNS}.\n` +
+        'Transcripts live in raw run output, not in the published results ' +
+        'contract. Run an eval to populate .eval-runs, or point RAW_RUNS_DIR at ' +
+        'a downloaded artifact tree.'
+    );
+    process.exit(1);
+  }
+
   console.log(
-    `replaying ${cases.length} judged checks with ${modelId} (effort=${effort})\n`
+    `replaying ${cases.length} judged checks with ${modelId} (effort=${effort})\n` +
+      `source: ${RAW_RUNS}\n`
   );
 
   let agree = 0;
