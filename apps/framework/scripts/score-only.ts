@@ -92,6 +92,15 @@ interface Verdict {
   passed: boolean;
   /** Check name to pass/fail, for reporting which check moved. */
   checks: Record<string, boolean>;
+  /**
+   * Checks decided by the LLM judge, identified by the scorer attaching
+   * `judgeNotes`. Tracked separately because with no agent there is no report
+   * for a judge to read, so it is being asked whether an empty string claimed
+   * something — an ill-posed question whose answer is entitled to vary. Counting
+   * that as scorer instability makes every scenario with a judged check look
+   * broken for a reason this tool cannot investigate.
+   */
+  judged: Set<string>;
   error?: string;
 }
 
@@ -141,6 +150,11 @@ async function scoreRepeatedly(
         checks: Object.fromEntries(
           (result.checks ?? []).map((c) => [c.name, Boolean(c.passed)])
         ),
+        judged: new Set(
+          (result.checks ?? [])
+            .filter((c) => (c as { judgeNotes?: string }).judgeNotes)
+            .map((c) => c.name)
+        ),
       });
     } catch (error) {
       // A throwing scorer is itself a stability result, so record it as a
@@ -148,6 +162,7 @@ async function scoreRepeatedly(
       verdicts.push({
         passed: false,
         checks: {},
+        judged: new Set<string>(),
         error: error instanceof Error ? error.message : String(error),
       });
     } finally {
@@ -164,13 +179,20 @@ async function scoreRepeatedly(
   return verdicts;
 }
 
-/** Which checks did not return the same verdict every time. */
-function unstableChecks(verdicts: Verdict[]): string[] {
+/** Which checks did not return the same verdict every time, split by kind. */
+function unstableChecks(verdicts: Verdict[]): {
+  deterministic: string[];
+  judged: string[];
+} {
   const names = new Set(verdicts.flatMap((v) => Object.keys(v.checks)));
-  return [...names].filter((name) => {
-    const values = verdicts.map((v) => v.checks[name]);
-    return new Set(values).size > 1;
-  });
+  const judgedNames = new Set(verdicts.flatMap((v) => [...v.judged]));
+  const moved = [...names].filter(
+    (name) => new Set(verdicts.map((v) => v.checks[name])).size > 1
+  );
+  return {
+    deterministic: moved.filter((n) => !judgedNames.has(n)),
+    judged: moved.filter((n) => judgedNames.has(n)),
+  };
 }
 
 async function main() {
@@ -206,16 +228,24 @@ async function main() {
     const verdicts = await scoreRepeatedly(ev, chosen.config.runtime as never);
     const passes = verdicts.filter((v) => v.passed).length;
     const moved = unstableChecks(verdicts);
-    const stable = passes === 0 || passes === REPEAT;
 
-    if (!stable || moved.length > 0) {
+    // Only deterministic checks decide the verdict. A judged check moving is
+    // reported, because it is worth knowing, but it is not evidence about the
+    // scorer: see the note on `Verdict.judged`.
+    if (moved.deterministic.length > 0) {
       unstable.push(ev.id);
       console.log(
-        `UNSTABLE ${ev.id}: ${passes}/${REPEAT} passed` +
-          (moved.length > 0 ? `, checks that moved: ${moved.join('; ')}` : '')
+        `UNSTABLE ${ev.id}: ${passes}/${REPEAT} passed, checks that moved: ` +
+          moved.deterministic.join('; ')
       );
     } else {
       console.log(`stable   ${ev.id}: ${passes}/${REPEAT} passed`);
+    }
+    if (moved.judged.length > 0) {
+      console.log(
+        `         judged checks also moved (no agent report to judge, not ` +
+          `counted): ${moved.judged.join('; ')}`
+      );
     }
     console.log('');
   }

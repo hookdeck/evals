@@ -1,4 +1,5 @@
 import type { ToolScoringContext } from '@hookdeck-evals/core';
+import { setConnectionRules } from '@hookdeck-evals/hookdeck';
 
 /**
  * A correct answer to this scenario, applied by `score-only` so the scorer can
@@ -23,34 +24,19 @@ import type { ToolScoringContext } from '@hookdeck-evals/core';
  * outcome another way passes; this just has to be *a* configuration that works.
  */
 export default async function apply(ctx: ToolScoringContext): Promise<void> {
-  const { models } = await ctx.api<{
-    models?: { id?: string; rules?: unknown[] }[];
-  }>('GET', '/connections?limit=100');
-
-  const connection = (models ?? [])[0];
-  if (!connection?.id) {
-    throw new Error(
-      'no connection found: the seed did not apply, so applying a solution ' +
-        'on top of it would be meaningless'
-    );
-  }
-
-  // 10 seconds: the scenario says the provider resends "within a few seconds",
-  // and the scorer posts its two probes back to back. Long enough to catch the
-  // duplicate, short enough that it is not silently suppressing everything —
-  // which the scorer's second check exists to catch.
-  await ctx.api('PUT', `/connections/${connection.id}`, {
-    rules: [
-      {
-        type: 'deduplicate',
-        window: 10_000,
-        // Key on the payment's own identifier. The scorer sends byte-identical
-        // bodies, so any field set works here — this one is named explicitly
-        // because a rule keyed on the wrong field is the failure the scenario
-        // is about, and a solution that got that wrong by accident would make
-        // the scorer look broken.
-        include_fields: ['body.id'],
-      },
-    ],
-  });
+  // `setConnectionRules` resolves the connection by name and does not return
+  // until the rules read back, because the scorer starts sending traffic the
+  // moment this does.
+  await setConnectionRules(ctx, 'payments-to-ledger', [
+    {
+      type: 'deduplicate',
+      window: 10_000,
+      // Key on the payment's own identifier. The scorer sends byte-identical
+      // bodies, so any field set works here — this one is named explicitly
+      // because a rule keyed on the wrong field is the failure the scenario is
+      // about, and a solution that got that wrong by accident would make the
+      // scorer look broken.
+      include_fields: ['body.id'],
+    },
+  ]);
 }
