@@ -93,9 +93,18 @@ export const codexRunner: AgentRunner<CodexModel> = {
 
     // Codex has no system-prompt flag; prepend the system prompt to the task,
     // both staged as files, fed on stdin.
+    // No `OPENAI_API_KEY` here, deliberately. `install` above already persisted
+    // auth to `~/.codex/auth.json`, so passing the key again only adds it to the
+    // agent's own environment — and an agent exploring an unfamiliar sandbox
+    // runs `env`, which put a live provider key into the transcript we upload
+    // from a public repository. See #20.
+    //
+    // This narrows exposure rather than removing it: the key is still present
+    // during `install`, and `HOOKDECK_API_KEY` has to stay because the task
+    // genuinely needs it. Redaction remains the control for those.
     const command = await sandbox.exec(
       `{ cat ${systemPromptPath}; printf '\\n\\n'; cat ${userPromptPath}; } | ${codex} ${flags}`,
-      { timeoutMs: timeoutSec * 1000, env: { OPENAI_API_KEY: apiKey } }
+      { timeoutMs: timeoutSec * 1000 }
     );
     return { command, raw: command.stdout };
   },
