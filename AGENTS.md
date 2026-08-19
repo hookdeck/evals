@@ -209,14 +209,30 @@ about the product. Mixing the two inflates the findings count with our own bugs 
 same reason Benchmark items are excluded from the counters. Anything outside those three headings is preamble and is not an item, which is
 how the run summary and the delta stay out of the changelog.
 
-**The release title says what the release found, not what kind of release it is.**
-It renders beside the version on the page and in the release list, so it is read on
-its own, next to a version number that already says where it sits in the sequence.
-"Corrections", "maintenance", "first packaged run" are categories: they are true of
-many releases and tell a reader nothing about this one. Prefer the most surprising
-true thing in it — "Eight of twenty published failures were our own scoring" is a
-title; "corrections" is a label for a filing cabinet. Same test as the item titles
-below: could this sit unchanged on a different release? Then it is not a title.
+**The changelog is about the product, not about the benchmark.** Its subject is what
+changed for someone building on Hookdeck with an agent: what the runs found, what we
+fixed, and what an agent can now do that it could not before. The benchmark's own
+machinery — a scorer we corrected, a harness we repaired — is how we know, not what we
+are reporting. It belongs in the `Benchmark` section, which the page does not render,
+and in issues.
+
+This is easy to get wrong, because the benchmark's own defects are often the most
+interesting thing that happened that week to the people running it. They are not the
+most interesting thing to a reader deciding whether their agent can configure a
+Hookdeck integration.
+
+**So the release title names the product improvement.** It renders beside the version,
+which already says where the release sits in the sequence, so the title has that space
+to say what an agent or a developer can now do. Two failure modes:
+
+- *Categories.* "Corrections", "maintenance", "first packaged run" are true of many
+  releases and say nothing about this one.
+- *Instrument news.* "Eight of twenty published failures were our own scoring" is a
+  striking sentence about our benchmark and tells a reader nothing about Hookdeck.
+
+Test: could this sit unchanged on a different release, and does it name something that
+changed about the product? If a release genuinely shipped no product change, say what it
+unblocks rather than dressing up the housekeeping.
 
 **The title is the whole entry, so it has to carry the finding alone.** No description
 is rendered. A reader sees one line and an issue number, and decides from that line
