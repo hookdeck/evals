@@ -9,14 +9,25 @@ import { waitForOrLast } from '@hookdeck-evals/hookdeck';
  * Outpost's most reliable support case: a destination switched off after
  * repeated failures, an endpoint since repaired, and nothing flowing.
  *
- * The trap is that nothing recovers on its own and nothing looks wrong.
+ * The trap is that nothing recovers on its own, and whether anything told you
+ * depends on configuration the customer's deployment may not have.
  * Outpost retries automatically with exponential backoff, so an endpoint that
  * breaks and heals needs no intervention — which is exactly why this scenario
  * does not use that shape. A *disabled* destination is different: the
  * documentation is explicit that events published to a tenant are not delivered
  * to a disabled destination and that "disabled destinations cannot be retried
- * until re-enabled". So the events are held, the endpoint is healthy, and the
- * only signal is a customer saying they stopped receiving anything.
+ * until re-enabled". Retrying one anyway answers `400 "Destination is
+ * disabled"`, verified against the live API. So the events are held and the
+ * endpoint is healthy.
+ *
+ * Outpost is not silent about this by design: `alert.destination.disabled` is a
+ * documented operator event, alongside `alert.destination.consecutive_failure`
+ * at 50/70/90/100% of the threshold. But operator events are off until a sink is
+ * configured — Hookdeck Monitoring settings on managed, `OPERATION_EVENTS_TOPICS`
+ * plus a sink when self-hosted — so the scenario is set on a deployment where
+ * nobody did, which is why the customer is the one who noticed. An agent that
+ * also recommends turning them on has given better advice than the task asked
+ * for; the scorer neither requires nor penalises it.
  *
  * That combination is what makes it worth scoring. An agent that checks the
  * endpoint finds it fine. An agent that republishes finds the new events held
