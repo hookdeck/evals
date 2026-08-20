@@ -615,6 +615,18 @@ route shapes that were never going to exist. The spec is
 `docs/apis/openapi.yaml` in `hookdeck/outpost`; the API host serves no
 `openapi.json`, so fetch it from the repository.
 
+**Read the Outpost prose docs before asserting a feature is absent.** They are
+published at <https://hookdeck.com/docs/outpost> and live as `.mdoc` under
+`docs/content/` in `hookdeck/outpost`. The OpenAPI spec describes shapes, not
+behaviour, and a whole feature can be documented without appearing in it: this
+scenario was written claiming a disabled destination produces no notification,
+which was wrong — `alert.destination.disabled` is a documented **operator
+event**, and it was missed by searching the spec and `internal/alert/` when the
+answer was in `internal/opevents/`. It came within one step of being published
+as a product finding. Being publicly documented cuts the other way too: the
+sandbox has network access, so an agent can read these pages and a scenario may
+fairly depend on them.
+
 **Retry against a disabled destination returns `400 "Destination is disabled"`.**
 Verified against the live API, and it is the mechanism `outpost-002` rests on:
 re-enabling and retrying are ordered by the product, not by the scenario. Worth
