@@ -16,8 +16,14 @@ export type {
   PristineSnapshot,
   FixedProjectSourceOptions,
 } from './project-source.js';
-export { readSeed, applySeed } from './seed.js';
-export type { Seed, SeedResource, SeedEvent, AppliedSeed } from './seed.js';
+export { readSeed, applySeed, applyOutpostSeed } from './seed.js';
+export type {
+  Seed,
+  SeedResource,
+  SeedEvent,
+  OutpostSeed,
+  AppliedSeed,
+} from './seed.js';
 export { hookdeckRuntime, hookdeckMcpServer } from './runtime.js';
 export type { HookdeckRuntimeOptions } from './runtime.js';
 export { collectEnvSecretValues, redactSecrets } from './redact.js';

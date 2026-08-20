@@ -84,6 +84,19 @@ function readFlag(name: string): string | undefined {
   return undefined;
 }
 
+/**
+ * Score the seeded state *without* applying the solution.
+ *
+ * The other half of what this script is for. A scorer that passes with the
+ * solution applied has been shown to accept a correct answer; it has not been
+ * shown to reject an incorrect one, and a scorer that passes unconditionally
+ * does the first perfectly. Every check that came back green here would be
+ * green for an agent that did nothing at all.
+ *
+ * So the expected outcome of this mode is **fail**. A pass is the bug.
+ */
+const NO_SOLUTION = rawArgs.includes('--no-solution');
+
 const EVAL_FILTER = readFlag('eval');
 const REPEAT = Number(readFlag('repeat') ?? 3);
 const EXPERIMENT = readFlag('experiment');
@@ -134,7 +147,7 @@ async function scoreRepeatedly(
     // scorer reading seeded history fails for reasons unrelated to itself.
     const session = await runtime.startSession(readSessionSeedArgs(ev));
     try {
-      if (solution) await solution(session.scoringContext);
+      if (solution && !NO_SOLUTION) await solution(session.scoringContext);
 
       const result = await scorer({
         ...session.scoringContext,
@@ -171,7 +184,7 @@ async function scoreRepeatedly(
 
     const latest = verdicts[verdicts.length - 1];
     process.stdout.write(
-      `  ${ev.id}${solution ? ' [solution]' : ''} ${i + 1}/${REPEAT}: ${latest.passed ? 'pass' : 'fail'}` +
+      `  ${ev.id}${solution && !NO_SOLUTION ? ' [solution]' : ''}${NO_SOLUTION ? ' [unsolved]' : ''} ${i + 1}/${REPEAT}: ${latest.passed ? 'pass' : 'fail'}` +
         `${latest.error ? ` (threw: ${latest.error.slice(0, 60)})` : ''}\n`
     );
   }
