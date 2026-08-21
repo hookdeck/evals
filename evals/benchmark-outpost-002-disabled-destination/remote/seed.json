@@ -1,0 +1,60 @@
+{
+  "outpost": {
+    "tenants": [
+      {
+        "id": "acme",
+        "topics": ["order.created", "order.shipped"],
+        "destinations": [
+          {
+            "ref": "acme-endpoint",
+            "type": "webhook",
+            "topics": ["order.created", "order.shipped"],
+            "config": {
+              "url": "https://mock.hookdeck.com/api/v1/acme/orders?status=503"
+            }
+          }
+        ]
+      },
+      {
+        "id": "globex",
+        "topics": ["order.created", "order.shipped"],
+        "destinations": [
+          {
+            "ref": "globex-endpoint",
+            "type": "webhook",
+            "topics": ["order.created", "order.shipped"],
+            "config": {
+              "url": "https://mock.hookdeck.com/api/v1/globex/orders"
+            }
+          }
+        ]
+      }
+    ],
+    "publish": [
+      {
+        "tenant": "acme",
+        "topic": "order.created",
+        "data": { "order_id": "ord_a1", "total": 2400 },
+        "count": 3
+      },
+      {
+        "tenant": "globex",
+        "topic": "order.created",
+        "data": { "order_id": "ord_g1", "total": 900 }
+      }
+    ],
+    "after": [
+      {
+        "path": "/tenants/acme/destinations/$ref:acme-endpoint/disable",
+        "method": "PUT"
+      },
+      {
+        "path": "/tenants/acme/destinations/$ref:acme-endpoint",
+        "method": "PATCH",
+        "body": {
+          "config": { "url": "https://mock.hookdeck.com/api/v1/acme/orders" }
+        }
+      }
+    ]
+  }
+}

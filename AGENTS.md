@@ -575,10 +575,62 @@ restores the Hookdeck project, and knows nothing about Outpost. Tenants and
 destinations an Outpost run creates survive into the next one, so the second run
 of a scenario finds `acme` already there and may score a previous run's work.
 `FixedProjectSource` now deletes tenants that were not present when it acquired
-the lease, on release. The residual: a run that dies before release still
-leaks, and the next run inherits it.
-Until it is, treat Outpost results after the first run of a scenario as
-unreliable, and delete tenants by hand between runs.
+the lease, on release — but that runs in a `catch`-and-ignore, so a run that dies
+before release still leaks and the next run inherits it.
+
+So cleanup on release is not enough on its own, and `applyOutpostSeed` deletes
+each tenant it is about to create. That makes seeding idempotent without
+depending on the previous run having exited cleanly, which is what the leftover
+tenant actually broke: tenant create is idempotent on the id and destination
+create is not, so seeding onto a survivor *appended* a second destination rather
+than replacing the first. The scenario then started with two, one carrying the
+seeded history and one empty, and a scorer reading `[0]` got whichever sorted
+first. Scorers should still aggregate across a tenant's destinations rather than
+taking the first, because an agent may legitimately add one.
+
+**Outpost seeds must wait for delivery before mutating, and the wait needs its
+own reason.** Publishing is synchronous and delivery is not, so an `after` block
+lands while the events are still queued — the same trap `applySeed` fixes for the
+gateway. On Outpost it is worse than a slow start: `outpost-002` disables a
+destination in `after`, a disabled destination is never attempted, so the failed
+attempts the whole scenario is built on were never created. It presented as a
+seed that worked, because an earlier run's tenant had survived and had been
+delivering while it sat there. `applyOutpostSeed` now waits for published events
+to be attempted, any status, before running `after`.
+
+**Outpost event history outlives the tenant.** Deleting and recreating `acme`
+leaves every event it ever received in place: a freshly recreated tenant listed
+38 events against the 3 that run had published. They stay bound to destinations
+that no longer exist, so retrying one answers `404 "event not found"` rather than
+anything explanatory. Filter by `destination_id` — and note that attempts are
+naturally run-scoped only because the destination is new each run, which is a
+property to rely on deliberately rather than by accident.
+
+**The hosted Outpost API is not shaped like its tenant-scoped routes suggest.**
+`/events`, `/attempts` and `/retry` are **top-level**, filtered by query
+parameter, while destinations are under `/tenants/{id}/`. Guessing
+`/tenants/{id}/events` returns a 404 whose body is an HTML page, which reads like
+a broken deployment rather than a wrong path — about an hour went into probing
+route shapes that were never going to exist. The spec is
+`docs/apis/openapi.yaml` in `hookdeck/outpost`; the API host serves no
+`openapi.json`, so fetch it from the repository.
+
+**Read the Outpost prose docs before asserting a feature is absent.** They are
+published at <https://hookdeck.com/docs/outpost> and live as `.mdoc` under
+`docs/content/` in `hookdeck/outpost`. The OpenAPI spec describes shapes, not
+behaviour, and a whole feature can be documented without appearing in it: this
+scenario was written claiming a disabled destination produces no notification,
+which was wrong — `alert.destination.disabled` is a documented **operator
+event**, and it was missed by searching the spec and `internal/alert/` when the
+answer was in `internal/opevents/`. It came within one step of being published
+as a product finding. Being publicly documented cuts the other way too: the
+sandbox has network access, so an agent can read these pages and a scenario may
+fairly depend on them.
+
+**Retry against a disabled destination returns `400 "Destination is disabled"`.**
+Verified against the live API, and it is the mechanism `outpost-002` rests on:
+re-enabling and retrying are ordered by the product, not by the scenario. Worth
+knowing before writing any scenario that assumes held events can be recovered.
 
 **Reset is to pristine, not to empty.** A new Hookdeck project ships with
 default issue triggers. The first acquire snapshots what the project contains,

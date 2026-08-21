@@ -20,6 +20,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { HookdeckClient, HttpMethod, ResourceKind } from './client.js';
+import { waitFor } from './wait-for.js';
 
 export interface SeedResource {
   kind: ResourceKind;
@@ -57,8 +58,45 @@ export interface SeedEvent {
   count?: number;
 }
 
+/**
+ * Outpost state a scenario starts from.
+ *
+ * Kept as its own section rather than folded into `resources`, because Outpost
+ * is a separate service: different base URL, different key, and a tenant model
+ * the gateway does not have. Sharing `ResourceKind` between them would make the
+ * seed file look uniform while the two halves went to different APIs.
+ *
+ * Applied only when an Outpost client is configured. A scenario needing this
+ * should declare `requires: [outpost]` so it reads as skipped rather than
+ * failing on a machine with no Outpost key.
+ */
+export interface OutpostSeed {
+  tenants?: {
+    id: string;
+    topics?: string[];
+    destinations?: {
+      /** Referenced by `after` steps via `$ref:<name>`. */
+      ref?: string;
+      type?: string;
+      topics?: string[] | string;
+      config?: Record<string, unknown>;
+      credentials?: Record<string, unknown>;
+    }[];
+  }[];
+  /** Events published before the agent runs, so history exists to reason about. */
+  publish?: { tenant: string; topic: string; data?: unknown; count?: number }[];
+  /**
+   * Applied after publishing, for the same reason the gateway seed has one:
+   * a resolve scenario starts from history that already went wrong and a
+   * system that is now healthy. Disabling a destination here is how a scenario
+   * expresses "this was switched off after it kept failing".
+   */
+  after?: SeedStep[];
+}
+
 export interface Seed {
   resources?: SeedResource[];
+  outpost?: OutpostSeed;
   events?: SeedEvent[];
   /**
    * Requests applied after every event has been sent.
@@ -238,4 +276,176 @@ function resolvePathRefs(path: string, refs: AppliedSeed['refs']): string {
     if (!target) throw new Error(`seed step references unknown ref "${name}"`);
     return target.id;
   });
+}
+
+/**
+ * Apply the Outpost half of a seed.
+ *
+ * Separate from `applySeed` because it talks to a different service with its
+ * own client, and because a scenario can want gateway state, Outpost state, or
+ * both. The caller decides whether an Outpost client exists; this does not
+ * silently no-op, so a seed asking for Outpost state on a machine without a key
+ * fails loudly rather than running the scenario against nothing.
+ */
+/** How long published events are given to be attempted before the seed gives up. */
+const ATTEMPT_WAIT_MS = 60_000;
+
+type OutpostCall = <T>(
+  method: HttpMethod,
+  path: string,
+  body?: unknown
+) => Promise<T>;
+
+export async function applyOutpostSeed(
+  outpost: OutpostCall,
+  seed: OutpostSeed
+): Promise<{ destinations: Record<string, string> }> {
+  const destinations: Record<string, string> = {};
+
+  for (const tenant of seed.tenants ?? []) {
+    // Delete first, so the seed is idempotent.
+    //
+    // Tenant create is idempotent on the id but destination create is not, so
+    // seeding onto a surviving tenant appends a second destination rather than
+    // replacing the first. The scenario then starts with two, one carrying the
+    // seeded history and one empty, and any scorer reading `[0]` gets whichever
+    // sorted first. That is how `alerting-001` came to publish a wrong result
+    // for twelve days — a leftover from an earlier run that nothing collected.
+    //
+    // Tenants are collected on release, but that runs in a `catch`-and-ignore
+    // so a crashed run leaves them behind. Deleting here does not depend on the
+    // previous run having exited cleanly.
+    await outpost('DELETE', `/tenants/${encodeURIComponent(tenant.id)}`).catch(
+      () => undefined
+    );
+    await outpost('PUT', `/tenants/${encodeURIComponent(tenant.id)}`, {
+      ...(tenant.topics ? { topics: tenant.topics } : {}),
+    });
+
+    for (const destination of tenant.destinations ?? []) {
+      const created = await outpost<{ id: string }>(
+        'POST',
+        `/tenants/${encodeURIComponent(tenant.id)}/destinations`,
+        {
+          type: destination.type ?? 'webhook',
+          topics: destination.topics ?? '*',
+          config: destination.config ?? {},
+          ...(destination.credentials
+            ? { credentials: destination.credentials }
+            : {}),
+        }
+      );
+      if (destination.ref) destinations[destination.ref] = created.id;
+    }
+  }
+
+  const published = new Map<string, number>();
+  for (const event of seed.publish ?? []) {
+    for (let i = 0; i < (event.count ?? 1); i += 1) {
+      await outpost('POST', '/publish', {
+        tenant_id: event.tenant,
+        topic: event.topic,
+        data: event.data ?? {},
+      });
+    }
+    published.set(
+      event.tenant,
+      (published.get(event.tenant) ?? 0) + (event.count ?? 1)
+    );
+  }
+
+  // Wait for the published events to be *attempted* before running `after`.
+  //
+  // Publishing is synchronous and delivery is not, so `after` otherwise lands
+  // while the events are still queued. For this seed's shape that is not a slow
+  // start, it is a different scenario: `after` disables the destination, and a
+  // disabled destination is never attempted, so the failed attempts the scorer
+  // looks for are never created at all. Verified — with a fresh tenant, acme
+  // ended with zero attempts; the run before it showed three only because the
+  // tenant had survived from an earlier run and had been delivering while it
+  // sat there.
+  //
+  // This is the same trap `applySeed` fixes on the gateway side, where
+  // `resolve-002` repaired an endpoint before the first delivery attempt and
+  // left nothing to redeliver. Second time, same cause.
+  await waitForPublishedAttempts(outpost, published);
+
+  for (const step of seed.after ?? []) {
+    const path = step.path.replace(
+      /\$ref:([a-zA-Z0-9_-]+)/g,
+      (_, ref: string) => destinations[ref] ?? `$ref:${ref}`
+    );
+    await outpost(step.method ?? 'PUT', path, step.body);
+  }
+
+  return { destinations };
+}
+
+/**
+ * Poll until each tenant has at least as many delivery attempts as it had
+ * events published.
+ *
+ * Any status counts. The point is that Outpost has *tried*, not that it
+ * succeeded: a seed deliberately pointing at a failing endpoint wants the
+ * failures, and waiting for success would hang forever on exactly the scenarios
+ * that need this most.
+ *
+ * Throws on timeout rather than continuing. A seed that cannot establish its
+ * own precondition has not set up the scenario, and running the agent against
+ * a state that quietly differs from the intended one produces a result that
+ * looks valid and is not — which is worth more than the cost of a failed run.
+ */
+async function waitForPublishedAttempts(
+  outpost: OutpostCall,
+  published: Map<string, number>
+): Promise<void> {
+  for (const [tenant, expected] of published) {
+    if (expected < 1) continue;
+    await waitFor(
+      () => countAttempts(outpost, tenant),
+      (seen) => seen >= expected,
+      {
+        timeoutMs: ATTEMPT_WAIT_MS,
+        description: `${expected} delivery attempt(s) on tenant ${tenant}`,
+      }
+    );
+  }
+}
+
+async function countAttempts(
+  outpost: OutpostCall,
+  tenant: string
+): Promise<number> {
+  const destinations = unwrapModels<{ id?: string }>(
+    await outpost<{ id?: string }[] | { models?: { id?: string }[] }>(
+      'GET',
+      `/tenants/${encodeURIComponent(tenant)}/destinations`
+    )
+  );
+  let total = 0;
+  for (const destination of destinations) {
+    if (!destination.id) continue;
+    total += unwrapModels<unknown>(
+      await outpost<unknown[] | { models?: unknown[] }>(
+        'GET',
+        `/tenants/${encodeURIComponent(tenant)}/destinations/${encodeURIComponent(destination.id)}/attempts`
+      )
+    ).length;
+  }
+  return total;
+}
+
+/**
+ * Outpost list endpoints return `{ pagination, models }`, not `{ data }`.
+ *
+ * Reading the wrong key does not error, it returns nothing — so a wait built on
+ * it would time out on a tenant that was delivering perfectly well. Both
+ * `outpost-001` and `outpost-002` have been caught by this.
+ */
+function unwrapModels<T>(
+  rows: T[] | { models?: T[]; data?: T[] } | undefined
+): T[] {
+  if (!rows) return [];
+  if (Array.isArray(rows)) return rows;
+  return rows.models ?? rows.data ?? [];
 }

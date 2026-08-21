@@ -18,7 +18,7 @@ import type {
 } from '@hookdeck-evals/core';
 import { OutpostClient } from './outpost-client.js';
 import type { ProjectSource } from './project-source.js';
-import { applySeed, readSeed } from './seed.js';
+import { applyOutpostSeed, applySeed, readSeed } from './seed.js';
 
 export interface HookdeckRuntimeOptions {
   projects: ProjectSource;
@@ -59,6 +59,29 @@ export function hookdeckRuntime(options: HookdeckRuntimeOptions): EvalRuntime {
         const outpostClient = outpostKey
           ? new OutpostClient({ apiKey: outpostKey })
           : undefined;
+
+        // The Outpost half of the seed, applied after the client exists.
+        // Loudly rather than silently: a scenario asking for Outpost state on a
+        // machine with no key would otherwise run against nothing and score the
+        // agent for a setup that was never there. Scenarios needing this
+        // declare `requires: [outpost]`, which skips them before they reach
+        // here — so arriving without a client means the requirement is missing,
+        // not that the machine is simply unconfigured.
+        if (args.remoteDir) {
+          const seed = readSeed(args.remoteDir);
+          if (seed?.outpost) {
+            if (!outpostClient) {
+              throw new Error(
+                'seed declares outpost state but OUTPOST_API_KEY is not set; ' +
+                  'the scenario should declare `requires: [outpost]`'
+              );
+            }
+            await applyOutpostSeed(
+              (method, path, body) => outpostClient.request(method, path, body),
+              seed.outpost
+            );
+          }
+        }
 
         const scoringContext: ToolScoringContext = {
           projectId: project.projectId,
