@@ -1,6 +1,7 @@
 ---
 stage: investigate
 suite: regression
+gated_by: discovery
 product:
   - event-gateway
 topic:

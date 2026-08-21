@@ -478,6 +478,35 @@ real catches, so a switch is safe; it is just not worth making, because these
 checks are mostly negatives guarding against invented capabilities and the
 saving is trivial.
 
+**Classify what gates a scenario, and read failures along it.** Every scenario
+carries `gated_by` in its frontmatter: `discovery`, `judgement` or `mixed`. The
+test is one question — **if we improved our docs and skills, could this cell go
+from red to green?** If yes it is `discovery` and a failure is a to-do for us.
+If the agent had everything it needed and chose badly, acting more broadly than
+asked or stopping short, it is `judgement`: no documentation change moves it, so
+it measures the model rather than the product.
+
+This matters because the two are otherwise the same red square with opposite
+implications, and `passed` is the AND of every check — so "could not configure a
+queue" and "configured it and broke something else" are indistinguishable in a
+snapshot. Reporting them as one number invites reading model carefulness as a
+documentation win, or the reverse.
+
+```bash
+pnpm --filter @hookdeck-evals/framework report-results
+```
+
+splits a snapshot along it, and prints the failing check names for `mixed`
+scenarios, where the label alone cannot say which half failed. Run it before
+deciding what to work on from a set of results: on the 78/90 snapshot every one
+of the twelve failures was discovery-gated, which is a different instruction
+from the same twelve split evenly.
+
+Prefer `discovery` when writing new scenarios. A `judgement` scenario is still
+worth publishing as a floor — carefulness on multi-part tickets is a real fact
+about running agents — but it will never move for anything we ship, so a suite
+made of them measures models and calls it a product benchmark.
+
 **Prefer deterministic checks.** Across supabase/evals, 69 of 91 checks are
 deterministic and 22 are judged. A scenario that is entirely judged is a design
 smell.

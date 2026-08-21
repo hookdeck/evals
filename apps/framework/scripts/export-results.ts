@@ -180,6 +180,7 @@ async function readResultFile(
     product: promptData?.product ?? parsedResult.product,
     topic: promptData?.topic ?? parsedResult.topic,
     suite: promptData?.suite ?? parsedResult.suite,
+    gatedBy: promptData?.gatedBy ?? parsedResult.gatedBy,
     interface: promptData?.interface ?? parsedResult.interface,
     cliVersion: promptData?.cliVersion ?? parsedResult.cliVersion,
     passed: parsedResult.passed === true,

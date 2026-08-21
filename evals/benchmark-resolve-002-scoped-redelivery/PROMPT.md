@@ -1,6 +1,7 @@
 ---
 stage: resolve
 suite: benchmark
+gated_by: mixed
 product:
   - event-gateway
 topic:
