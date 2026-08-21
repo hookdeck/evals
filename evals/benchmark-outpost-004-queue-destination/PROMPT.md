@@ -1,6 +1,7 @@
 ---
 stage: build
 suite: benchmark
+gated_by: mixed
 product:
   - outpost
 topic:
