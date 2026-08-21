@@ -1,6 +1,7 @@
 ---
 stage: investigate
 suite: benchmark
+gated_by: mixed
 product:
   - event-gateway
 topic:

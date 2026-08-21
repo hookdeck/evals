@@ -1,6 +1,7 @@
 ---
 stage: resolve
 suite: benchmark
+gated_by: discovery
 product:
   - event-gateway
 topic:
