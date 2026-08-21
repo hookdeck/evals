@@ -190,6 +190,26 @@ export type EvalMetadata = {
    */
   skills?: string[];
   /**
+   * Skills added to the experiment's list for this eval, **only when the
+   * experiment already has skills**.
+   *
+   * For product skills a scenario needs and its experiment does not carry.
+   * Outpost scenarios are the case: `+skills` experiments load `hookdeck` and
+   * `event-gateway`, so an Outpost scenario got a router plus the *wrong*
+   * product's skill, whose only Outpost content is a line telling the agent to
+   * go elsewhere.
+   *
+   * Not `skills`, which replaces the experiment's list outright — including for
+   * a `-no-skills` experiment, which would hand the baseline arm the very skill
+   * it exists to do without. And not adding `outpost` to the experiments
+   * themselves, which would change the skill set for all seventeen scenarios
+   * and make every published `+skills` row non-comparable to answer a question
+   * about four of them.
+   *
+   * Empty experiment list stays empty: that is what makes this safe.
+   */
+  extraSkills?: string[];
+  /**
    * Skips installing the real Hookdeck CLI into the sandbox before the agent
    * starts (sandbox evals only). Defaults to false. Set true only for
    * scenarios whose prompt has the agent install the CLI itself — the
@@ -220,6 +240,7 @@ export const evalMetadataSchema = z.object({
   hostedProject: z.union([z.boolean(), z.stringbool()]).optional(),
   requires: z.array(evalRequirementSchema).optional(),
   skills: z.array(z.string().min(1)).optional(),
+  extraSkills: z.array(z.string().min(1)).optional(),
   skipCliInstall: z.union([z.boolean(), z.stringbool()]).optional(),
 });
 
@@ -307,6 +328,9 @@ export const evalFrontmatterSchema = z.preprocess((raw) => {
     // in apps/framework/harness/run-eval.ts).
     skills: Array.isArray(data.skills)
       ? toIdentifierList(data.skills)
+      : undefined,
+    extraSkills: Array.isArray(data.extraSkills ?? data.extra_skills)
+      ? toIdentifierList((data.extraSkills ?? data.extra_skills) as unknown[])
       : undefined,
     skipCliInstall: data.skipCliInstall,
   };
