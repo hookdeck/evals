@@ -49,6 +49,33 @@ export const evalTopicSchema = z.enum([
 export const EVAL_TOPICS = evalTopicSchema.options;
 export type EvalTopic = z.infer<typeof evalTopicSchema>;
 
+/**
+ * What actually decides whether an agent passes this scenario.
+ *
+ * The benchmark's axis is skills, which is to say documentation: every
+ * experiment gets the same CLI and the same API key, so a row differs from its
+ * twin by what the agent could find out and nothing else. That makes the useful
+ * question about any scenario **"if we improved our docs and skills, could this
+ * cell go from red to green?"**
+ *
+ * - `discovery` — yes. The agent fails because it could not find out how, which
+ *   is ours to fix and is what the whole exercise is for.
+ * - `judgement` — no. The agent had everything it needed and chose badly: acted
+ *   more broadly than asked, or stopped short. No documentation change moves
+ *   this, so it measures the model rather than the product.
+ * - `mixed` — the scenario contains both, and a red cell does not say which.
+ *
+ * Recorded because the two are otherwise the same red square while having
+ * opposite implications. A discovery failure is a to-do for us; a judgement
+ * failure is a fact about running agents against any product, worth publishing
+ * as a floor but not something shipping docs will change. Reporting them as one
+ * number invites reading model carefulness as a documentation win, or the
+ * reverse.
+ */
+export const evalGatedBySchema = z.enum(['discovery', 'judgement', 'mixed']);
+export const EVAL_GATED_BY = evalGatedBySchema.options;
+export type EvalGatedBy = z.infer<typeof evalGatedBySchema>;
+
 export const evalSuiteSchema = z.enum(['benchmark', 'regression', 'other']);
 export const EVAL_SUITES = evalSuiteSchema.options;
 export type EvalSuite = z.infer<typeof evalSuiteSchema>;
@@ -115,6 +142,12 @@ export type EvalMetadata = {
   product: EvalProduct[];
   topic: EvalTopic[];
   suite: EvalSuite;
+  /**
+   * What decides pass or fail here — see `evalGatedBySchema`. Optional so
+   * existing scenarios stay valid; unset reads as "not yet classified" rather
+   * than as any particular kind.
+   */
+  gatedBy?: EvalGatedBy;
   interface?: EvalInterface;
   /** Hookdeck CLI version this scenario requires (sandbox evals only). */
   cliVersion?: string;
@@ -176,6 +209,7 @@ export const evalMetadataSchema = z.object({
   product: z.array(evalProductSchema).min(1),
   topic: z.array(evalTopicSchema).min(1),
   suite: evalSuiteSchema,
+  gatedBy: evalGatedBySchema.optional(),
   interface: evalInterfaceSchema.optional(),
   cliVersion: cliVersionSchema.optional(),
   services: z.array(z.string().min(1)).optional(),
@@ -250,6 +284,10 @@ export const evalFrontmatterSchema = z.preprocess((raw) => {
     product: toTokenList(data.product ?? data.products),
     topic: toTokenList(data.topic ?? data.topics),
     suite: toToken(data.suite),
+    // `gated_by` as well as `gatedBy`: the rest of this frontmatter is
+    // snake-case in the files, and a key silently dropped here is validated as
+    // absent rather than rejected — which is how `requires` came to be ignored.
+    gatedBy: toToken(data.gatedBy ?? data.gated_by),
     interface: toToken(data.interface),
     cliVersion: data.cliVersion,
     // `services: []` means database only; an omitted key means the full stack.
@@ -386,6 +424,7 @@ const evalResultShape = {
   product: z.array(evalProductSchema).optional(),
   topic: z.array(evalTopicSchema).optional(),
   suite: evalSuiteSchema.optional(),
+  gatedBy: evalGatedBySchema.optional(),
   interface: evalInterfaceSchema.optional(),
   cliVersion: cliVersionSchema.optional(),
   passed: z.boolean().optional(),

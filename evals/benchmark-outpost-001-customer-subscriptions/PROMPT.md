@@ -1,6 +1,7 @@
 ---
 stage: build
 suite: benchmark
+gated_by: discovery
 product:
   - outpost
 topic:
