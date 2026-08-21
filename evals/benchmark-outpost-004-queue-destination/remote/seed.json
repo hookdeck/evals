@@ -1,0 +1,34 @@
+{
+  "outpost": {
+    "tenants": [
+      {
+        "id": "acme",
+        "topics": ["orders", "retries"],
+        "destinations": [
+          {
+            "ref": "acme-webhook",
+            "type": "webhook",
+            "topics": ["orders", "retries"],
+            "config": {
+              "url": "https://mock.hookdeck.com/api/v1/acme/orders"
+            }
+          }
+        ]
+      },
+      {
+        "id": "globex",
+        "topics": ["orders"],
+        "destinations": [
+          {
+            "ref": "globex-webhook",
+            "type": "webhook",
+            "topics": ["orders"],
+            "config": {
+              "url": "https://mock.hookdeck.com/api/v1/globex/orders"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

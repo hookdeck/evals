@@ -694,6 +694,21 @@ destination is equivalent in configuration but not identical. Acceptable on a
 dedicated eval project, and worth knowing before pointing any of this at one
 that is not.
 
+**Outpost validates a destination's shape, not its reachability.** A
+well-formed but entirely fictional SQS queue and key pair is accepted;
+`queue_url: "not-a-url"` is rejected with `422 "config.queue_url failed pattern
+validation"`. That is what makes `outpost-004` scoreable without a live queue:
+the API itself covers the part real infrastructure would add least to, and
+standing up a real queue would mean cloud credentials inside the agent sandbox
+and an external dependency that can fail a run for reasons no agent caused.
+Delivery is already proven against webhook destinations elsewhere.
+
+**Destination credentials are redacted on read** — `AKIA****************` — so a
+scorer can assert that credentials were supplied and never which ones. Same
+limitation as Hookdeck source `config.auth`. Presence is still worth checking:
+an agent thinking in webhook shapes puts the access key in `config` beside the
+queue URL and leaves `credentials` empty.
+
 **Reset is to pristine, not to empty.** A new Hookdeck project ships with
 default issue triggers. The first acquire snapshots what the project contains,
 and every reset deletes only what a run added.
