@@ -102,12 +102,63 @@ export function hookdeckRuntime(options: HookdeckRuntimeOptions): EvalRuntime {
         return {
           mcpServers,
           promptAddendum: [
-            // The agent is told the project exists and is authenticated, and
-            // nothing else. Which docs to read, and how to do the task, is what
-            // the scenario measures.
+            // The agent is told what its environment contains, and nothing
+            // else. Which docs to read, and how to do the task, is what the
+            // scenario measures.
             'You have a Hookdeck project. The Hookdeck CLI is installed and ' +
               'HOOKDECK_API_KEY is set in your environment, so both the CLI ' +
               'and the REST API are available to you.',
+            // Named because it is there.
+            //
+            // This sentence exists to make the one above true. The addendum's
+            // job is disclosure — it already says a project exists and how it
+            // is authenticated — and it was silently omitting a second project
+            // that the harness injects whenever a scenario needs Outpost. That
+            // is not a discovery test we designed; it is an incomplete
+            // sentence, and "so both the CLI and the REST API are available to
+            // you" actively reads as *this is your access*.
+            //
+            // Measured on 21 August, before this line existed: across twelve
+            // baseline cells on four Outpost scenarios, `OUTPOST_API_KEY` was
+            // used as a credential exactly zero times and every cell failed.
+            // Nine of the twelve agents believed they had succeeded, having
+            // built the task on `api.hookdeck.com`. Two reported, with
+            // authority, that the harness had given them the wrong credential.
+            // The skill was the only artefact in the sandbox naming the
+            // variable, so the skills delta could not be separated from
+            // credential disclosure — the run measured our own omission.
+            //
+            // One credential type, two projects. Both keys authenticate
+            // `api.hookdeck.com` and the CLI; only the Outpost project's key
+            // reaches the Outpost subdomain, and a key from another project
+            // gets a `404` there rather than anything that says why (#39).
+            //
+            // The wording points at the API rather than the CLI deliberately,
+            // and that is a statement about the pinned version rather than a
+            // permanent one. Against `HOOKDECK_CLI_VERSION` 2.5.0 the Outpost
+            // key authenticates the CLI and selects the Outpost project —
+            // verified — but there is nothing useful to do with it there, so
+            // the API is the only honest route to point at.
+            //
+            // `3.0.0-beta.1` is published (npm dist-tag `beta`; `latest` is
+            // still 2.5.0) and adds managing an Outpost project from the CLI.
+            // When that pin moves, this sentence becomes incomplete rather
+            // than wrong, and the CLI becomes a legitimate answer for Outpost
+            // work. A CLI bump also changes the product under test, so results
+            // either side of it are not comparable — see Releases in
+            // AGENTS.md.
+            // A developer using Outpost knows they use it and has the key in
+            // their environment; nobody learns their own credentials by
+            // enumerating env vars.
+            ...(outpostClient
+              ? [
+                  'You also have a Hookdeck Outpost project, and ' +
+                    'OUTPOST_API_KEY is set in your environment. It is an ' +
+                    'ordinary Hookdeck project API key scoped to that ' +
+                    'project: use it for the Outpost API, which has its own ' +
+                    'subdomain.',
+                ]
+              : []),
             ...(options.mcpServers ?? [])
               .map((s) => s.promptAddendum)
               .filter((p): p is string => Boolean(p)),
