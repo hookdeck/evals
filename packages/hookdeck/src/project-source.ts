@@ -84,6 +84,7 @@ export class FixedProjectSource implements ProjectSource {
   private cachedOutpostClient?: OutpostClient;
   private outpostTenantsAtAcquire?: Set<string>;
   private outpostConfigAtAcquire?: Record<string, unknown>;
+  private operatorEventDestinationsAtAcquire?: OperatorEventDestination[];
 
   constructor(options: FixedProjectSourceOptions) {
     this.options = options;
@@ -142,6 +143,8 @@ export class FixedProjectSource implements ProjectSource {
     await this.resetToPristine(snapshot);
     this.outpostTenantsAtAcquire = await this.listOutpostTenants();
     this.outpostConfigAtAcquire = await this.readOutpostConfig();
+    this.operatorEventDestinationsAtAcquire =
+      await this.readOperatorEventDestinations();
     return {
       projectId: this.projectId,
       apiKey: this.apiKey,
@@ -165,6 +168,7 @@ export class FixedProjectSource implements ProjectSource {
       // the next acquire will clean up regardless.
     }
     await this.releaseOutpostTenants();
+    await this.restoreOperatorEventDestinations();
     await this.restoreOutpostConfig();
   }
 
@@ -281,6 +285,118 @@ export class FixedProjectSource implements ProjectSource {
     }
   }
 
+  /**
+   * The project's operator event destinations, or undefined when Outpost is off.
+   *
+   * Project-level rather than tenant-level, and therefore outside everything
+   * else that gets reset. A scenario about configuring alerting has to start
+   * from "no alerting configured", which means deleting whatever the project
+   * already has — so this captures it first and `restoreOperatorEventDestinations`
+   * puts it back.
+   *
+   * A project that has never had one answers `404 "tenant not found"`, because
+   * the backing tenant is created lazily on the first create. That is an empty
+   * list, not an error.
+   */
+  private async readOperatorEventDestinations(): Promise<
+    OperatorEventDestination[] | undefined
+  > {
+    const outpost = this.outpostClient;
+    if (!outpost) return undefined;
+    try {
+      const rows = await outpost.request<
+        OperatorEventDestination[] | { models?: OperatorEventDestination[] }
+      >('GET', '/operator-events/destinations');
+      return Array.isArray(rows) ? rows : (rows.models ?? []);
+    } catch (error) {
+      // A 404 is the lazily-created tenant described above: genuinely none.
+      // Anything else means the baseline could not be read, and that is not the
+      // same thing. Returning `[]` for both would tell `restore` that the
+      // project started with no destinations, and it would then delete the ones
+      // it found — destroying alerting this run did not configure. Same
+      // reasoning as the tenant baseline, and the same answer: without a
+      // baseline, do nothing.
+      if (String((error as Error).message).includes('404')) return [];
+      return undefined;
+    }
+  }
+
+  /**
+   * Put the project's operator event destinations back as they were.
+   *
+   * Deletes what this lease added and recreates what it removed. Both halves
+   * matter: a leftover destination from a run makes the next run's scenario
+   * pass before the agent does anything, and a deleted one silently turns off
+   * the project's real alerting.
+   *
+   * **Recreating changes the signing secret.** The secret is generated on
+   * create and there is no way to supply it, so a restored destination is
+   * equivalent in configuration but not identical, and anything verifying
+   * signatures against the old secret would start rejecting. That is acceptable
+   * on a dedicated eval project and would not be elsewhere.
+   */
+  private async restoreOperatorEventDestinations(): Promise<void> {
+    const outpost = this.outpostClient;
+    const before = this.operatorEventDestinationsAtAcquire;
+    if (!outpost) return;
+    if (!before) {
+      // Undefined means the acquire-time read failed, not that there were none.
+      console.warn(
+        'outpost operator events: no baseline was captured, so the project was ' +
+          'left as this run found it rather than risk deleting a destination ' +
+          'this run did not create'
+      );
+      return;
+    }
+
+    try {
+      const now = (await this.readOperatorEventDestinations()) ?? [];
+      const keep = new Set(before.map((d) => d.id).filter(Boolean));
+
+      // Each one independently. A single failure must not abandon the rest —
+      // and in particular a delete that fails must not stop the recreates,
+      // because that is the half that puts the project's real alerting back.
+      // `restoreOutpostConfig` learned the same lesson from a batched PATCH.
+      for (const destination of now) {
+        if (!destination.id || keep.has(destination.id)) continue;
+        try {
+          await outpost.request(
+            'DELETE',
+            `/operator-events/destinations/${destination.id}`
+          );
+        } catch (error) {
+          console.warn(
+            `outpost operator events: could not delete ${destination.id}, which ` +
+              `this run added (${(error as Error).message})`
+          );
+        }
+      }
+
+      const present = new Set(now.map((d) => d.id).filter(Boolean));
+      for (const destination of before) {
+        if (destination.id && present.has(destination.id)) continue;
+        try {
+          await outpost.request('POST', '/operator-events/destinations', {
+            type: destination.type ?? 'webhook',
+            ...(destination.topics ? { topics: destination.topics } : {}),
+            config: destination.config ?? {},
+          });
+        } catch (error) {
+          console.warn(
+            'outpost operator events: could not recreate the destination for ' +
+              `${String(destination.config?.url ?? destination.id)}, so the project ` +
+              `is left without alerting it had before this run (${(error as Error).message})`
+          );
+        }
+      }
+    } catch (error) {
+      console.warn(
+        "outpost operator events: could not restore the project's destinations, " +
+          `so the next run may not start from the state this one found (${(error as Error).message})`
+      );
+    }
+  }
+
   private async releaseOutpostTenants(): Promise<void> {
     const outpost = this.outpostClient;
     if (!outpost || !this.outpostTenantsAtAcquire) return;
@@ -345,6 +461,14 @@ export class FixedProjectSource implements ProjectSource {
       }
     }
   }
+}
+
+export interface OperatorEventDestination {
+  id?: string;
+  type?: string;
+  topics?: string[];
+  config?: Record<string, unknown>;
+  disabled_at?: string | null;
 }
 
 /**

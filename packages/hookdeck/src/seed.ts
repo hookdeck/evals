@@ -71,6 +71,19 @@ export interface SeedEvent {
  * failing on a machine with no Outpost key.
  */
 export interface OutpostSeed {
+  /**
+   * Delete the project's operator event destinations before seeding.
+   *
+   * For scenarios about configuring alerting, which have to start from none
+   * configured. The project is shared and long-lived, so it accumulates real
+   * ones — at the time of writing it carried a destination subscribed to `*`,
+   * which would have made "you are not being alerted" false and let a correct
+   * agent answer that this was already set up.
+   *
+   * `FixedProjectSource` captures them at acquire and restores them on release,
+   * so this removes them for the run rather than for good.
+   */
+  clearOperatorEventDestinations?: boolean;
   tenants?: {
     id: string;
     topics?: string[];
@@ -339,6 +352,10 @@ export async function applyOutpostSeed(
     }
   }
 
+  if (seed.clearOperatorEventDestinations) {
+    await clearOperatorEventDestinations(outpost);
+  }
+
   const published = new Map<string, number>();
   for (const event of seed.publish ?? []) {
     for (let i = 0; i < (event.count ?? 1); i += 1) {
@@ -448,4 +465,36 @@ function unwrapModels<T>(
   if (!rows) return [];
   if (Array.isArray(rows)) return rows;
   return rows.models ?? rows.data ?? [];
+}
+
+/**
+ * Remove every operator event destination on the project.
+ *
+ * A project that has never had one answers `404 "tenant not found"` on the
+ * list, because the backing tenant is created lazily on the first create. That
+ * is an empty list and not a failure — treating it as one would throw on
+ * exactly the clean project this is trying to produce.
+ */
+async function clearOperatorEventDestinations(
+  outpost: OutpostCall
+): Promise<void> {
+  let existing: { id?: string }[] = [];
+  try {
+    existing = unwrapModels<{ id?: string }>(
+      await outpost<{ id?: string }[] | { models?: { id?: string }[] }>(
+        'GET',
+        '/operator-events/destinations'
+      )
+    );
+  } catch {
+    return;
+  }
+
+  for (const destination of existing) {
+    if (!destination.id) continue;
+    await outpost(
+      'DELETE',
+      `/operator-events/destinations/${encodeURIComponent(destination.id)}`
+    );
+  }
 }

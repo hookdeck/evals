@@ -179,6 +179,17 @@ describe('FixedProjectSource Outpost cleanup', () => {
       const u = new URL(String(url));
       if (u.hostname.includes('outpost')) {
         const method = init?.method ?? 'GET';
+        // These tests are about tenants. The real API serves several unrelated
+        // collections under the same host — operator event destinations and the
+        // managed config among them — and answering the tenant list for every
+        // path made this fake report tenants as operator event destinations,
+        // which the cleanup then dutifully deleted.
+        if (u.pathname.includes('/operator-events')) {
+          return new Response(JSON.stringify({ models: [] }), { status: 200 });
+        }
+        if (u.pathname.endsWith('/config')) {
+          return new Response(JSON.stringify({}), { status: 200 });
+        }
         if (method === 'DELETE') {
           const id = u.pathname.split('/').pop() as string;
           state.delete(id);
@@ -230,6 +241,117 @@ describe('FixedProjectSource Outpost cleanup', () => {
     } finally {
       if (prior !== undefined) process.env.OUTPOST_API_KEY = prior;
     }
+  });
+
+  /**
+   * Operator event destinations are project-level and outlive a run, so a
+   * scenario that clears them to start from "no alerting configured" has to put
+   * them back. Both directions are load-bearing: a leftover makes the next run
+   * pass before the agent acts, and a lost one silently turns off real alerting.
+   */
+  function fakeOperatorEvents(initial: { id: string; url: string }[]) {
+    let rows = [...initial];
+    const created: unknown[] = [];
+    const fetchImpl = vi.fn(async (url: string | URL, init?: RequestInit) => {
+      const u = new URL(String(url));
+      if (u.pathname.includes('/operator-events/destinations')) {
+        const method = init?.method ?? 'GET';
+        if (method === 'DELETE') {
+          const id = u.pathname.split('/').pop() as string;
+          rows = rows.filter((r) => r.id !== id);
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+          });
+        }
+        if (method === 'POST') {
+          const body = JSON.parse(String(init?.body ?? '{}'));
+          created.push(body);
+          rows.push({ id: `des_new_${created.length}`, url: body.config?.url });
+          return new Response(JSON.stringify(rows[rows.length - 1]), {
+            status: 200,
+          });
+        }
+        return new Response(
+          JSON.stringify(
+            rows.map((r) => ({ id: r.id, config: { url: r.url } }))
+          ),
+          { status: 200 }
+        );
+      }
+      if (u.hostname.includes('outpost')) {
+        return new Response(JSON.stringify({ models: [] }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ models: [] }), { status: 200 });
+    });
+    return { fetchImpl, created, rows: () => rows };
+  }
+
+  it('restores operator event destinations a run cleared', async () => {
+    const outpost = fakeOperatorEvents([
+      { id: 'des_real', url: 'https://alerts.example.com' },
+    ]);
+    vi.stubGlobal('fetch', outpost.fetchImpl);
+    const source = new FixedProjectSource({
+      apiKey: 'k',
+      outpostApiKey: 'o',
+      snapshotPath: tempSnapshotPath(),
+    });
+
+    const lease = await source.acquire();
+    // What `clearOperatorEventDestinations` does, then what an agent does.
+    await outpost.fetchImpl(
+      'https://api.outpost.hookdeck.com/2025-07-01/operator-events/destinations/des_real',
+      { method: 'DELETE' }
+    );
+    await outpost.fetchImpl(
+      'https://api.outpost.hookdeck.com/2025-07-01/operator-events/destinations',
+      {
+        method: 'POST',
+        body: JSON.stringify({ config: { url: 'https://agent.example.com' } }),
+      }
+    );
+    await source.release(lease);
+
+    const urls = outpost.rows().map((r) => r.url);
+    expect(urls).toContain('https://alerts.example.com');
+    expect(urls).not.toContain('https://agent.example.com');
+  });
+
+  it('leaves operator event destinations alone when the baseline could not be read', async () => {
+    // Not the same as "there were none": deleting on an unreadable baseline
+    // would destroy alerting this run did not configure.
+    let listed = 0;
+    const fetchImpl = vi.fn(async (url: string | URL, init?: RequestInit) => {
+      const u = new URL(String(url));
+      const method = init?.method ?? 'GET';
+      if (u.pathname.includes('/operator-events/destinations')) {
+        if (method === 'GET') {
+          listed += 1;
+          if (listed === 1) return new Response('boom', { status: 500 });
+          return new Response(
+            JSON.stringify([
+              { id: 'des_real', config: { url: 'https://alerts.example.com' } },
+            ]),
+            { status: 200 }
+          );
+        }
+        deletedOperatorIds.push(u.pathname.split('/').pop() as string);
+        return new Response(JSON.stringify({ success: true }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ models: [] }), { status: 200 });
+    });
+    const deletedOperatorIds: string[] = [];
+    vi.stubGlobal('fetch', fetchImpl);
+    const source = new FixedProjectSource({
+      apiKey: 'k',
+      outpostApiKey: 'o',
+      snapshotPath: tempSnapshotPath(),
+    });
+
+    const lease = await source.acquire();
+    await source.release(lease);
+
+    expect(deletedOperatorIds).toEqual([]);
   });
 
   it('deletes nothing when the baseline could not be read', async () => {

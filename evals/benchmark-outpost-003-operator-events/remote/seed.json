@@ -1,0 +1,21 @@
+{
+  "outpost": {
+    "clearOperatorEventDestinations": true,
+    "tenants": [
+      {
+        "id": "acme",
+        "topics": ["orders", "retries"],
+        "destinations": [
+          {
+            "ref": "acme-orders",
+            "type": "webhook",
+            "topics": ["orders"],
+            "config": {
+              "url": "https://mock.hookdeck.com/api/v1/acme/orders"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
