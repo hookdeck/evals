@@ -83,6 +83,7 @@ export class FixedProjectSource implements ProjectSource {
   private cachedClient?: HookdeckClient;
   private cachedOutpostClient?: OutpostClient;
   private outpostTenantsAtAcquire?: Set<string>;
+  private outpostConfigAtAcquire?: Record<string, unknown>;
 
   constructor(options: FixedProjectSourceOptions) {
     this.options = options;
@@ -140,6 +141,7 @@ export class FixedProjectSource implements ProjectSource {
     const snapshot = await this.loadOrCaptureSnapshot();
     await this.resetToPristine(snapshot);
     this.outpostTenantsAtAcquire = await this.listOutpostTenants();
+    this.outpostConfigAtAcquire = await this.readOutpostConfig();
     return {
       projectId: this.projectId,
       apiKey: this.apiKey,
@@ -163,6 +165,7 @@ export class FixedProjectSource implements ProjectSource {
       // the next acquire will clean up regardless.
     }
     await this.releaseOutpostTenants();
+    await this.restoreOutpostConfig();
   }
 
   /**
@@ -183,6 +186,101 @@ export class FixedProjectSource implements ProjectSource {
    * visible rather than silent, because a leftover tenant makes
    * `outpost-001`'s first check pass without the agent doing anything.
    */
+  /**
+   * Outpost's managed configuration, or undefined when Outpost is off.
+   *
+   * Deployment-level rather than project-level, which is why it is captured at
+   * all: it is the one piece of state a scenario can change that no reset
+   * touches. `/config` is only served by the managed version, so a self-hosted
+   * or unreachable deployment answers an error, and that is not a reason to
+   * fail an acquire — it just means there is nothing to restore.
+   */
+  private async readOutpostConfig(): Promise<
+    Record<string, unknown> | undefined
+  > {
+    const outpost = this.outpostClient;
+    if (!outpost) return undefined;
+    try {
+      return await outpost.request<Record<string, unknown>>('GET', '/config');
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * Put back any managed config value this lease changed.
+   *
+   * Necessary because Outpost's managed config is **deployment-wide**. Tenants
+   * are namespaced per scenario and a leaked one is at least visible; a changed
+   * config key is neither. `OPERATOR_EVENTS_TOPICS` left set by one run silently
+   * changes what every later run is configured with, including runs of other
+   * scenarios, and nothing in the scoreboard would show it.
+   *
+   * Only keys that actually differ are written back, and only when the value
+   * captured at acquire is safe to replay. Some values come back redacted or
+   * masked, and PATCHing a redacted value would write the mask in as the real
+   * setting — turning a tidy-up into the corruption it was meant to prevent. A
+   * key that cannot be restored safely is left alone and reported, because a
+   * loud leftover is better than a quiet wrong value.
+   */
+  private async restoreOutpostConfig(): Promise<void> {
+    const outpost = this.outpostClient;
+    const before = this.outpostConfigAtAcquire;
+    if (!outpost || !before) return;
+
+    try {
+      const now = await outpost.request<Record<string, unknown>>(
+        'GET',
+        '/config'
+      );
+      const patch: Record<string, unknown> = {};
+      const unsafe: string[] = [];
+
+      for (const [key, original] of Object.entries(before)) {
+        if (JSON.stringify(now[key]) === JSON.stringify(original)) continue;
+        if (looksRedacted(original)) {
+          unsafe.push(key);
+          continue;
+        }
+        patch[key] = original;
+      }
+
+      if (unsafe.length > 0) {
+        console.warn(
+          `outpost config: ${unsafe.join(', ')} changed during this run but the ` +
+            'value captured at acquire is redacted, so it was left as-is rather ' +
+            'than restored to a mask'
+        );
+      }
+
+      // One key at a time, not one batch.
+      //
+      // Some keys are read-only even though they are returned by `GET /config`
+      // — `OPERATOR_EVENTS_TOPICS` answers `422 ... cannot be set directly`,
+      // because on the managed version it is owned by the operator event
+      // destinations rather than by config. A single batched PATCH containing
+      // one such key is rejected in full, so an unrelated key that genuinely
+      // needed restoring is silently left dirty. Measured: the first version of
+      // this method restored nothing at all and said nothing about it.
+      for (const [key, value] of Object.entries(patch)) {
+        try {
+          await outpost.request('PATCH', '/config', { [key]: value });
+        } catch (error) {
+          console.warn(
+            `outpost config: could not restore ${key} — it is still set to this ` +
+              `run's value for the next one (${(error as Error).message})`
+          );
+        }
+      }
+    } catch (error) {
+      // Never fail a paid-for run here, but do not be silent about it either:
+      // the whole point of this method is that a leftover is invisible.
+      console.warn(
+        `outpost config: restore did not run (${(error as Error).message})`
+      );
+    }
+  }
+
   private async releaseOutpostTenants(): Promise<void> {
     const outpost = this.outpostClient;
     if (!outpost || !this.outpostTenantsAtAcquire) return;
@@ -247,4 +345,16 @@ export class FixedProjectSource implements ProjectSource {
       }
     }
   }
+}
+
+/**
+ * Does this value look like a mask rather than a setting?
+ *
+ * Deliberately broad. A false positive leaves a key unrestored and says so; a
+ * false negative writes `********` in as a live credential.
+ */
+function looksRedacted(value: unknown): boolean {
+  return (
+    typeof value === 'string' && /^\*+$|^\[redacted\]$|\*{4,}/i.test(value)
+  );
 }
