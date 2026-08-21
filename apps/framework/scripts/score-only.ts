@@ -179,7 +179,16 @@ async function scoreRepeatedly(
         error: error instanceof Error ? error.message : String(error),
       });
     } finally {
-      await session[Symbol.asyncDispose]?.();
+      // `close()`, not `Symbol.asyncDispose`. The session does not implement
+      // the disposable protocol, so `session[Symbol.asyncDispose]?.()` was an
+      // optional call on `undefined` — a silent no-op that type-checked, ran
+      // clean, and released nothing.
+      //
+      // Every iteration therefore kept its lease: no reset to pristine, no
+      // Outpost tenant cleanup, no config restore. It surfaced when a scenario
+      // that clears the project's operator event destinations left them
+      // cleared, because the release that would have put them back never ran.
+      await session.close();
     }
 
     const latest = verdicts[verdicts.length - 1];

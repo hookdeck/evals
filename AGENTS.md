@@ -632,6 +632,39 @@ Verified against the live API, and it is the mechanism `outpost-002` rests on:
 re-enabling and retrying are ordered by the product, not by the scenario. Worth
 knowing before writing any scenario that assumes held events can be recovered.
 
+**A session is closed with `close()`, not `Symbol.asyncDispose`.** The session
+object does not implement the disposable protocol, so
+`session[Symbol.asyncDispose]?.()` is an optional call on `undefined`: it
+type-checks, runs clean, and releases nothing. `score-only` did exactly that
+from the day it was written, so every iteration kept its lease — no reset to
+pristine, no Outpost tenant cleanup, no config restore. It stayed invisible
+because the *next* acquire resets the Hookdeck project anyway, so the only
+damage was to state that acquire does not cover. It surfaced when a scenario
+that clears the project's operator event destinations left them cleared for
+good. If a throwaway script needs a session, close it the same way.
+
+**The operator events API is real, and in no published spec.**
+`/operator-events/destinations` (list, create, get, update, delete, enable,
+disable), `/operator-events/destination-types`, `/operator-events/events`,
+`/operator-events/attempts` and `/operator-events/retry`, on the Outpost API
+host with the Outpost key. None of it is in Hookdeck's OpenAPI, in Outpost's
+`docs/apis/openapi.yaml`, or in the rendered reference at
+`/docs/outpost/api` — see hookdeck/evals#34. Two traps in one: a `GET` on a
+project that has never had a destination answers `404 "tenant not found"`,
+because the backing tenant is created lazily on first create, so an empty
+resource is easily read as a missing route; and `PATCH /config` rejects
+`OPERATOR_EVENTS_TOPICS` with a 422 saying it is owned by those destinations,
+which is the only pointer the product gives that the resource exists.
+
+**The shared project carries real operator event destinations.** It is
+long-lived, and at the time of writing had one subscribed to `*`. A scenario
+about configuring alerting has to start from none, so `clearOperatorEventDestinations`
+deletes them and `FixedProjectSource` puts them back on release. Recreating
+changes the signing secret — there is no way to supply it — so a restored
+destination is equivalent in configuration but not identical. Acceptable on a
+dedicated eval project, and worth knowing before pointing any of this at one
+that is not.
+
 **Reset is to pristine, not to empty.** A new Hookdeck project ships with
 default issue triggers. The first acquire snapshots what the project contains,
 and every reset deletes only what a run added.
