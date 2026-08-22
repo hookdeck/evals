@@ -331,6 +331,34 @@ agent runs inside a container, which needs an API key the same way CI does.
 
 ## Conventions
 
+**Every product finding this benchmark has produced came from a transcript.
+None came from the scoreboard.** Two days of Outpost runs produced four: an API
+answering `404` where `401` was meant, a skill that never names the credential,
+a docs page whose environment variables do not exist, and a harness omission of
+our own that failed twelve baseline cells and read as a skills result. A pass
+rate cannot express any of them. It cannot even separate "the agent could not"
+from "we misled it" — which is the difference between a to-do for the product
+and a bug in our instrument.
+
+So the scoreboard says *which* cells to read and never *what happened*. Run
+
+```bash
+pnpm --filter @hookdeck-evals/framework triage
+```
+
+after a run. It reads what the harness already records and flags the cells where
+the number is not the whole story: an unclean exit (a killed container arrives
+with a plausible partial score, and one was written as a `2/6` agent failure), a
+run that failed while its own report claims success (nine of twelve baselines in
+one run, every one of them confidently building on the wrong product), a
+declared credential the agent never referenced, a skill offered and never
+opened, a baseline that self-installed a product skill, and a cell whose only
+green checks are the ones an idle agent satisfies.
+
+Nothing flagged is not the same as nothing to learn. It means no cell tripped a
+signal the script knows about, and the signals it knows about are the ones that
+have already cost us something.
+
 **When a scorer disagrees with an agent, read the agent's report first.** It has
 been the cheapest answer every time and it keeps getting skipped. It named the
 credential it could not fetch, and the variable name it looked for
