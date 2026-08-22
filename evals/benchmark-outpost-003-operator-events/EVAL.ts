@@ -13,20 +13,31 @@ import type {
  * with none is silent by design rather than by fault.
  *
  * What makes it worth measuring is where the answer lives. Operator events are
- * configured over the API at `/operator-events/destinations`, and those routes
- * appear in neither published OpenAPI spec nor the API reference at
- * `/docs/outpost/api`; the prose page tells managed users to use the dashboard.
- * An agent has no source of truth except what it can read, so this measures
- * whether a documented-by-UI-only capability is reachable at all. See
+ * configured at `/operator-events/destinations`, and those routes appear in
+ * neither published OpenAPI spec nor the API reference at `/docs/outpost/api`;
+ * the prose page tells managed users to use the dashboard. See
  * hookdeck/evals#34.
  *
- * **Expect every agent to fail this initially, and publish it anyway.** That is
- * a floor rather than a flat result: the scenario is passable, the route exists
- * and works, and the only thing missing is documentation. If #34 is fixed and
- * the next run turns green, that is a closed loop — a finding, a change made
- * outside this repository, and a re-run that says what the change bought. A
- * scenario nobody passes for a reason we have written down is more useful than
- * one nobody fails.
+ * **This scenario originally predicted that every agent would fail it, and that
+ * was wrong.** The prediction rested on "an agent has no source of truth except
+ * what it can read". Agents do not work that way: on 21 and 22 August it was
+ * passed six times out of six, across three models and both arms — including by
+ * a weak model with no skills at all. They find the route by enumeration,
+ * probing `/operator-events`, `/operator-event-destinations`,
+ * `/operator/destinations` and so on until one answers, having first probed a
+ * deliberately bogus path to learn what a real 404 looks like.
+ *
+ * So it does not measure discovery in the sense the classification implies, and
+ * it does not currently discriminate at all. What it measures is persistence:
+ * whether an agent keeps going when the documentation runs out. That is worth
+ * something, but it is a fact about agents rather than about Hookdeck, and it
+ * will not move if we fix the docs.
+ *
+ * Two consequences worth keeping in mind. It is **high variance** — the same
+ * model passed 4/4 in one run and failed 0/1 in the next, because passing turns
+ * on which paths get guessed, so a single attempt publishes a coin flip. And
+ * #34 stands regardless: an endpoint reachable only by guesswork is
+ * undocumented whether or not a determined agent gets there.
  *
  * Scored on outcome. It does not matter whether the agent used the API, and it
  * is not required to subscribe to the alert topic by name — `*` covers it and

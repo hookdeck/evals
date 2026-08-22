@@ -59,6 +59,8 @@ interface Destination {
 interface Attempt {
   id?: string;
   status?: string;
+  /** Which event this attempt was for. The check below turns on it. */
+  event_id?: string;
 }
 
 const scorer: ToolScorer = async (ctx) => {
@@ -120,21 +122,46 @@ async function checkMissedEventsDelivered(
 ): Promise<CheckResult> {
   const name = 'the events the customer missed were delivered';
 
+  // Counted per *event*, not per successful attempt.
+  //
+  // The first version counted any three successes on the tenant, which three
+  // fresh test publishes satisfy just as well as recovering the outage. It
+  // passed an agent that reported retrying 54 events out of 78 it had found —
+  // the stale-history trap, since events outlive the tenant and a shared
+  // project accumulates them.
+  //
+  // "Missed" is definable from the attempts themselves and needs no timestamps:
+  // an event that has a failed attempt is one the customer did not get, and it
+  // has been recovered when that same `event_id` also has a successful one.
+  // Republishing cannot fake it, because a new event has no failed attempt.
+  const recovered = (rows: Attempt[]): number => {
+    const failed = new Set(
+      rows
+        .filter((a) => a.status === 'failed' && a.event_id)
+        .map((a) => a.event_id)
+    );
+    const succeeded = new Set(
+      rows
+        .filter((a) => a.status === 'success' && a.event_id)
+        .map((a) => a.event_id)
+    );
+    return [...failed].filter((id) => succeeded.has(id)).length;
+  };
+
   // Poll: a retry triggered moments before the agent finished is still in
   // flight, and reading once would score the agent for the platform's timing.
-  // Summed across the tenant's destinations, for the same reason: an agent that
-  // recovered the events onto a replacement destination delivered them.
+  // Summed across the tenant's destinations, because an agent that recovered
+  // the events onto a replacement destination delivered them.
   const attempts = await waitForOrLast(
     () => listAllAttempts(ctx, TENANT, destinations),
-    (rows) =>
-      rows.filter((a) => a.status === 'success').length >= MISSED_EVENTS,
+    (rows) => recovered(rows) >= MISSED_EVENTS,
     {
       timeoutMs: DELIVERY_WAIT_MS,
       description: 'the held events to be delivered',
     }
   );
 
-  const delivered = attempts.filter((a) => a.status === 'success').length;
+  const delivered = recovered(attempts);
   return {
     name,
     passed: delivered >= MISSED_EVENTS,

@@ -72,6 +72,42 @@ const scorer: ToolScorer = async (ctx) => {
     (d) => normalise(d.config?.url) === normalise(OLD_ENDPOINT)
   );
 
+  // An agent that did nothing scores zero, not two out of six.
+  //
+  // Both negative checks — that the retries still reach the old endpoint, and
+  // that the other customer was left alone — are satisfied by the untouched
+  // seed. So a run that never acted used to report `2/6`, which reads as
+  // partial progress and is really no progress: it is the shape a crashed cell
+  // wears, and one did exactly that on 21 August before being spotted.
+  //
+  // The verdict was never wrong, since `passed` is the conjunction and the four
+  // positive checks need real work. It is the per-check count that misleads
+  // anyone reading the detail — including us, triaging a run.
+  //
+  // So when nothing has changed at all, say that in one line instead of
+  // awarding marks for leaving things alone.
+  const untouched =
+    queues.length === 0 &&
+    webhooks.some(
+      (d) => !d.disabled_at && subscribes(d, ORDERS) && subscribes(d, RETRIES)
+    );
+
+  if (untouched) {
+    return {
+      passed: false,
+      checks: [
+        {
+          name: 'their orders are delivered to the queue they gave us',
+          passed: false,
+          notes:
+            'nothing was changed: no queue destination exists and the old endpoint ' +
+            'still carries both topics, so the checks about not breaking anything ' +
+            'are true only because no work was done',
+        },
+      ],
+    };
+  }
+
   const checks: CheckResult[] = [
     checkQueueExists(destinations, queues),
     checkQueueReceivesOrders(queues),
