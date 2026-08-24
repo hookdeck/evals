@@ -303,6 +303,14 @@ jobs:
       # on 13 August scored outpost-001 as six agent failures rather than
       # skipping it, which is a false result published against named vendors.
       OUTPOST_API_KEY: ${{ secrets.OUTPOST_API_KEY }}
+      # Synthetic AWS credentials a scenario's workspace note carries as
+      # `${SEED_*}` placeholders. Not real, and not committed: a key realistic
+      # enough to convince an agent is realistic enough to trip push
+      # protection. Absent, `benchmark-outpost-004` is skipped rather than
+      # failed — an agent handed a literal placeholder is right to refuse, and
+      # scoring that is the 13 August mistake in a new form.
+      SEED_ACME_SQS_ACCESS_KEY: ${{ secrets.SEED_ACME_SQS_ACCESS_KEY }}
+      SEED_ACME_SQS_SECRET_KEY: ${{ secrets.SEED_ACME_SQS_SECRET_KEY }}
       # For `gh run cancel` when a provider stops answering. Needs
       # `actions: write` at the workflow level, which `publish-results` did
       # not previously require.
@@ -354,6 +362,8 @@ jobs:
             echo "HOOKDECK_API_KEY=${HOOKDECK_API_KEY}"
             echo "HOOKDECK_WEBHOOK_SECRET=${HOOKDECK_WEBHOOK_SECRET}"
             echo "OUTPOST_API_KEY=${OUTPOST_API_KEY}"
+            echo "SEED_ACME_SQS_ACCESS_KEY=${SEED_ACME_SQS_ACCESS_KEY}"
+            echo "SEED_ACME_SQS_SECRET_KEY=${SEED_ACME_SQS_SECRET_KEY}"
           } > .env
 
       - name: Run evals
