@@ -39,8 +39,8 @@ export default async function solve(ctx: ToolEvalContext): Promise<void> {
     // push protection — a credential realistic enough to convince an agent is
     // realistic enough to look like a leak.
     credentials: {
-      key: process.env.ACME_SQS_ACCESS_KEY ?? '',
-      secret: process.env.ACME_SQS_SECRET_KEY ?? '',
+      key: process.env.SEED_ACME_SQS_ACCESS_KEY ?? '',
+      secret: process.env.SEED_ACME_SQS_SECRET_KEY ?? '',
     },
   });
 

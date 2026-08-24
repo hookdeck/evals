@@ -177,6 +177,24 @@ export function hookdeckRuntime(options: HookdeckRuntimeOptions): EvalRuntime {
               .filter((p): p is string => Boolean(p)),
           ].join('\n\n'),
           sandboxEnv: {
+            // Anything a scenario opted into by naming it `SEED_*`.
+            //
+            // `local/` files expand `${VAR}` from *this* object, not from the
+            // host environment — so a scenario that needs a credential of its
+            // own had no way to supply one without editing this file. Measured:
+            // `outpost-004` put `${ACME_SQS_ACCESS_KEY}` in its workspace note,
+            // the variable was set in `.env`, and the agent was handed the
+            // literal placeholder and stopped.
+            //
+            // A prefix rather than a passthrough of the whole environment: a
+            // workspace file saying `${OPENAI_API_KEY}` should not be able to
+            // help itself to one. Opting in by name keeps the blast radius to
+            // variables somebody chose to expose.
+            ...Object.fromEntries(
+              Object.entries(process.env).flatMap(([k, v]) =>
+                k.startsWith('SEED_') && v ? [[k, v] as const] : []
+              )
+            ),
             HOOKDECK_API_KEY: project.apiKey,
             // The secret Hookdeck signs forwarded requests with, so a handler
             // an agent writes can verify `x-hookdeck-signature`. It is
