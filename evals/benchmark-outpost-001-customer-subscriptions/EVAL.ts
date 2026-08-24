@@ -45,6 +45,19 @@ const scorer: ToolScorer = async (ctx) => {
     );
   }
 
+  // A leftover `acme` used to satisfy every check here with no agent action.
+  // This was the only Outpost scenario with no seed, and every other one seeds
+  // a tenant called `acme` with a destination on an order-ish topic; tenant
+  // cleanup runs on release inside a `catch`-and-ignore and is skipped when a
+  // run is killed, both of which have happened. The row published green.
+  //
+  // The fix is in the seed — `deleteTenants: ["acme", "globex"]` — because the
+  // state has to be *absent*, not merely distinguishable. Comparing the
+  // tenant's `created_at` against the lease was tried first and does not work:
+  // tenant create is idempotent, so an agent that correctly `PUT`s an existing
+  // id gets the original timestamp back and is scored as having inherited
+  // someone else's work. Measured on 24 August, the tenant read two minutes
+  // older than the lease about to score it.
   const tenants = await listTenants(ctx);
   const tenant = tenants.find((t) => /acme/i.test(String(t.id ?? '')));
 
@@ -110,7 +123,23 @@ async function checkOrderEventDelivered(
     };
   }
 
-  const before = await attemptCount(ctx, tenantId, destinations);
+  // Successful attempts, not attempts.
+  //
+  // Counting any attempt made this check "Outpost tried", which is not what its
+  // name claims. A destination pointed at a hostname the agent invented records
+  // an attempt and fails to deliver, and the customer receives nothing. The
+  // header of `outpost-004` asserts "delivery is already proven against webhook
+  // destinations by outpost-001" — it was not.
+  //
+  // **This does not close the whole hole, and the remaining half is a scenario
+  // problem rather than a scorer one.** The ticket never says where the
+  // customer's endpoint is, so any reachable URL satisfies it: one agent stood
+  // up a localtunnel *inside its own sandbox*, delivered to itself, passed, and
+  // offered to "swap the temporary receiver URL for the real customer endpoint
+  // next". That receiver died with the container. Fixing it means giving the
+  // ticket an endpoint to deliver to, which changes a published scenario, so it
+  // is called out here rather than done quietly.
+  const before = await successCount(ctx, tenantId, destinations);
   await ctx.outpost?.('POST', '/publish', {
     tenant_id: tenantId,
     topic,
@@ -120,7 +149,7 @@ async function checkOrderEventDelivered(
   // attempt count rather than sleeping and reading once. A single positive
   // assertion, so the first observation that satisfies it is the answer.
   const after = await waitForOrLast(
-    () => attemptCount(ctx, tenantId, destinations),
+    () => successCount(ctx, tenantId, destinations),
     (count) => count > before,
     {
       timeoutMs: DELIVERY_WAIT_MS,
@@ -159,6 +188,28 @@ function orderTopic(
     if (match) return String(match);
   }
   return undefined;
+}
+
+/** Attempts that actually delivered. */
+async function successCount(
+  ctx: ToolEvalContext,
+  tenantId: string,
+  destinations: Record<string, unknown>[]
+): Promise<number> {
+  let total = 0;
+  for (const destination of destinations) {
+    const id = String(destination.id ?? '');
+    if (!id) continue;
+    const body = await ctx.outpost?.<
+      { status?: string }[] | { models?: { status?: string }[] }
+    >(
+      'GET',
+      `/tenants/${encodeURIComponent(tenantId)}/destinations/${encodeURIComponent(id)}/attempts`
+    );
+    const rows = Array.isArray(body) ? body : (body?.models ?? []);
+    total += rows.filter((a) => a.status === 'success').length;
+  }
+  return total;
 }
 
 async function attemptCount(
@@ -202,8 +253,17 @@ async function listDestinations(
   ctx: ToolEvalContext,
   tenantId: string
 ): Promise<Record<string, unknown>[]> {
+  // `models ?? data`, matching every sibling scorer and the client. This file
+  // read `data` alone — the exact trap its own comments warn about twice, which
+  // survives only because this endpoint happens to be unpaged and returns a
+  // bare array. The day it gains an envelope, every agent is told the tenant
+  // has nowhere to deliver to.
   const body = await ctx.outpost?.<
-    Record<string, unknown>[] | { data?: Record<string, unknown>[] }
+    | Record<string, unknown>[]
+    | {
+        models?: Record<string, unknown>[];
+        data?: Record<string, unknown>[];
+      }
   >('GET', `/tenants/${encodeURIComponent(tenantId)}/destinations`);
-  return Array.isArray(body) ? body : (body?.data ?? []);
+  return Array.isArray(body) ? body : (body?.models ?? body?.data ?? []);
 }

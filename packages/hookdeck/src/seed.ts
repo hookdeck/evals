@@ -84,6 +84,22 @@ export interface OutpostSeed {
    * so this removes them for the run rather than for good.
    */
   clearOperatorEventDestinations?: boolean;
+  /**
+   * Tenants to delete before the agent runs, and not recreate.
+   *
+   * For scenarios that score an agent for *creating* something. `outpost-001`
+   * asks for a tenant to be set up and had no seed at all, so a tenant left by
+   * any other Outpost scenario — they all use `acme` — satisfied every check
+   * with no agent action, and the row published green.
+   *
+   * Scoping the check by `created_at` instead does not work: tenant create is
+   * idempotent, so an agent that correctly `PUT`s an existing id gets the
+   * original timestamp back and is scored as having inherited a leftover.
+   * Measured on 24 August — the tenant read two minutes older than the lease
+   * that was about to score it. The state has to be absent, not merely
+   * distinguishable.
+   */
+  deleteTenants?: string[];
   tenants?: {
     id: string;
     topics?: string[];
@@ -350,6 +366,12 @@ export async function applyOutpostSeed(
       );
       if (destination.ref) destinations[destination.ref] = created.id;
     }
+  }
+
+  for (const id of seed.deleteTenants ?? []) {
+    await outpost('DELETE', `/tenants/${encodeURIComponent(id)}`).catch(
+      () => undefined
+    );
   }
 
   if (seed.clearOperatorEventDestinations) {

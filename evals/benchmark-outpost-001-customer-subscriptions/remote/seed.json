@@ -1,0 +1,5 @@
+{
+  "outpost": {
+    "deleteTenants": ["acme", "globex"]
+  }
+}
