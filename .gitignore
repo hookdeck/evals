@@ -28,3 +28,9 @@ dist/
 
 # Agent worktrees. Real git repos; never part of this one.
 .claude/worktrees/
+
+# Throwaway probe scripts. They have to live inside a workspace to resolve its
+# imports, so they cannot go in a temp directory — and two were committed by a
+# `git add -A` after the command that would have deleted them timed out. Name
+# scratch files `*.probe.ts` and they cannot be added by accident.
+*.probe.ts
