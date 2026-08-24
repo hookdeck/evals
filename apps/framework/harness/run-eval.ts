@@ -206,6 +206,18 @@ function buildLoadSkillTool(skills: readonly ToolsSkill[]): ToolSet {
  * so `docker cp` copies real files, not dangling links. Missing skills are
  * skipped with a warning.
  */
+function resolveSkillNames(
+  metadata: { skills?: string[]; extraSkills?: string[] },
+  experimentSkills: string[]
+): string[] {
+  if (metadata.skills) return metadata.skills;
+  if (experimentSkills.length === 0) return experimentSkills;
+  const extra = (metadata.extraSkills ?? []).filter(
+    (name) => !experimentSkills.includes(name)
+  );
+  return [...experimentSkills, ...extra];
+}
+
 function resolveSkillSources(
   skillNames: string[]
 ): Array<{ name: string; dir: string }> {
@@ -314,11 +326,16 @@ async function runOne(
   // A per-eval `skills` override replaces the experiment's own list entirely,
   // so a scenario testing self-installed skills gets an empty list regardless
   // of which experiment runs it.
-  const skillSources = resolveSkillSources(ev.metadata.skills ?? exp.skills);
+  // `skills` replaces, `extraSkills` adds — and adds nothing to an experiment
+  // that has none. That asymmetry is the point: a `-no-skills` arm must stay
+  // empty whatever the scenario asks for, or the baseline is no longer a
+  // baseline. See `extraSkills` in eval-metadata.ts.
+  const skillNames = resolveSkillNames(ev.metadata, exp.skills);
+  const skillSources = resolveSkillSources(skillNames);
   const availableSkills = skillSources.map((skill) => skill.name);
   const toolsSkills =
     ev.mode === 'tools' && !agentRunsInSandbox
-      ? loadToolsSkills(ev.metadata.skills ?? exp.skills)
+      ? loadToolsSkills(skillNames)
       : [];
   const scorer = (await import(pathToFileURL(ev.evalPath).href))
     .default as ToolScorer;

@@ -8,6 +8,8 @@ topic:
   - capabilities
 requires:
   - outpost
+extra_skills:
+  - outpost
 motivation: Most Outpost traffic is webhooks, but delivering to a queue is a core capability and a different job — a type rather than a URL, credentials rather than a secret, and fields whose names differ per provider. This scores whether an agent can configure a non-HTTP destination from details it has to find, rather than reaching for the webhook shape it has seen most often.
 ---
 

@@ -8,6 +8,8 @@ topic:
   - alerting
 requires:
   - outpost
+extra_skills:
+  - outpost
 motivation: Follows the incident in benchmark-outpost-002. A destination was auto-disabled, the customer's events were held, and nobody found out until the customer emailed. Outpost emits `alert.destination.disabled` for exactly this, but it is delivered only to a configured operator events destination, and this project has none. The routes that configure it are absent from the published OpenAPI spec and from the API reference, so this measures whether an agent can set up alerting it cannot read about.
 ---
 
