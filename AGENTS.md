@@ -234,6 +234,35 @@ Test: could this sit unchanged on a different release, and does it name somethin
 changed about the product? If a release genuinely shipped no product change, say what it
 unblocks rather than dressing up the housekeeping.
 
+**A release title names what changed. An item title names what happened to a
+reader.** They are different jobs and the rules below are for items, which is
+easy to miss when writing the line at the top.
+
+Test a release title by whether it completes "in this release, …". v0.2.0's
+does: *"Agents can now authenticate the CLI without a terminal"* — the "now" is
+the tell, because something became true that was not. A title that reads as a
+standing fact, a conclusion or a slogan is not describing a change.
+
+Three drafts were rejected before v0.3.0's, and each failed differently:
+
+- *"Turning on alerts for a stalled customer needs an API you cannot find"* —
+  opaque, and it picked one of four findings to be the whole release.
+- *"Five Outpost scenarios, four documentation gaps"* — accurate and reads as
+  generated. Symmetry and counting are a tell.
+- *"Agents can use Outpost. Working out how is the hard part."* — a conclusion,
+  not a change. Editorialising is the third failure mode alongside categories
+  and instrument news.
+
+What it landed on was the plainest available statement of the change:
+*"Outpost coverage goes from one scenario to five"*.
+
+**Product coverage is a change worth naming; benchmark plumbing is not.** The
+rule that the changelog is about the product, not the instrument, does not mean
+coverage is off limits. Which products we can now say anything about is a fact a
+reader has a stake in — a scorer we repaired is not. When a release ships no
+product change, coverage growth is usually the honest headline, and reaching
+past it for a cleverer product angle produces the three failures above.
+
 **The title is the whole entry, so it has to carry the finding alone.** No description
 is rendered. A reader sees one line and an issue number, and decides from that line
 whether to click. Rules, in order of how often they are broken:
