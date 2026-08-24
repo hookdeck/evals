@@ -155,3 +155,76 @@ cannot be justified by these four failures either, and needs its own controlled
 measurement before being called a fix.
 
 **Status: closed, no measurable improvement.**
+
+---
+
+## Loop 2: the harness never told agents the Outpost project existed
+
+**Status:** closed. The measured skills win was our own defect; the real delta is
+about a tenth of what the first run claimed.
+
+### What the benchmark found
+
+Four Outpost scenarios were run across six experiments on 21 August. The result was
+stark: **`+skills` 9, `-no-skills` 0**. Every cell with skills passed; every cell
+without failed. It read as the clearest evidence yet that the Hookdeck skills earn
+their place, and it was hours from being published as exactly that.
+
+Reading the transcripts said otherwise. Across the twelve baseline cells,
+`OUTPOST_API_KEY` was used as a credential **zero times**. Nine of the twelve agents
+reported *success* — having built the task on `api.hookdeck.com`, in the wrong product
+entirely. Two reported, with authority, that the harness had handed them the wrong
+credential.
+
+The cause was one sentence of ours. The prompt addendum told every agent:
+
+> You have a Hookdeck project. The Hookdeck CLI is installed and `HOOKDECK_API_KEY` is
+> set in your environment, so both the CLI and the REST API are available to you.
+
+It named one project and silently injected a second. The only artefact in the sandbox
+that named `OUTPOST_API_KEY` was the Outpost skill's own reference files — so "skills
+help" and "we forgot to mention a credential" were the same measurement, and nothing
+in the scoreboard could tell them apart.
+
+### The change
+
+The addendum now names the Outpost project when a scenario uses one, gated on the
+scenario's seed rather than on the machine having a key. The `+skills` arm also
+receives the `outpost` skill, which no experiment had ever loaded — Outpost scenarios
+were being given `event-gateway`, whose only Outpost content is a line telling the
+agent to go elsewhere.
+
+### What it bought
+
+The same 24 cells, re-run: **`+skills` 12/12, `-no-skills` 10/12.** A delta of **2
+cells in 24**, in different models on different scenarios, against 9–0 before.
+
+A later 30-cell run put it closer still: 28/30 overall, with one skills-arm failure
+being an agent that asked for confirmation rather than one that could not do the task.
+
+**Roughly seven of the original nine cells were measuring our own omission.**
+
+### What it cost to learn, and why it nearly was not
+
+Three independent reviews were run against the first result. Two concluded the harness
+was sound and the 0/12 was genuine — and they were right about the harness. It took a
+third, instructed specifically to *refute the interpretation* rather than check the
+mechanism, to find that the skill was the only thing naming the variable.
+
+Had only the first two run, this would have shipped.
+
+Three consequences:
+
+1. **Assume most of an apparent skills win is our own instrument until proven
+   otherwise.** This is the second loop in a row where a striking result dissolved
+   under a control.
+2. **A review that checks whether a result is *real* is not the same as one that
+   checks whether it means what you think.** Only the adversarial framing found it.
+3. **Every product finding in this period came from a transcript; none came from the
+   scoreboard.** A pass rate cannot distinguish "the agent could not" from "we misled
+   it". `pnpm --filter @hookdeck-evals/framework triage` now flags the cells worth
+   reading, because the convention alone kept being skipped — including by whoever
+   wrote it down.
+
+**Status: closed. The instrument was wrong, the correction is measured, and the
+corrected delta is small enough that it should not be published as a headline.**
