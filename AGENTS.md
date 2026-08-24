@@ -235,33 +235,56 @@ changed about the product? If a release genuinely shipped no product change, say
 unblocks rather than dressing up the housekeeping.
 
 **A release title names what changed. An item title names what happened to a
-reader.** They are different jobs and the rules below are for items, which is
+reader.** They are different jobs, and the rules below are for items, which is
 easy to miss when writing the line at the top.
 
-Test a release title by whether it completes "in this release, …". v0.2.0's
-does: *"Agents can now authenticate the CLI without a terminal"* — the "now" is
-the tell, because something became true that was not. A title that reads as a
-standing fact, a conclusion or a slogan is not describing a change.
+**Make the delta visible.** A changelog is a list of changes, so a title that
+states a standing condition leaves a reader unable to tell whether it is new,
+whether we broke it, or whether we merely noticed it. *"The operator events API
+is undocumented"* could be any of the three. The strongest fix is to say what
+was done, verb first and in the past tense:
 
-Three drafts were rejected before v0.3.0's, and each failed differently:
+- Added the operator events API to the OpenAPI definition
+- Fixed the environment variable names on the operator events docs page
+- Changed the Outpost API to return 401 rather than 404 for a key from another
+  project
+- Added four Outpost scenarios
 
-- *"Turning on alerts for a stalled customer needs an API you cannot find"* —
-  opaque, and it picked one of four findings to be the whole release.
-- *"Five Outpost scenarios, four documentation gaps"* — accurate and reads as
-  generated. Symmetry and counting are a tell.
-- *"Agents can use Outpost. Working out how is the hard part."* — a conclusion,
-  not a change. Editorialising is the third failure mode alongside categories
-  and instrument news.
+Naming the previous state works too, and is often sharper: *"returns 401, not
+404"* tells a developer exactly what moved without any framing word. *"Outpost
+coverage goes from one scenario to five"* carries both ends.
 
-What it landed on was the plainest available statement of the change:
-*"Outpost coverage goes from one scenario to five"*.
+This does not contradict "state the observed behaviour, not the work" above.
+That rule is against vague project-tracking — *"Track the CLI agent-safety
+work"* — not against naming a change actively. "Added X to Y" is specific and
+checkable; "improved Outpost documentation" is not.
+
+**Prefer the artefact over the capability it implies.** "Added `hookdeck ci` to
+the skill" cannot overstate itself. *"Agents can now authenticate the CLI
+without a terminal"* is more readable and asserts an outcome that release had
+not measured — no run had yet shown agents doing better. Use the capability
+framing only when a run demonstrated it, and cite the run.
+
+Three v0.3.0 titles were rejected before the plain one, each failing
+differently: *"Turning on alerts for a stalled customer needs an API you cannot
+find"* was opaque and built the release on one of four findings; *"Five Outpost
+scenarios, four documentation gaps"* was accurate and read as generated, because
+symmetry and counting are a tell; *"Agents can use Outpost. Working out how is
+the hard part."* was a conclusion rather than a change. Editorialising is a
+third failure mode alongside categories and instrument news.
 
 **Product coverage is a change worth naming; benchmark plumbing is not.** The
-rule that the changelog is about the product, not the instrument, does not mean
-coverage is off limits. Which products we can now say anything about is a fact a
-reader has a stake in — a scorer we repaired is not. When a release ships no
-product change, coverage growth is usually the honest headline, and reaching
-past it for a cleverer product angle produces the three failures above.
+rule that the changelog is about the product does not put coverage off limits —
+which products we can say anything about is a fact a reader has a stake in,
+where a repaired scorer is not. When a release ships no product change, coverage
+growth is usually the honest headline, and reaching past it for a cleverer angle
+produced all three rejected drafts above.
+
+**Terminology: the OpenAPI *Specification* is the standard; the file is a
+definition.** "Added it to the spec" is wrong in the same way "the Event Gateway
+API" was wrong for `api.hookdeck.com`, which carries platform and Event Gateway
+functionality while Outpost has its own subdomain. Precision here is cheap and
+the alternative is a reader correcting us.
 
 **The title is the whole entry, so it has to carry the finding alone.** No description
 is rendered. A reader sees one line and an issue number, and decides from that line
