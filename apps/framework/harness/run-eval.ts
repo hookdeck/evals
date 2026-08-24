@@ -108,7 +108,50 @@ function unmetRequirements(ev: EvalManifest): string[] {
   const available: Record<string, boolean> = {
     outpost: Boolean(process.env.OUTPOST_API_KEY),
   };
-  return (ev.metadata.requires ?? []).filter((r) => !available[r]);
+  const unmet = (ev.metadata.requires ?? []).filter((r) => !available[r]);
+
+  // A `${SEED_*}` placeholder the environment cannot fill is an unmet
+  // requirement, not a task.
+  //
+  // `local/` files leave an unset variable as written, so the agent is handed
+  // the literal `${SEED_ACME_SQS_ACCESS_KEY}`. That reads as an obvious
+  // placeholder, and an agent that notices is right to stop rather than
+  // configure delivery that will silently fail — measured on 24 August, where
+  // exactly that scored 0/1 while three agents that did not notice scored 6/6.
+  //
+  // Scoring it is the 13 August mistake again: a missing credential became six
+  // agent failures against named vendors, and the fix then was to skip rather
+  // than score. The same reasoning applies to a credential the scenario
+  // supplies itself.
+  return [...unmet, ...unfilledSeedPlaceholders(ev)];
+}
+
+/** `SEED_*` names a scenario's workspace asks for and the environment lacks. */
+function unfilledSeedPlaceholders(ev: EvalManifest): string[] {
+  if (!ev.localDir || !existsSync(ev.localDir)) return [];
+  const missing = new Set<string>();
+
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(path);
+        continue;
+      }
+      let text: string;
+      try {
+        text = readFileSync(path, 'utf8');
+      } catch {
+        continue; // binary; nothing to expand
+      }
+      for (const [, name] of text.matchAll(/\$\{(SEED_[A-Z0-9_]+)\}/g)) {
+        if (!process.env[name]) missing.add(name);
+      }
+    }
+  };
+  walk(ev.localDir);
+
+  return [...missing];
 }
 
 type ToolsSkill = { name: string; description: string; body: string };
