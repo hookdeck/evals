@@ -56,6 +56,19 @@ export function hookdeckRuntime(options: HookdeckRuntimeOptions): EvalRuntime {
         // as skipped rather than failing inside a check on a machine that has
         // no Outpost project.
         const outpostKey = process.env.OUTPOST_API_KEY;
+        // Does *this scenario* involve Outpost, as opposed to this machine
+        // merely having a key?
+        //
+        // Gating the addendum on the client existing was wrong: the client is
+        // built whenever OUTPOST_API_KEY is set, which is always, so every
+        // Event Gateway scenario was being told about an Outpost project it has
+        // no use for — noise in fourteen prompts to answer a question about
+        // five, and it would have made every published cell non-comparable
+        // rather than just the Outpost ones.
+        const scenarioSeed = args.remoteDir
+          ? readSeed(args.remoteDir)
+          : undefined;
+        const scenarioUsesOutpost = Boolean(scenarioSeed?.outpost);
         const outpostClient = outpostKey
           ? new OutpostClient({ apiKey: outpostKey })
           : undefined;
@@ -68,7 +81,7 @@ export function hookdeckRuntime(options: HookdeckRuntimeOptions): EvalRuntime {
         // here — so arriving without a client means the requirement is missing,
         // not that the machine is simply unconfigured.
         if (args.remoteDir) {
-          const seed = readSeed(args.remoteDir);
+          const seed = scenarioSeed;
           if (seed?.outpost) {
             if (!outpostClient) {
               throw new Error(
@@ -150,7 +163,7 @@ export function hookdeckRuntime(options: HookdeckRuntimeOptions): EvalRuntime {
             // A developer using Outpost knows they use it and has the key in
             // their environment; nobody learns their own credentials by
             // enumerating env vars.
-            ...(outpostClient
+            ...(outpostClient && scenarioUsesOutpost
               ? [
                   'You also have a Hookdeck Outpost project, and ' +
                     'OUTPOST_API_KEY is set in your environment. It is an ' +

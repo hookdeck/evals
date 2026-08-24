@@ -22,6 +22,17 @@ import { waitForSettled } from '@hookdeck-evals/hookdeck';
  * mentioned because it was working. Nobody sees an error. The customer notices
  * days later, when something they depend on has quietly stopped arriving.
  *
+ * The ticket had to be rewritten to make that true. Its first version added
+ * "everything else they get today should carry on exactly as it is, and Globex
+ * shouldn't be affected at all" — which states four of the five checks, and
+ * replaces the silence the scenario depends on with an instruction to enumerate
+ * and preserve. It also never named a topic acme *wanted*, so "narrow to the
+ * one they talk about" was not a candidate action and the wrong answer took
+ * more work than the right one. All six agents passed. The trap was described
+ * here and never set in the prompt, which is a thing to check for: verifying a
+ * scorer rejects a hand-written wrong answer proves the scorer works, not that
+ * agents make that mistake.
+ *
  * That is the same failure mode as `resolve-002` and `alerting-001`: acting more
  * broadly than asked. The difference is that here it is the *cheapest* way to
  * satisfy the request, rather than a mistake you have to reach for.
