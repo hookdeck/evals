@@ -34,9 +34,13 @@ export default async function solve(ctx: ToolEvalContext): Promise<void> {
     // The queue URL is config; the key pair is credentials. Keeping them
     // separate is the whole shape difference between this and a webhook.
     config: { queue_url: QUEUE_URL },
+    // From the environment, matching the `${VAR}` placeholders the workspace
+    // note carries. A literal AKIA-shaped key in the repo is blocked by GitHub
+    // push protection — a credential realistic enough to convince an agent is
+    // realistic enough to look like a leak.
     credentials: {
-      key: 'AKIAIOSFODNN7EXAMPLE',
-      secret: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
+      key: process.env.ACME_SQS_ACCESS_KEY ?? '',
+      secret: process.env.ACME_SQS_SECRET_KEY ?? '',
     },
   });
 

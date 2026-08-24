@@ -30,6 +30,17 @@ import type {
  * `422 "config.queue_url failed pattern validation"`. So the API itself covers
  * the part a live queue would add least to.
  *
+ * The credentials in the workspace note are synthetic, and that is not
+ * cosmetic. They were AWS's published documentation example pair
+ * (`AKIAIOSFODNN7EXAMPLE`), which appears verbatim in most AWS tutorials ever
+ * written. On 24 August `claude-code-sonnet-5` recognised them, worked out the
+ * entire correct solution — `aws_sqs`, `config.queue_url`, credentials as a
+ * separate object, narrowing the webhook to `retries` — and then **stopped**,
+ * because configuring delivery with placeholder keys would fail silently. It
+ * scored 0/1. Three other agents did not notice and passed. The scenario was
+ * rewarding not checking your inputs and penalising checking them, which is the
+ * inversion AGENTS.md calls the worst thing a scorer can do.
+ *
  * The trap is in the workspace note rather than the API. Acme want *orders* on
  * the queue and everything else unchanged, so deleting the webhook destination
  * — the obvious way to "stop sending their orders to the old endpoint" — also

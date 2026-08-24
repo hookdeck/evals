@@ -14,8 +14,8 @@ Sent over by their platform team on the 14th:
 ```
 Queue URL:  https://sqs.eu-west-1.amazonaws.com/402319887654/acme-order-events
 Region:     eu-west-1
-Access key: AKIAIOSFODNN7EXAMPLE
-Secret key: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+Access key: ${ACME_SQS_ACCESS_KEY}
+Secret key: ${ACME_SQS_SECRET_KEY}
 ```
 
 They only want `orders` on the queue. Anything else we send them today should
