@@ -77,6 +77,27 @@ const CAPABILITY_ENV: Record<string, string> = { outpost: 'OUTPOST_API_KEY' };
  */
 const PRODUCT_SKILLS = new Set(['hookdeck', 'event-gateway', 'outpost']);
 
+/**
+ * Phrases an agent uses when it is waiting for a person.
+ *
+ * The benchmark is single-turn, so a question gets no reply and the agent is
+ * scored on whatever state it left — usually nothing. That is not an agent
+ * failing the task; it is an agent checking before it touches a customer's
+ * project, which is the safer behaviour.
+ *
+ * Measured on 25 August across 36 cells: three of twelve failures were this,
+ * and **all three were in the `+skills` arm** while the baseline never once
+ * stopped to ask. Plausibly a mechanism rather than noise — skills tell an
+ * agent to verify its context, and a weaker model follows that literally. It
+ * also inflates whatever the arm's failure count is being used to argue.
+ *
+ * Flagged rather than fixed, because declaring the benchmark autonomous in the
+ * base prompt would change behaviour everywhere and destroy the ability to
+ * measure how often this happens. See hookdeck/evals#57.
+ */
+const ASKED_AND_STOPPED =
+  /\b(confirm that|before I (inspect|proceed|change|touch|go further)|I need you to confirm|once you have (that|the) (secret|key|credential)|please confirm|can you confirm|need confirmation|waiting on (you|your)|let me know (if|whether) (you|I should))\b/i;
+
 /** Phrases an agent uses when it believes it finished. */
 const SUCCESS_CLAIM =
   /\b(everything (is )?(set up|working|verified)|successfully|all set|is now (set up|configured|working)|done!|completed successfully|verified end-to-end)\b/i;
@@ -170,6 +191,15 @@ function flagsFor(row: Row, requiredEnv: string[]): Flag[] {
     }
   }
 
+  if (row.passed === false && ASKED_AND_STOPPED.test(row.agentReport ?? '')) {
+    flags.push({
+      label: 'ASKED AND STOPPED',
+      detail:
+        'ended its turn with a question, and this benchmark has no way to answer — ' +
+        'scored as a failure, but it is not one about capability (#57)',
+    });
+  }
+
   if (row.passed === false && (row.toolCalls?.length ?? 0) === 0) {
     flags.push({ label: 'NO TOOL CALLS', detail: 'scored without acting' });
   }
@@ -239,7 +269,9 @@ function main() {
         ? 0
         : f.some((x) => x.label === 'UNCLEAN EXIT')
           ? 1
-          : 2;
+          : f.some((x) => x.label === 'ASKED AND STOPPED')
+            ? 2
+            : 3;
     return rank(a.flags) - rank(b.flags);
   });
 
