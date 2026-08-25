@@ -62,7 +62,20 @@ const HOSTED_ACCESS_TOKEN = 'sbp_' + '0'.repeat(40);
 
 const rawArgs = process.argv.slice(2);
 const args = new Set(rawArgs);
-const FORCE = !args.has('--skip-existing');
+/**
+ * Re-run cells that already have results, which is the default.
+ *
+ * Deliberately kept that way. A stale row surviving a code change is its own
+ * hazard, and a live one: `outpost-001`'s scorer, prompt and seed were all
+ * corrected on 24 August, so keeping its old rows would have published results
+ * scored by code that no longer exists.
+ *
+ * What was missing was a way to *resume*. Three runs were interrupted on 21-22
+ * August — a wiped config, exhausted credits, a stopped Docker daemon — and
+ * each time the obvious command re-ran and re-paid for work already done. Use
+ * `--resume` for that. `--skip-existing` is kept as its older name.
+ */
+const FORCE = !(args.has('--skip-existing') || args.has('--resume'));
 const SMOKE = args.has('--smoke');
 const DRY = args.has('--dry');
 const EXPERIMENT_FILTERS = readRepeatedFlag(rawArgs, 'experiment').map(
@@ -104,6 +117,21 @@ function readFlag(name: string): string | undefined {
  * skipped for exactly the reason its scorer would otherwise have had to detect
  * and report.
  */
+/**
+ * Did the agent's process die, as opposed to finishing or running out of budget?
+ *
+ * Deliberately a deny-list of the two shapes that mean "the process fell over"
+ * rather than an allow-list of good ones. Runners emit reasons from several
+ * sources — a CLI subtype, an AI SDK finish reason, or the exit code — and a
+ * reason nobody has catalogued yet is more likely to be a new legitimate
+ * outcome than a new kind of crash. Erring the other way would start silently
+ * discarding valid rows.
+ */
+function isDeadProcess(reason: string | undefined): boolean {
+  if (!reason) return false;
+  return reason === 'error' || reason.startsWith('error_exit_');
+}
+
 function unmetRequirements(ev: EvalManifest): string[] {
   const available: Record<string, boolean> = {
     outpost: Boolean(process.env.OUTPOST_API_KEY),
@@ -463,6 +491,33 @@ async function runOne(
       );
     }
 
+    // A process that died is not an answer, however much transcript it left.
+    //
+    // The guard above only catches an *empty* one, so a container killed
+    // mid-flight came through with a populated transcript and a plausible
+    // partial score. One did on 21 August — `error_exit_255`, fifteen tool
+    // calls, written as a 2/6 agent failure on `outpost-004` — and was spotted
+    // only because a baseline failing after three passes looked odd. That is
+    // the 13 August incident wearing different clothes.
+    //
+    // Budget exhaustion is *not* in this category and stays scoreable:
+    // `timeout`, `max_steps` and `error_max_turns` all mean the agent had its
+    // run and used it up, which is a result about the agent.
+    //
+    // Known caveat: `processStopReason` maps exit 137 to `timeout`, and 137 is
+    // SIGKILL — which is also what a stopping Docker daemon sends. A container
+    // killed that way is indistinguishable here from one we timed out
+    // ourselves, and would still be scored. Telling them apart needs the
+    // harness's own elapsed time, which this layer does not have.
+    if (isDeadProcess(run.stoppedReason)) {
+      throw new Error(
+        `${expName} x ${ev.id}: the agent process did not exit cleanly ` +
+          `(stoppedReason: ${run.stoppedReason}), so its transcript is not an ` +
+          'answer and was not scored. Re-run the cell. If this reason is in fact ' +
+          'a legitimate agent outcome, add it to `isDeadProcess`.'
+      );
+    }
+
     last = await (scorer as ToolScorer)({
       ...session.scoringContext,
       toolCalls: run.toolCalls,
@@ -681,7 +736,10 @@ async function main() {
     for (const ev of suiteFiltered) {
       const out = resultPath(name, ev);
       if (!FORCE && existsSync(out)) {
-        console.log(`SKIP ${name} x ${ev.id} (already ran)`);
+        console.log(
+          `SKIP ${name} x ${ev.id} (already ran; --resume). Delete its file in ` +
+            '.eval-runs to force it, and do that if the scorer has changed since.'
+        );
         continue;
       }
       if (config.skipEval?.(ev)) {

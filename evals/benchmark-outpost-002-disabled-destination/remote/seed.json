@@ -3,7 +3,6 @@
     "tenants": [
       {
         "id": "acme",
-        "topics": ["order.created", "order.shipped"],
         "destinations": [
           {
             "ref": "acme-endpoint",
@@ -17,7 +16,6 @@
       },
       {
         "id": "globex",
-        "topics": ["order.created", "order.shipped"],
         "destinations": [
           {
             "ref": "globex-endpoint",
@@ -34,13 +32,19 @@
       {
         "tenant": "acme",
         "topic": "order.created",
-        "data": { "order_id": "ord_a1", "total": 2400 },
+        "data": {
+          "order_id": "ord_a1",
+          "total": 2400
+        },
         "count": 3
       },
       {
         "tenant": "globex",
         "topic": "order.created",
-        "data": { "order_id": "ord_g1", "total": 900 }
+        "data": {
+          "order_id": "ord_g1",
+          "total": 900
+        }
       }
     ],
     "after": [
@@ -52,7 +56,9 @@
         "path": "/tenants/acme/destinations/$ref:acme-endpoint",
         "method": "PATCH",
         "body": {
-          "config": { "url": "https://mock.hookdeck.com/api/v1/acme/orders" }
+          "config": {
+            "url": "https://mock.hookdeck.com/api/v1/acme/orders"
+          }
         }
       }
     ]

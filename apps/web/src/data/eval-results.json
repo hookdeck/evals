@@ -1455,7 +1455,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-003-operator-events",
-    "ranAt": "2026-08-24T15:54:51.689Z",
+    "ranAt": "2026-08-25T10:00:40.539Z",
     "stage": "build",
     "product": [
       "outpost"
@@ -1498,158 +1498,69 @@
       "calls": [
         {
           "source": "web_fetch",
-          "query": "List any documentation pages related to alerts, notifications, destination disabled, consecutive failures, or automatic destination disabling.",
+          "query": "List any pages related to alerts, notifications, destination disabled events, or consecutive delivery failure thresholds.",
           "hasContent": true,
           "pages": [
             {
               "url": "https://hookdeck.com/docs/outpost/llms.txt"
             }
           ],
-          "resultChars": 779
+          "resultChars": 641
         },
         {
           "source": "web_fetch",
-          "query": "Explain how operator events/alerts work in Outpost, especially: how to configure an alert URL/webhook for when a destination is disabled, and any settings for consecutive delivery failure thresholds or warnings before a destination is disabled. Include exact config keys, env vars, or API fields.",
+          "query": "Give the full details on: what operator events exist (especially destination disabled / deactivated events, and consecutive delivery failure events), how to configure the endpoint/URL that receives them, what config options exist (env vars or API), and whether there is a threshold for consecutive failures before disabling and how to configure alerts before that threshold is hit.",
           "hasContent": true,
           "pages": [
             {
               "url": "https://hookdeck.com/docs/outpost/features/operator-events.md"
             }
           ],
-          "resultChars": 1881
+          "resultChars": 1782
         },
         {
           "source": "web_fetch",
-          "query": "List every page URL related to: API reference, admin API, organization settings, project settings, or alert configuration via API (not just self-hosted env vars).",
+          "query": "List all pages/URLs related to monitoring, managed deployment settings, alerts configuration, or admin API for configuring operator event sinks.",
           "hasContent": true,
           "pages": [
             {
               "url": "https://hookdeck.com/docs/outpost/llms.txt"
             }
           ],
-          "resultChars": 1247
+          "resultChars": 1319
         },
         {
           "source": "web_fetch",
-          "query": "This page mentions 'dashboard settings for managed Outpost'. Explain exactly how managed (Hookdeck Cloud) Outpost customers configure operator alerts / alert URL / consecutive failure thresholds — via dashboard, API, or otherwise. Quote any relevant sections about OPERATION_EVENTS_TOPICS, OPERATION_EVENTS_HTTP_URL, ALERT_CONSECUTIVE_FAILURE_COUNT, ALERT_AUTO_DISABLE_DESTINATION and how these map to managed project settings.",
+          "query": "Explain what \"dashboard settings for managed Outpost\" means for operator events / alerts. How does a managed Outpost user (via console.hookdeck.com) configure the HTTP URL destination for operator events like alert.destination.disabled and alert.destination.consecutive_failure? Is it done through the Hookdeck Console UI, or via an API call? Give exact steps or API endpoint if documented.",
           "hasContent": true,
           "pages": [
             {
               "url": "https://hookdeck.com/docs/outpost/self-hosting/configuration.md"
             }
           ],
-          "resultChars": 950
+          "resultChars": 748
         },
         {
           "source": "web_fetch",
-          "query": "Quote any endpoints related to configuring alerts, operator events, webhook alert URLs, consecutive failure thresholds, or destination auto-disable settings at the project level. Include exact HTTP methods, paths, and request/response body fields.",
+          "query": "Output the raw markdown content verbatim, especially the section about managed deployments / Hookdeck Monitoring settings and how to configure them in the console.",
           "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api/configure.md"
-            }
-          ],
-          "resultChars": 1184
-        },
-        {
-          "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/outpost/api/configure.md | head -300",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api/configure.md"
-            }
-          ],
-          "resultChars": 6966
-        },
-        {
-          "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/outpost/api/configure.md | grep -n -i -A 60 \"## Config\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api/configure.md"
-            }
-          ],
-          "resultChars": 3596
-        },
-        {
-          "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/outpost/api/configure.md | sed -n '896,960p'",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api/configure.md"
-            }
-          ],
-          "resultChars": 3133
-        },
-        {
-          "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/outpost/features/operator-events.md",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/outpost/features/operator-events.md"
             }
           ],
-          "resultChars": 8597
+          "resultChars": 1067
         },
         {
-          "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/platform/outpost-projects.md",
+          "source": "web_fetch",
+          "query": "Find any mention of a \"Config API\" for configuring operator event topics, sinks, or alert thresholds. Give exact endpoint paths, methods, and example request bodies if present.",
+          "hasContent": true,
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/platform/outpost-projects.md"
+              "url": "https://hookdeck.com/docs/outpost/api"
             }
           ],
-          "resultChars": 5841
-        },
-        {
-          "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/outpost/api/configure.md | grep -n -i \"OPERATION\\|EVENTS_TOPICS\\|EVENTS_HTTP\\|SINK\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api/configure.md"
-            }
-          ],
-          "resultChars": 31
-        },
-        {
-          "source": "shell_fetch",
-          "query": "curl -s \"https://hookdeck.com/docs/outpost/llms.txt\" | grep -i \"operator\\|monitoring\\|alert\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/llms.txt"
-            }
-          ],
-          "resultChars": 171
-        },
-        {
-          "source": "shell_fetch",
-          "query": "curl -s \"https://hookdeck.com/docs/llms.txt\" 2>/dev/null | grep -i \"operator\\|outpost\\|monitoring\" ",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/llms.txt"
-            }
-          ],
-          "resultChars": 101
-        },
-        {
-          "source": "shell_fetch",
-          "query": "curl -s \"https://hookdeck.com/docs/llms.txt\" 2>/dev/null | head -100",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/llms.txt"
-            }
-          ],
-          "resultChars": 9141
-        },
-        {
-          "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/outpost/api/configure.md | sed -n '/### Destination object/,/### List Destinations/p' | head -100",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api/configure.md"
-            }
-          ],
-          "resultChars": 73
+          "resultChars": 873
         }
       ]
     },
@@ -1668,7 +1579,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-004-queue-destination",
-    "ranAt": "2026-08-24T14:30:15.999Z",
+    "ranAt": "2026-08-25T10:02:30.384Z",
     "stage": "build",
     "product": [
       "outpost"
@@ -1712,6 +1623,7 @@
         "outpost"
       ],
       "loaded": [
+        "hookdeck",
         "event-gateway",
         "outpost"
       ]
@@ -3676,7 +3588,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-003-operator-events",
-    "ranAt": "2026-08-24T15:50:09.305Z",
+    "ranAt": "2026-08-25T09:44:21.279Z",
     "stage": "build",
     "product": [
       "outpost"
@@ -3686,23 +3598,12 @@
     ],
     "suite": "benchmark",
     "gatedBy": "discovery",
-    "passed": true,
+    "passed": false,
     "checks": [
       {
-        "name": "alerts are delivered to the endpoint that was asked for",
-        "passed": true
-      },
-      {
-        "name": "the disabled-destination alert is subscribed",
-        "passed": true
-      },
-      {
-        "name": "the alerting destination is enabled",
-        "passed": true
-      },
-      {
-        "name": "the build-up to a disable is subscribed too",
-        "passed": true
+        "name": "alerts are delivered somewhere",
+        "passed": false,
+        "notes": "no operator events destination exists, so nothing is emitted when a customer's destination is disabled — the same silence that ended the last incident"
       }
     ],
     "skills": {
@@ -3713,7 +3614,201 @@
       "calls": [
         {
           "source": "web_fetch",
-          "query": "Find documentation about alerts, notifications, or webhooks for when a destination is disabled or delivery failures occur. Also find the base API URL and authentication method.",
+          "query": "I need to find how to configure Outpost to send alerts when a destination is disabled due to consecutive delivery failures, and how to configure the consecutive failure threshold. Look for information about admin/operator webhooks, event topics like destination.disabled, and alert configuration.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/references/api/config"
+            }
+          ],
+          "resultChars": 215
+        },
+        {
+          "source": "web_fetch",
+          "query": "Summarize the documentation structure. I'm looking for information about: 1) alerting when a destination is disabled, 2) consecutive delivery failure thresholds, 3) internal/admin webhooks for Outpost's own lifecycle events.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost"
+            }
+          ],
+          "resultChars": 1020
+        },
+        {
+          "source": "web_fetch",
+          "query": "Find details about alert configuration: consecutive failure thresholds, auto-disabling of destinations, and how to set up a webhook/callback URL to receive alerts when a destination is disabled or when failures accumulate.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/overview/alerts"
+            }
+          ],
+          "resultChars": 215
+        },
+        {
+          "source": "web_fetch",
+          "query": "Find configuration options related to alerts, alert webhook URL, consecutive failure count/threshold for auto-disabling destinations, and callback/notification URLs.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/references/config"
+            }
+          ],
+          "resultChars": 215
+        },
+        {
+          "source": "web_search",
+          "query": "Hookdeck Outpost \"alert\" destination disabled consecutive failures configuration site:hookdeck.com",
+          "hasContent": false,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/outpost/guides/webhook-alerting-and-notifications",
+              "title": "Why Alerting and Notifications Are Necessary for Outbound Webhook Providers"
+            },
+            {
+              "url": "https://hookdeck.com/webhooks/platforms/hookdeck-outpost-vs-hook0-webhook-sending-comparison",
+              "title": "Hookdeck Outpost vs Hook0: Webhook Sending Compared"
+            },
+            {
+              "url": "https://hookdeck.com/docs/outpost/self-hosting/configuration",
+              "title": "Configuration Reference — Outpost Docs | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/blog/evaluating-webhook-infrastructure-for-sending-webhooks",
+              "title": "Evaluating Webhook Infrastructure for Sending Webhooks"
+            },
+            {
+              "url": "https://hookdeck.com/docs/hookdeck-basics",
+              "title": "Hookdeck Basics | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/webhooks/platforms/how-to-solve-woocommerce-5-delivery-failure-webhook-disabling",
+              "title": "How to Solve WooCommerce's 5 Delivery Failure Webhook Disabling"
+            },
+            {
+              "url": "https://hookdeck.com/blog/hookdeck-cli-v2",
+              "title": "Hookdeck CLI v2: AI agents can query, inspect, and debug webhooks via MCP"
+            },
+            {
+              "url": "https://hookdeck.com/docs/use-cases/receive-webhooks",
+              "title": "Receive and Process Webhooks with Hookdeck | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/docs/issue-triggers",
+              "title": "Issue Triggers | Hookdeck Event Gateway Docs"
+            }
+          ],
+          "resultChars": 2897
+        },
+        {
+          "source": "web_search",
+          "query": "Hookdeck Outpost admin API destination.disabled webhook topics",
+          "hasContent": false,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/destinations/webhook",
+              "title": "Webhook | Outpost Docs"
+            },
+            {
+              "url": "https://hookdeck.com/blog/outpost-open-source-webhooks-event-destinations-infrastructure",
+              "title": "Introducing Outpost: Open Source Outbound Webhooks and Event Destinations Infrastructure"
+            },
+            {
+              "url": "https://hookdeck.com/outpost/guides/send-webhooks-with-go-guide",
+              "title": "Send Webhooks with Go"
+            },
+            {
+              "url": "https://hookdeck.com/outpost",
+              "title": "Outpost - Managed & Self-hosted infrastructure for sending webhooks by Hookdeck"
+            },
+            {
+              "url": "https://hookdeck.com/docs/outpost/concepts",
+              "title": "Concepts — Outpost Docs | Hookdeck Event Gateway Docs"
+            }
+          ],
+          "resultChars": 2587
+        },
+        {
+          "source": "web_fetch",
+          "query": "Find all configuration variables related to alerts: ALERT_CALLBACK_URL, ALERT_CONSECUTIVE_FAILURE_COUNT, ALERT_AUTO_DISABLE_DESTINATION and any others. Give exact variable names, defaults, and whether they can be set via API vs only environment variables/deployment config.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/self-hosting/configuration"
+            }
+          ],
+          "resultChars": 1292
+        },
+        {
+          "source": "web_search",
+          "query": "Hookdeck Outpost Config API PATCH /config alert callback url consecutive failure count",
+          "hasContent": false,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/self-hosting/configuration",
+              "title": "Configuration Reference — Outpost Docs | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/outpost/guides/webhook-alerting-and-notifications",
+              "title": "Why Alerting and Notifications Are Necessary for Outbound Webhook Providers"
+            },
+            {
+              "url": "https://hookdeck.com/outpost/guides/why-your-platform-needs-outbound-webhooks-and-how-to-ship-them",
+              "title": "Why Your Platform Needs Outbound Webhooks"
+            },
+            {
+              "url": "https://hookdeck.com/docs/outpost/features/event-delivery",
+              "title": "Event Delivery & Retries | Outpost Docs"
+            },
+            {
+              "url": "https://hookdeck.com/docs/hookdeck-basics",
+              "title": "Hookdeck Basics | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/docs/api",
+              "title": "REST API Reference | Hookdeck Event Gateway Docs"
+            }
+          ],
+          "resultChars": 2416
+        },
+        {
+          "source": "web_fetch",
+          "query": "Show the full Config API reference - what fields exist, including alert configuration (callback_url, consecutive_failure_count, auto_disable_destination), and whether this is settable via REST API with an API key.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/references/api/config"
+            }
+          ],
+          "resultChars": 215
+        },
+        {
+          "source": "web_search",
+          "query": "Outpost Hookdeck API base URL api.outpost.hookdeck.com /api/v1 reference",
+          "hasContent": false,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/guides/building-your-own-ui",
+              "title": "Building Your Own UI — Outpost Docs | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/docs/outpost/features/tenant-user-portal",
+              "title": "Tenant Portal — Outpost Docs | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/docs/api",
+              "title": "REST API Reference | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/blog/outpost-v0-4-0-released",
+              "title": "Outpost v0.4.0 Released: Azure Service Bus Support + Full Feature Overview"
+            }
+          ],
+          "resultChars": 2205
+        },
+        {
+          "source": "web_fetch",
+          "query": "Find the Outpost REST API base URL and list of endpoints, especially anything related to configuration, alerts, topics, or admin settings.",
           "hasContent": true,
           "pages": [
             {
@@ -3724,249 +3819,143 @@
         },
         {
           "source": "web_fetch",
-          "query": "Give me an overview of the docs site structure, especially anything about alerts, notifications, consecutive failures, destination disabled events, or admin/operator webhooks.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost"
-            }
-          ],
-          "resultChars": 1254
-        },
-        {
-          "source": "web_fetch",
-          "query": "Give full details on alert configuration: how to set up alerts for destination disabled events and consecutive delivery failures, including API endpoints, request/response schemas, thresholds, and debouncing.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/features/alerts"
-            }
-          ],
-          "resultChars": 1770
-        },
-        {
-          "source": "web_fetch",
-          "query": "Give full details on alert configuration: how to set up alerts for destination disabled events and consecutive delivery failures, including API endpoints, request/response schemas, thresholds, and debouncing.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/guides/alerts"
-            }
-          ],
-          "resultChars": 215
-        },
-        {
-          "source": "web_fetch",
-          "query": "Give full details on operator events / alerts configuration: API endpoints, request/response schemas for configuring the sink, topics list, thresholds, and how this works for managed Hookdeck Outpost projects vs self-hosted.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/references/operator-events"
-            }
-          ],
-          "resultChars": 215
-        },
-        {
-          "source": "web_fetch",
-          "query": "List all API endpoints available, especially anything related to admin, operator events, alerts, settings, or topics configuration. Include base URL and auth header format.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/references/api-reference"
-            }
-          ],
-          "resultChars": 215
-        },
-        {
-          "source": "web_search",
-          "query": "Hookdeck Outpost \"operator events\" OR \"alert.destination.disabled\" API documentation",
-          "hasContent": false,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/features/event-delivery",
-              "title": "Event Delivery & Retries | Outpost Docs"
-            },
-            {
-              "url": "https://hookdeck.com/docs/platform/outpost-projects",
-              "title": "Outpost Projects | Hookdeck Event Gateway Docs"
-            },
-            {
-              "url": "https://hookdeck.com/docs/outpost/features/tenant-user-portal",
-              "title": "Tenant Portal — Outpost Docs | Hookdeck Event Gateway Docs"
-            }
-          ],
-          "resultChars": 2166
-        },
-        {
-          "source": "web_fetch",
-          "query": "Give full details on operator events, alerts for destination disabled and consecutive failures, how to configure the sink/topics via API, thresholds, and event payload schemas.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/features/event-delivery"
-            }
-          ],
-          "resultChars": 1334
-        },
-        {
-          "source": "web_fetch",
-          "query": "Give full details on how Outpost projects work within Hookdeck, especially Monitoring settings, operator events, alerts configuration, and any API endpoints for configuring alert topics/sinks.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/platform/outpost-projects"
-            }
-          ],
-          "resultChars": 1389
-        },
-        {
-          "source": "web_fetch",
-          "query": "Give complete details on operator events: full list of event topics (especially alert.destination.disabled and alert.destination.consecutive_failure), how to configure the sink URL for managed Hookdeck Outpost projects (via API or dashboard), thresholds, event payload schemas, and any authentication/signing details.",
+          "query": "Explain the operator events feature: what topics are available (e.g. destination.disabled, alert events), the payload format, and how to configure OPERATOR_EVENTS_HTTP_URL and OPERATOR_EVENTS_TOPICS.",
           "hasContent": true,
           "pages": [
             {
               "url": "https://hookdeck.com/docs/outpost/features/operator-events"
             }
           ],
-          "resultChars": 2669
-        },
-        {
-          "source": "web_fetch",
-          "query": "List every API endpoint documented, including any related to project settings, monitoring, alerts, topics, or sinks configuration. Include HTTP methods and paths.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api"
-            }
-          ],
-          "resultChars": 1196
-        },
-        {
-          "source": "web_fetch",
-          "query": "Give full API details for Tenants, Destinations, and Configuration endpoints. I especially need the Configuration endpoint(s) - full HTTP method, path, request body, and response schema. Does it support setting operator event topics or alert sink/destination URLs?",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api/configure"
-            }
-          ],
-          "resultChars": 1825
-        },
-        {
-          "source": "web_fetch",
-          "query": "Give the full list of supported configuration keys for PATCH /config, especially ALERT_CONSECUTIVE_FAILURE_COUNT and ALERT_AUTO_DISABLE_DESTINATION. Also give the base URL for the Outpost API and the authentication header format.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api/configure#configuration"
-            }
-          ],
-          "resultChars": 2593
+          "resultChars": 1524
         },
         {
           "source": "web_search",
-          "query": "Hookdeck Outpost API \"operator event destinations\" endpoint reference",
+          "query": "hookdeck outpost github \"alert.destination.disabled\" OR \"OPERATOR_EVENTS_TOPICS\" source",
           "hasContent": false,
           "pages": [
             {
-              "url": "https://hookdeck.com/blog/hookdeck-review-january-2026",
-              "title": "Outpost Early-access, Webhook Skills & Metrics API - Hookdeck January 2026"
-            },
-            {
-              "url": "https://hookdeck.com/docs/outpost/concepts",
-              "title": "Concepts — Outpost Docs | Hookdeck Event Gateway Docs"
-            },
-            {
-              "url": "https://hookdeck.com/docs/outpost/features/tenant-user-portal",
-              "title": "Tenant Portal — Outpost Docs | Hookdeck Event Gateway Docs"
-            },
-            {
               "url": "https://hookdeck.com/blog/outpost-open-source-webhooks-event-destinations-infrastructure",
               "title": "Introducing Outpost: Open Source Outbound Webhooks and Event Destinations Infrastructure"
-            },
-            {
-              "url": "https://hookdeck.com/docs/outpost/publishing/events",
-              "title": "Publishing Events | Outpost Docs"
-            },
-            {
-              "url": "https://hookdeck.com/docs/outpost/destinations/webhook",
-              "title": "Webhook | Outpost Docs"
-            },
-            {
-              "url": "https://hookdeck.com/docs/api",
-              "title": "REST API Reference | Hookdeck Event Gateway Docs"
             }
           ],
-          "resultChars": 2657
+          "resultChars": 2594
         },
         {
           "source": "web_fetch",
-          "query": "List all documentation page URLs related to operator events, alerts, monitoring, or destinations configuration API.",
+          "query": "Quote verbatim every line/paragraph that mentions OPERATOR_EVENTS_HTTP_URL, OPERATOR_EVENTS_TOPICS, OPERATOR_EVENTS_HTTP_SIGNING_SECRET, or any operator events / alert topic strings like alert.destination.disabled. Include exact variable names as written.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/self-hosting/configuration"
+            }
+          ],
+          "resultChars": 537
+        },
+        {
+          "source": "web_fetch",
+          "query": "List all documentation page URLs related to alerts, operator events, or configuration.",
           "hasContent": true,
           "pages": [
             {
               "url": "https://hookdeck.com/docs/outpost/llms.txt"
             }
           ],
-          "resultChars": 1320
+          "resultChars": 731
         },
         {
           "source": "web_fetch",
-          "query": "I need the exact API steps to register an operator event destination for a managed Hookdeck Outpost project via the REST API (not the dashboard). Specifically: is there a reserved/special tenant ID used for operator event destinations? What is the exact HTTP request (method, path, body) to create a webhook destination that receives operator events like alert.destination.disabled? Quote any code samples verbatim.",
+          "query": "Return the full content of this page verbatim, especially: the exact list of topic strings for alert events (destination disabled, consecutive failure, exhausted retries), the exact environment variable names for the HTTP sink URL and topics filter and signing secret, the event payload/envelope structure with field names, and any example JSON payloads.",
           "hasContent": true,
           "pages": [
             {
               "url": "https://hookdeck.com/docs/outpost/features/operator-events.md"
             }
           ],
-          "resultChars": 917
+          "resultChars": 1464
+        },
+        {
+          "source": "shell_fetch",
+          "query": "curl -s \"https://hookdeck.com/docs/outpost/features/operator-events.md\" | head -c 6000",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/features/operator-events.md"
+            }
+          ],
+          "resultChars": 5998
         },
         {
           "source": "web_search",
-          "query": "\"operator-events/destinations\" outpost hookdeck",
+          "query": "Hookdeck API \"operator event destination\" OR \"operator-event-destinations\" endpoint monitoring settings",
           "hasContent": false,
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/outpost/features/tenant-user-portal",
-              "title": "Tenant Portal — Outpost Docs | Hookdeck Event Gateway Docs"
+              "url": "https://hookdeck.com/docs/destinations",
+              "title": "Destinations | Hookdeck Event Gateway Docs"
             },
+            {
+              "url": "https://hookdeck.com/docs/metrics",
+              "title": "Metrics | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/docs/guides/how-to-test-outbound-webhook-delivery",
+              "title": "Test Outbound Webhook Delivery | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/docs/api",
+              "title": "REST API Reference | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/docs",
+              "title": "Documentation | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/docs/use-cases/receive-webhooks",
+              "title": "Receive and Process Webhooks with Hookdeck | Hookdeck Event Gateway Docs"
+            }
+          ],
+          "resultChars": 2673
+        },
+        {
+          "source": "shell_fetch",
+          "query": "curl -s \"https://hookdeck.com/docs/outpost/features/operator-events.md\" | sed -n '1,40p'\necho \"----full-search-config-endpoint----\"\ncurl -s \"https://hookdeck.com/docs/api\" -o /tmp/hd_api.html -w \"%{http_code}\\n\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/features/operator-events.md"
+            }
+          ],
+          "resultChars": 2240
+        },
+        {
+          "source": "web_search",
+          "query": "\"dashboard.hookdeck.com/settings/project/monitoring\" outpost operator events destination configure",
+          "hasContent": false,
+          "pages": [
             {
               "url": "https://hookdeck.com/docs/platform/outpost-projects",
               "title": "Outpost Projects | Hookdeck Event Gateway Docs"
-            },
-            {
-              "url": "https://hookdeck.com/blog/outpost-open-source-webhooks-event-destinations-infrastructure",
-              "title": "Introducing Outpost: Open Source Outbound Webhooks and Event Destinations Infrastructure"
             },
             {
               "url": "https://hookdeck.com/docs/outpost/guides/migrate-to-outpost",
               "title": "Migrate Existing Webhooks to Outpost — Outpost Docs | Hookdeck Event Gateway Docs"
             },
             {
-              "url": "https://hookdeck.com/outpost",
-              "title": "Outpost - Managed & Self-hosted infrastructure for sending webhooks by Hookdeck"
+              "url": "https://hookdeck.com/docs/outpost/features/opentelemetry",
+              "title": "OpenTelemetry — Outpost Docs | Hookdeck Event Gateway Docs"
             },
             {
-              "url": "https://hookdeck.com/docs/outpost/publishing/events",
-              "title": "Publishing Events | Outpost Docs"
+              "url": "https://hookdeck.com/docs/platform/event-gateway-projects",
+              "title": "Event Gateway Projects | Hookdeck Docs"
             },
             {
-              "url": "https://hookdeck.com/docs/outpost/destinations/aws-sqs",
-              "title": "AWS SQS — Outpost Docs | Hookdeck Event Gateway Docs"
-            }
-          ],
-          "resultChars": 2578
-        },
-        {
-          "source": "web_fetch",
-          "query": "Give the exact JSON request body example for POST /tenants/{tenant_id}/destinations to create a webhook destination, including all field names (type, topics, config object with url, etc.)",
-          "hasContent": true,
-          "pages": [
+              "url": "https://hookdeck.com/docs/outpost/features/tenant-user-portal",
+              "title": "Tenant Portal — Outpost Docs | Hookdeck Event Gateway Docs"
+            },
             {
-              "url": "https://hookdeck.com/docs/outpost/destinations/webhook"
+              "url": "https://hookdeck.com/docs/outpost/concepts",
+              "title": "Concepts — Outpost Docs | Hookdeck Event Gateway Docs"
             }
           ],
-          "resultChars": 743
+          "resultChars": 2176
         }
       ]
     },
@@ -3985,7 +3974,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-004-queue-destination",
-    "ranAt": "2026-08-24T14:27:15.505Z",
+    "ranAt": "2026-08-25T09:48:19.544Z",
     "stage": "build",
     "product": [
       "outpost"
@@ -4030,31 +4019,310 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "Hookdeck Outpost API tenants destinations reference",
+          "query": "Hookdeck Outpost API documentation base URL",
           "hasContent": false,
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/outpost/features/tenant-user-portal",
-              "title": "Tenant Portal — Outpost Docs | Hookdeck Event Gateway Docs"
-            },
-            {
-              "url": "https://hookdeck.com/docs/outpost/guides/migrate-to-outpost",
-              "title": "Migrate Existing Webhooks to Outpost — Outpost Docs | Hookdeck Event Gateway Docs"
+              "url": "https://hookdeck.com/docs/api",
+              "title": "REST API Reference | Hookdeck Event Gateway Docs"
             },
             {
               "url": "https://hookdeck.com/docs/outpost/guides/building-your-own-ui",
               "title": "Building Your Own UI — Outpost Docs | Hookdeck Event Gateway Docs"
             },
             {
+              "url": "https://hookdeck.com/docs/outpost/features/tenant-user-portal",
+              "title": "Tenant Portal — Outpost Docs | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/docs/outpost/destinations/webhook",
+              "title": "Webhook | Outpost Docs"
+            },
+            {
+              "url": "https://hookdeck.com/docs/outpost/self-hosting/configuration",
+              "title": "Configuration Reference — Outpost Docs | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/outpost",
+              "title": "Outpost - Managed & Self-hosted infrastructure for sending webhooks by Hookdeck"
+            }
+          ],
+          "resultChars": 1763
+        },
+        {
+          "source": "web_search",
+          "query": "Hookdeck Outpost API AWS SQS destination configuration",
+          "hasContent": false,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/destinations/aws-sqs",
+              "title": "AWS SQS — Outpost Docs | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/docs/outpost/self-hosting/configuration",
+              "title": "Configuration Reference — Outpost Docs | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/blog/outpost-open-source-webhooks-event-destinations-infrastructure",
+              "title": "Introducing Outpost: Open Source Outbound Webhooks and Event Destinations Infrastructure"
+            },
+            {
               "url": "https://hookdeck.com/docs/outpost/concepts",
               "title": "Concepts — Outpost Docs | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/outpost",
+              "title": "Outpost - Managed & Self-hosted infrastructure for sending webhooks by Hookdeck"
+            },
+            {
+              "url": "https://hookdeck.com/docs/outpost/guides/migrate-to-outpost",
+              "title": "Migrate Existing Webhooks to Outpost — Outpost Docs | Hookdeck Event Gateway Docs"
+            }
+          ],
+          "resultChars": 2750
+        },
+        {
+          "source": "web_search",
+          "query": "Hookdeck Outpost REST API authentication bearer token",
+          "hasContent": false,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api",
+              "title": "REST API Reference | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/docs/authentication",
+              "title": "Authentication & Verification | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/docs/outpost/features/tenant-user-portal",
+              "title": "Tenant Portal — Outpost Docs | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/outpost/guides/send-webhooks-with-go-guide",
+              "title": "Send Webhooks with Go"
+            },
+            {
+              "url": "https://hookdeck.com/outpost/guides/send-webhooks-with-gin-guide",
+              "title": "Send Webhooks with Gin"
+            },
+            {
+              "url": "https://hookdeck.com/outpost/guides/send-webhooks-with-fastapi-guide",
+              "title": "Send Webhooks with FastAPI"
+            },
+            {
+              "url": "https://hookdeck.com/outpost/guides/send-webhooks-with-python-guide",
+              "title": "Send Webhooks with Python"
+            },
+            {
+              "url": "https://hookdeck.com/docs/platform/outpost-projects",
+              "title": "Outpost Projects | Hookdeck Event Gateway Docs"
             },
             {
               "url": "https://hookdeck.com/docs/outpost/destinations/webhook",
               "title": "Webhook | Outpost Docs"
             }
           ],
-          "resultChars": 2512
+          "resultChars": 2295
+        },
+        {
+          "source": "web_search",
+          "query": "Hookdeck Outpost API tenants destinations topics event types",
+          "hasContent": false,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/concepts",
+              "title": "Concepts — Outpost Docs | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/blog/outpost-open-source-webhooks-event-destinations-infrastructure",
+              "title": "Introducing Outpost: Open Source Outbound Webhooks and Event Destinations Infrastructure"
+            },
+            {
+              "url": "https://hookdeck.com/docs/outpost/publishing/events",
+              "title": "Publishing Events | Outpost Docs"
+            },
+            {
+              "url": "https://hookdeck.com/docs/outpost/features/tenant-user-portal",
+              "title": "Tenant Portal — Outpost Docs | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/blog/hookdeck-review-january-2026",
+              "title": "Outpost Early-access, Webhook Skills & Metrics API - Hookdeck January 2026"
+            },
+            {
+              "url": "https://hookdeck.com/docs/outpost/guides/building-your-own-ui",
+              "title": "Building Your Own UI — Outpost Docs | Hookdeck Event Gateway Docs"
+            }
+          ],
+          "resultChars": 2830
+        },
+        {
+          "source": "web_search",
+          "query": "Hookdeck CLI outpost commands",
+          "hasContent": false,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/cli",
+              "title": "The Hookdeck CLI | Hookdeck Docs"
+            },
+            {
+              "url": "https://hookdeck.com/blog/hookdeck-cli-v2",
+              "title": "Hookdeck CLI v2: AI agents can query, inspect, and debug webhooks via MCP"
+            },
+            {
+              "url": "https://hookdeck.com/docs/outpost/self-hosting/quickstarts/kubernetes",
+              "title": "Deploy on Kubernetes — Outpost Docs | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/blog/hookdeck-review-october-2025",
+              "title": "CLI v1.1.0 Interactive Mode, Webhook Radar & Outpost Scaling - Hookdeck October 2025"
+            },
+            {
+              "url": "https://hookdeck.com/blog/hookdeck-review-march-2026",
+              "title": "CLI v2 with MCP, Request issues, Discord notifications - Hookdeck March 2026"
+            },
+            {
+              "url": "https://hookdeck.com/docs/mcp",
+              "title": "MCP & Skills | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/blog/hookdeck-review-january-2026",
+              "title": "Outpost Early-access, Webhook Skills & Metrics API - Hookdeck January 2026"
+            },
+            {
+              "url": "https://hookdeck.com/blog/hookdeck-review-november-2025",
+              "title": "New Relic Metrics, Quick Filters, CLI v1.3.0 & Outpost Standard Webhooks - Hookdeck November 2025"
+            }
+          ],
+          "resultChars": 2503
+        },
+        {
+          "source": "web_fetch",
+          "query": "What are the exact configuration fields required for AWS SQS destination? Include field names, required vs optional, and example request body.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/destinations/aws-sqs"
+            }
+          ],
+          "resultChars": 867
+        },
+        {
+          "source": "web_fetch",
+          "query": "How do topics work? How are destinations filtered by topics? Can destinations subscribe to specific topics or just wildcard all?",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api/topics"
+            }
+          ],
+          "resultChars": 215
+        },
+        {
+          "source": "web_fetch",
+          "query": "What is the base URL for the Outpost API and authentication method?",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/overview"
+            }
+          ],
+          "resultChars": 592
+        },
+        {
+          "source": "web_search",
+          "query": "Hookdeck Outpost API destinations create endpoint documentation",
+          "hasContent": false,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/guides/building-your-own-ui",
+              "title": "Building Your Own UI — Outpost Docs | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/docs/api",
+              "title": "REST API Reference | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/docs/outpost/features/tenant-user-portal",
+              "title": "Tenant Portal — Outpost Docs | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/blog/outpost-open-source-webhooks-event-destinations-infrastructure",
+              "title": "Introducing Outpost: Open Source Outbound Webhooks and Event Destinations Infrastructure"
+            },
+            {
+              "url": "https://hookdeck.com/docs/outpost/overview",
+              "title": "Overview — Outpost Docs | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/docs/create-a-destination",
+              "title": "Destinations | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/docs/outpost/concepts",
+              "title": "Concepts — Outpost Docs | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/docs/use-cases/send-webhooks",
+              "title": "Send Webhooks With Hookdeck | Hookdeck Event Gateway Docs"
+            }
+          ],
+          "resultChars": 2921
+        },
+        {
+          "source": "web_search",
+          "query": "site:outpost.hookdeck.com/docs/api destinations",
+          "hasContent": false,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/destinations/webhook",
+              "title": "Webhook | Outpost Docs"
+            },
+            {
+              "url": "https://hookdeck.com/docs/outpost/guides/building-your-own-ui",
+              "title": "Building Your Own UI — Outpost Docs | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/docs/platform/outpost-projects",
+              "title": "Outpost Projects | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/docs/outpost/concepts",
+              "title": "Concepts — Outpost Docs | Hookdeck Event Gateway Docs"
+            },
+            {
+              "url": "https://hookdeck.com/blog/outpost-open-source-webhooks-event-destinations-infrastructure",
+              "title": "Introducing Outpost: Open Source Outbound Webhooks and Event Destinations Infrastructure"
+            },
+            {
+              "url": "https://hookdeck.com/outpost",
+              "title": "Outpost - Managed & Self-hosted infrastructure for sending webhooks by Hookdeck"
+            }
+          ],
+          "resultChars": 2244
+        },
+        {
+          "source": "web_fetch",
+          "query": "What is the REST API endpoint to create a destination? Show the full POST request URL, body structure, and how topics are filtered.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/guides/building-your-own-ui"
+            }
+          ],
+          "resultChars": 1370
+        },
+        {
+          "source": "web_fetch",
+          "query": "What is the base URL and the exact REST endpoint for creating a destination? Show the full path and method.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api"
+            }
+          ],
+          "resultChars": 771
         }
       ]
     },
@@ -7374,7 +7642,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-003-operator-events",
-    "ranAt": "2026-08-24T16:04:27.436Z",
+    "ranAt": "2026-08-25T10:19:40.439Z",
     "stage": "build",
     "product": [
       "outpost"
@@ -7410,291 +7678,151 @@
         "outpost"
       ],
       "loaded": [
-        "hookdeck",
         "outpost"
       ]
     },
     "docs": {
       "calls": [
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/llms.txt | sed -n '1,220p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/llms.txt"
-            }
-          ],
-          "resultChars": 11412
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost disabled destination alert consecutive delivery failures threshold Outpost",
+          "pages": []
         },
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api | sed -n '1,220p'\"",
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/outpost/features/operator-events",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/features/operator-events"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost Config API monitoring settings operator events HTTP url topic update",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost/api config API operation events http url topics",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/outpost/api",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/outpost/api"
             }
-          ],
-          "resultChars": 613299
+          ]
         },
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api.md | sed -n '1,260p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api.md"
-            }
-          ],
-          "resultChars": 5554
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost \"Monitoring settings\" \"Config API\"",
+          "pages": []
         },
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/features/operator-events.md | sed -n '1,260p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/features/operator-events.md"
-            }
-          ],
-          "resultChars": 8210
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost \"Config API\" \"operation events\" \"api\" \"settings\"",
+          "pages": []
         },
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api/resources.md | sed -n '1,260p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api/resources.md"
-            }
-          ],
-          "resultChars": 5733
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs \"Config API\" \"project settings\" hookdeck monitoring",
+          "pages": []
         },
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api/configure.md | sed -n '1,260p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api/configure.md"
-            }
-          ],
-          "resultChars": 5832
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/platform/outpost-projects API project settings monitoring Config API",
+          "pages": []
         },
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api/inspect.md | sed -n '1,260p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api/inspect.md"
-            }
-          ],
-          "resultChars": 7595
+          "source": "web_search",
+          "query": "site:github.com/hookdeck/outpost openapi yaml config operation events http url",
+          "pages": []
         },
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/platform/outpost-projects.md | sed -n '1,260p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/platform/outpost-projects.md"
-            }
-          ],
-          "resultChars": 5841
+          "source": "web_search",
+          "query": "site:github.com/hookdeck/outpost \"getManagedConfig\" \"updateManagedConfig\"",
+          "pages": []
         },
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/platform/organizations.md | sed -n '1,220p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/platform/organizations.md"
-            }
-          ],
-          "resultChars": 3442
+          "source": "web_search",
+          "query": "site:raw.githubusercontent.com/hookdeck/outpost/main/docs/apis/openapi.yaml OPERATION_EVENTS_HTTP_URL",
+          "pages": []
         },
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/platform/llms.txt | sed -n '1,220p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/platform/llms.txt"
-            }
-          ],
-          "resultChars": 22682
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/platform OPERATION_EVENTS_HTTP_URL",
+          "pages": []
         },
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/llms.txt | sed -n '1,260p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/llms.txt"
-            }
-          ],
-          "resultChars": 9141
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/platform/project settings monitoring api operator events hookdeck api",
+          "pages": []
         },
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/api.md | sed -n '1,260p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api.md"
-            }
-          ],
-          "resultChars": 8525
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs platform project settings API monitoring outpost operator events sink",
+          "pages": []
         },
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/platform/project-settings.md | sed -n '1,260p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/platform/project-settings.md"
-            }
-          ],
-          "resultChars": 27518
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api projects settings monitoring alert webhook endpoint hookdeck",
+          "pages": []
         },
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/api/configure.md | sed -n '1,260p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api/configure.md"
-            }
-          ],
-          "resultChars": 7829
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api projects organization settings alerting outpost operator events",
+          "pages": []
         },
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/issues.md | sed -n '1,260p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/issues.md"
-            }
-          ],
-          "resultChars": 10152
+          "source": "web_search",
+          "query": "site:raw.githubusercontent.com/hookdeck/outpost/main/docs/apis/openapi.yaml \"operator event destinations\"",
+          "pages": []
         },
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/issue-triggers.md | sed -n '1,260p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/issue-triggers.md"
-            }
-          ],
-          "resultChars": 9240
+          "source": "web_search",
+          "query": "site:github.com/hookdeck operator event destinations webhook url project settings API",
+          "pages": []
         },
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/llms.txt | rg -n 'operator|monitor|alert|destination|config'\"",
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/outpost/destinations/webhook",
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/outpost/llms.txt"
+              "url": "https://hookdeck.com/docs/outpost/destinations/webhook"
             }
-          ],
-          "resultChars": 4305
+          ]
         },
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api.md | rg -n 'operator-events|ALERT_CONSECUTIVE_FAILURE_COUNT|ALERT_AUTO_DISABLE_DESTINATION|monitoring|config'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api.md"
-            }
-          ],
-          "resultChars": 246
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/platform/projects api project settings hookdeck",
+          "pages": []
         },
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/features/operator-events.md | sed -n '1,260p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/features/operator-events.md"
-            }
-          ],
-          "resultChars": 8210
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs notifications webhook specific events api hookdeck project settings",
+          "pages": []
         },
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api/configure.md | sed -n '1,260p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api/configure.md"
-            }
-          ],
-          "resultChars": 5832
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs \"PUT /2025-07-01\" \"operator events\" hookdeck",
+          "pages": []
         },
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api.md | rg -n 'Configuration|/config|operator-events|monitoring|destination-types'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api.md"
-            }
-          ],
-          "resultChars": 246
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost \"operator-events/destinations\"",
+          "pages": []
         },
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api/configure.md | rg -n 'Configuration|/config|monitoring|operator|alert|destination|topics'\"",
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/outpost/self-hosting/changelog/upgrade-v0.16",
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/outpost/api/configure.md"
+              "url": "https://hookdeck.com/docs/outpost/self-hosting/changelog/upgrade-v0.16"
             }
-          ],
-          "resultChars": 6126
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/features/operator-events.md | rg -n 'Config API|Monitoring settings|ALERT_AUTO_DISABLE_DESTINATION|ALERT_CONSECUTIVE_FAILURE_COUNT|sink|topics'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/features/operator-events.md"
-            }
-          ],
-          "resultChars": 3408
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api/configure.md | sed -n '836,980p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api/configure.md"
-            }
-          ],
-          "resultChars": 6503
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api/resources.md | rg -n 'operator|monitor|config|sink|destination|topic'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api/resources.md"
-            }
-          ],
-          "resultChars": 2101
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/llms.txt | rg -n 'operator-events|destination-types|monitoring|destination'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/llms.txt"
-            }
-          ],
-          "resultChars": 3400
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api/configure.md | sed -n '322,440p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api/configure.md"
-            }
-          ],
-          "resultChars": 2569
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/quickstarts/hookdeck-outpost-curl.md | sed -n '1,220p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/quickstarts/hookdeck-outpost-curl.md"
-            }
-          ],
-          "resultChars": 6070
+          ]
         }
       ]
     },
@@ -7713,7 +7841,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-004-queue-destination",
-    "ranAt": "2026-08-24T14:34:20.878Z",
+    "ranAt": "2026-08-25T10:22:06.313Z",
     "stage": "build",
     "product": [
       "outpost"
@@ -7762,47 +7890,7 @@
       ]
     },
     "docs": {
-      "calls": [
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost update destination tenant_id destinations PUT Hookdeck Outpost",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/outpost/api",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "'Update Destination' in https://hookdeck.com/docs/outpost/api",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api destination update outpost destination_id",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api \"Create or Update Destination\" Hookdeck Outpost",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api \"Update Destination\" \"Outpost API Reference\"",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api \"PATCH /api/v1/tenants/<TENANT_ID>/destinations/<DESTINATION_ID>\"",
-          "pages": []
-        }
-      ]
+      "calls": []
     },
     "prompt": "Acme are moving off webhooks. Their endpoint keeps falling over under load and\nthey'd rather we drop order events straight onto a queue they already run.\n\nThey sent us the queue details last week — whoever picked up the ticket put\nthem in the repo.\n\nSet that up, and stop sending their orders to the old endpoint.",
     "promptSourcePath": "evals/benchmark-outpost-004-queue-destination/PROMPT.md",
@@ -11940,7 +12028,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-003-operator-events",
-    "ranAt": "2026-08-24T15:59:29.050Z",
+    "ranAt": "2026-08-25T10:13:38.069Z",
     "stage": "build",
     "product": [
       "outpost"
@@ -11977,31 +12065,50 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "Hookdeck API alerts destination disabled delivery failures threshold endpoint project API",
+          "query": "site:docs.hookdeck.com Hookdeck API destinations alerts disable destination consecutive delivery failures operator alerts",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs notification settings API Hookdeck webhooks notification channels",
+          "query": "Hookdeck alerts destination failure operator alert webhook",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "https://hookdeck.com/docs/outpost/features/operator-events",
+          "query": "https://hookdeck.com/docs/issues",
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/outpost/features/operator-events"
+              "url": "https://hookdeck.com/docs/issues"
             }
           ]
         },
         {
           "source": "web_search",
-          "query": "'Configuration API' in https://hookdeck.com/docs/outpost/features/operator-events",
+          "query": "'notifications/webhooks' in https://hookdeck.com/docs/issues",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api config api outpost operator events settings",
+          "query": "https://hookdeck.com/docs/issues/issue-triggers",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/issues/issue-triggers"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs issue triggers Hookdeck delivery attempts threshold",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api issue triggers Hookdeck API",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "'notifications' in https://hookdeck.com/docs/api",
           "pages": []
         },
         {
@@ -12015,37 +12122,56 @@
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api \"notification\" \"project\" Hookdeck API Reference",
+          "query": "site:hookdeck.com/docs/api Hookdeck authentication Bearer API key",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "apis.io Hookdeck Notifications API OpenAPI",
+          "query": "https://hookdeck.com/docs/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api \"notifications/webhooks\" \"api.hookdeck.com\"",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "'notification' in https://github.com/hookdeck/outpost/blob/main/docs/apis/openapi.yaml",
+          "query": "site:hookdeck.com/docs/api \"GET /2025-07-01\" Hookdeck project",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost operator event destinations API",
+          "query": "site:hookdeck.com/docs/api Bearer Token Authentication Hookdeck API key",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost \"operator event destinations\" \"Config API\"",
+          "query": "site:hookdeck.com/docs/api \"Base URL\" Hookdeck REST API",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "\"operator event destinations\" hookdeck github",
+          "query": "site:hookdeck.com/docs/api \"2025-07-01/notifications/webhooks\"",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api openapi json operator event destinations",
+          "query": "site:hookdeck.com/docs/outpost \"Config API\" \"operator events\"",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost/api reference openapi outpost",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost/api openapi api.outpost.hookdeck.com",
           "pages": []
         },
         {
@@ -12059,22 +12185,87 @@
         },
         {
           "source": "web_search",
-          "query": "site:github.com/hookdeck/outpost \"OPERATOR_EVENTS_HTTP_URL\"",
+          "query": "site:hookdeck.com/docs/outpost/api operator events config api key topics sink",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "Hookdeck Notifications API webhook channel create endpoint",
+          "query": "site:hookdeck.com/docs/outpost \"Config API\" \"OPERATION_EVENTS_HTTP_URL\"",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:github.com/hookdeck/outpost \"operator event destinations\" \"api\"",
+          "query": "site:hookdeck.com/docs/outpost \"Config API\" \"curl\" \"settings\"",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:github.com/hookdeck/outpost operator_events hookdeck outpost code",
+          "query": "site:hookdeck.com/docs/outpost \"Config API\" endpoint \"PUT\" \"config\"",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost/api config api endpoint operator events",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost/api monitoring operator events outpost api",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost operator event destinations API",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost/api \"OPERATION_EVENTS_HTTP_URL\"",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:github.com/hookdeck/outpost OPERATION_EVENTS_HTTP_URL",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "'OPERATOR_EVENTS_HTTP_URL' in https://github.com/hookdeck/outpost/blob/main/docs/apis/openapi.yaml",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:github.com/hookdeck/outpost \"OPERATION_EVENTS_HTTP_URL\"",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:github.com/hookdeck/outpost \"operation_events\" \"api/v1\"",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:github.com/hookdeck/outpost \"settings/project/monitoring\"",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/platform project settings monitoring API hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:npmjs.org hookdeck cli package monitoring outpost",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "\"operator event destinations\" Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://dashboard.hookdeck.com/settings/project/monitoring",
           "pages": []
         }
       ]
@@ -12094,7 +12285,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-004-queue-destination",
-    "ranAt": "2026-08-24T14:32:01.863Z",
+    "ranAt": "2026-08-25T10:14:57.662Z",
     "stage": "build",
     "product": [
       "outpost"
@@ -12139,17 +12330,12 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "site:hookdeck.com docs Hookdeck API authentication X-API-KEY Bearer",
+          "query": "Hookdeck API connections destinations sources documentation orders queue SQS official",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/aws sqs hookdeck destination API create destination request body",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api create destination aws_sqs event gateway Hookdeck API",
+          "query": "site:hookdeck.com/docs hookdeck api connections destinations REST create update official",
           "pages": []
         },
         {
@@ -12163,30 +12349,25 @@
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api \"Create a destination\" Hookdeck Event Gateway",
+          "query": "site:hookdeck.com/docs/api destinations connections openapi Hookdeck REST API",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api Hookdeck API Bearer token base url /2025-07-01",
+          "query": "site:hookdeck.com/docs/outpost/api openapi json hookdeck outpost",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api \"List connections\" Hookdeck API",
+          "query": "site:hookdeck.com/docs/outpost/api/2025-07-01 outpost api reference hookdeck",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api \"api.hookdeck.com\" Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/api",
+          "query": "https://hookdeck.com/docs/outpost/api",
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/api"
+              "url": "https://hookdeck.com/docs/outpost/api"
             }
           ]
         }
@@ -14016,7 +14197,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-003-operator-events",
-    "ranAt": "2026-08-24T16:11:00.373Z",
+    "ranAt": "2026-08-25T10:30:12.675Z",
     "stage": "build",
     "product": [
       "outpost"
@@ -14058,37 +14239,34 @@
     "docs": {
       "calls": [
         {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost notifications destination disabled consecutive failures Outpost",
-          "pages": []
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"cat .agents/skills/outpost/references/outpost-verify.md; printf '\\\\n--- DOC INDEX MATCHES ---\\\\n'; curl -fsSL https://hookdeck.com/docs/outpost/llms.txt | rg -i 'alert|notification|disable|failure|attempt|project|setting' | head -100; printf '\\\\n--- OPENAPI MATCHES ---\\\\n'; curl -fsSL https://raw.githubusercontent.com/hookdeck/outpost/main/docs/apis/openapi.yaml -o /tmp/outpost-openapi.yaml; rg -n -i 'alert|notification|disable|failure|attempt|project|setting' /tmp/outpost-openapi.yaml | head -200\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/llms.txt"
+            }
+          ],
+          "resultChars": 14598
         },
         {
-          "source": "web_search",
-          "query": "\"managed by your operator event destinations\" Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api monitoring notification destination Hookdeck project monitoring API",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/outpost/features/operator-events.md",
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"printf '%s\\\\n' '--- OPERATOR EVENTS DOC ---'; curl -fsSL https://hookdeck.com/docs/outpost/features/operator-events.md; printf '%s\\\\n' '--- CONFIG OPENAPI ---'; sed -n '3010,3185p' /tmp/outpost-openapi.yaml; sed -n '3240,3290p' /tmp/outpost-openapi.yaml; rg -n '\"'^  /.*config|operationId:.*[Cc]onfig|Configuration'\"' /tmp/outpost-openapi.yaml | tail -50\"",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/outpost/features/operator-events.md"
             }
-          ]
+          ],
+          "resultChars": 18777
         },
         {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/outpost/features/operator-events",
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"sed -n '2960,3175p' /tmp/outpost-openapi.yaml; sed -n '3380,3475p' /tmp/outpost-openapi.yaml; printf '\\\\n--- CURL QUICKSTART AUTH/BASE ---\\\\n'; curl -fsSL https://hookdeck.com/docs/outpost/quickstarts/hookdeck-outpost-curl.md | sed -n '1,180p'\"",
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/outpost/features/operator-events"
+              "url": "https://hookdeck.com/docs/outpost/quickstarts/hookdeck-outpost-curl.md"
             }
-          ]
+          ],
+          "resultChars": 6070
         }
       ]
     },
@@ -14107,7 +14285,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-004-queue-destination",
-    "ranAt": "2026-08-24T14:38:31.684Z",
+    "ranAt": "2026-08-25T10:32:34.410Z",
     "stage": "build",
     "product": [
       "outpost"
@@ -15888,7 +16066,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-003-operator-events",
-    "ranAt": "2026-08-24T16:07:45.281Z",
+    "ranAt": "2026-08-25T10:25:42.942Z",
     "stage": "build",
     "product": [
       "outpost"
@@ -15925,18 +16103,23 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs outpost destination disabled webhook attempts alert",
+          "query": "site:hookdeck.com/docs Outpost destination disabled alert notification delivery failures",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "Hookdeck Outpost API reference",
+          "query": "site:outpost.hookdeck.com/docs \"disabled\" destination",
           "pages": []
         },
         {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api monitoring operator events config API Hookdeck",
-          "pages": []
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"for path in \\\\\n /docs/outpost/overview \\\\\n /docs/outpost/features \\\\\n /docs/outpost/features/delivery-attempts \\\\\n /docs/outpost/features/automatic-disable \\\\\n /docs/outpost/features/notifications \\\\\n /docs/outpost/api \\\\\n /docs/api \\\\\n /docs/outpost/quickstarts/overview; do \\\\\n   url=\\\"https://hookdeck.com\"'$path\"; code=$(curl -sS -L -o \"/tmp/doc$(echo \"$path\"|tr / _)\" -w '\"'%{http_code}' \\\"\"'$url\"); printf '\"'%s %s %s\\\\n' \\\"\"'$code\" \"$(wc -c <\"/tmp/doc$(echo \"$path\"|tr / _)\")\" \"$path\"; done; \nprintf '\"'%s\\\\n' '--- site map outpost paths ---'; curl -sS -L https://hookdeck.com/sitemap-index.xml | head -c 1000; echo; curl -sS -L https://hookdeck.com/sitemap-0.xml -o /tmp/sitemap || true; rg -o 'https://hookdeck.com/[\"'^<]+'\"' /tmp/sitemap | rg 'outpost|issue|notification|alert' | head -200\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/sitemap-index.xml"
+            }
+          ],
+          "resultChars": 9134
         },
         {
           "source": "web_search",
@@ -15964,7 +16147,7 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-004-queue-destination",
-    "ranAt": "2026-08-24T14:36:10.449Z",
+    "ranAt": "2026-08-25T10:28:01.601Z",
     "stage": "build",
     "product": [
       "outpost"
@@ -16009,12 +16192,7 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs Outpost API subdomain destinations SQS Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "Hookdeck Outpost API GitHub destinations subscriptions API",
+          "query": "site:hookdeck.com/docs/api destinations create AWS SQS Hookdeck API",
           "pages": []
         }
       ]

@@ -102,7 +102,9 @@ export interface OutpostSeed {
   deleteTenants?: string[];
   tenants?: {
     id: string;
-    topics?: string[];
+    // No `topics` here: `Tenant.topics` is read-only and derived from the
+    // tenant's destinations, so declaring it in a seed configured nothing while
+    // reading as though it gated delivery. Set topics on the destinations.
     destinations?: {
       /** Referenced by `after` steps via `$ref:<name>`. */
       ref?: string;
@@ -347,9 +349,15 @@ export async function applyOutpostSeed(
     await outpost('DELETE', `/tenants/${encodeURIComponent(tenant.id)}`).catch(
       () => undefined
     );
-    await outpost('PUT', `/tenants/${encodeURIComponent(tenant.id)}`, {
-      ...(tenant.topics ? { topics: tenant.topics } : {}),
-    });
+    // No `topics`: the API ignores it.
+    //
+    // `Tenant.topics` is read-only and derived from the tenant's destinations —
+    // verified live, a `PUT` carrying topics returns `[]`, and adding a
+    // destination on `order.shipped` makes it `["order.shipped"]`. Sending it
+    // made four seed files look as though they gated delivery, and produced one
+    // scorer that justified its whole design on an agent "editing the tenant's
+    // topics instead", a route that does not exist.
+    await outpost('PUT', `/tenants/${encodeURIComponent(tenant.id)}`, {});
 
     for (const destination of tenant.destinations ?? []) {
       const created = await outpost<{ id: string }>(
