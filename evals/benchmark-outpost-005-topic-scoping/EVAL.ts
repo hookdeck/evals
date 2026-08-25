@@ -201,6 +201,10 @@ const scorer: ToolScorer = async (ctx) => {
     const live = (await listDestinations(ctx, ACME)).filter(
       (d) => !d.disabled_at
     );
+    // A wildcard counts here, unlike the topic checks in `outpost-003` and
+    // `-004`. This is not judging whether the agent scoped correctly; it is
+    // asking whether anything should have arrived at all, and a destination
+    // subscribed to everything would have received it.
     const shouldHaveArrived = live.some((d) => {
       const topics = d.topics ?? [];
       return topics.includes('*') || topics.includes(KEPT);

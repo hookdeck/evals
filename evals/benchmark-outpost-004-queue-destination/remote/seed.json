@@ -3,7 +3,6 @@
     "tenants": [
       {
         "id": "acme",
-        "topics": ["orders", "retries"],
         "destinations": [
           {
             "ref": "acme-webhook",
@@ -17,7 +16,6 @@
       },
       {
         "id": "globex",
-        "topics": ["orders"],
         "destinations": [
           {
             "ref": "globex-webhook",

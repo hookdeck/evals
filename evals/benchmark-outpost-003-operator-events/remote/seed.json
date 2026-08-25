@@ -4,7 +4,6 @@
     "tenants": [
       {
         "id": "acme",
-        "topics": ["orders", "retries"],
         "destinations": [
           {
             "ref": "acme-orders",

@@ -177,14 +177,15 @@ function checkQueueExists(
 }
 
 function checkQueueReceivesOrders(queues: Destination[]): CheckResult {
-  const subscribed = queues.some((d) => subscribes(d, ORDERS));
+  const subscribed = queues.some((d) => subscribesExactly(d, ORDERS));
   return {
     name: 'the queue is subscribed to their order events',
     passed: subscribed,
     notes: subscribed
       ? undefined
-      : `the queue destination is not subscribed to ${ORDERS} ` +
-        `(topics: ${topicsOf(queues)}), so it would sit empty`,
+      : `the queue destination is not subscribed to exactly ${ORDERS} ` +
+        `(topics: ${topicsOf(queues)}). A wildcard does not count: they asked for ` +
+        'orders on the queue, and everything else would land there too',
   };
 }
 
@@ -268,7 +269,24 @@ async function checkOtherTenantUntouched(
   };
 }
 
-/** `*` subscribes to everything. */
+/**
+ * Does this destination receive `topic`?
+ *
+ * A wildcard does **not** count for the queue. The workspace note says "They
+ * only want `orders` on the queue", so a destination subscribed to everything
+ * satisfies the letter of "the queue receives orders" while also putting the
+ * customer's retry traffic on it — the acted-more-broadly-than-asked failure
+ * this scenario is built around. `applyOutpostSeed` defaults to `*` when topics
+ * are absent, so it is the natural thing for an agent to reach for.
+ *
+ * The old webhook is judged separately by `subscribesBroadly`, where a wildcard
+ * legitimately means "still receiving this".
+ */
+function subscribesExactly(destination: Destination, topic: string): boolean {
+  return (destination.topics ?? []).includes(topic);
+}
+
+/** For "is this still reaching them at all", where `*` genuinely qualifies. */
 function subscribes(destination: Destination, topic: string): boolean {
   const topics = destination.topics ?? [];
   return topics.includes('*') || topics.includes(topic);

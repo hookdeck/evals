@@ -162,25 +162,45 @@ function checkEnabled(matching: OperatorEventDestination[]): CheckResult {
 function checkConsecutiveFailureSubscribed(
   matching: OperatorEventDestination[]
 ): CheckResult {
-  const subscribed = matching.some((d) => subscribes(d, FAILURE_TOPIC));
+  const subscribed = matching.some((d) => subscribesExactly(d, FAILURE_TOPIC));
   return {
     name: 'the build-up to a disable is subscribed too',
     passed: subscribed,
     notes: subscribed
       ? undefined
-      : `not subscribed to ${FAILURE_TOPIC} (topics: ${topicsOf(matching)}), so ` +
-        'they would hear when a destination is switched off but not while it is ' +
-        'heading that way',
+      : `${FAILURE_TOPIC} is not named in the subscription (topics: ` +
+        `${topicsOf(matching)}). A wildcard is not enough here: the ticket asks ` +
+        'specifically to hear about failures building up, and an agent that ' +
+        'subscribed to everything never had to find that topic',
   };
 }
 
-/** `*` subscribes to everything, and is how the API expresses "all topics". */
+/**
+ * Does this destination receive `topic`?
+ *
+ * `*` counts here, and that is deliberate for the primary alert: the question
+ * is whether the alert would reach them, and a destination subscribed to
+ * everything receives it. Failing that would be scoring the route rather than
+ * the result.
+ *
+ * It does **not** count for the secondary check — see `subscribesExactly`.
+ * Accepting a wildcard there means an agent passes the whole scenario without
+ * ever learning either topic name, which is most of what the scenario asks.
+ */
 function subscribes(
   destination: OperatorEventDestination,
   topic: string
 ): boolean {
   const topics = destination.topics ?? [];
   return topics.includes('*') || topics.includes(topic);
+}
+
+/** Named the topic, rather than catching it by subscribing to everything. */
+function subscribesExactly(
+  destination: OperatorEventDestination,
+  topic: string
+): boolean {
+  return (destination.topics ?? []).includes(topic);
 }
 
 function topicsOf(destinations: OperatorEventDestination[]): string {
