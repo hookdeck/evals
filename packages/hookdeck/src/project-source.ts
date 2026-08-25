@@ -65,6 +65,8 @@ export interface FixedProjectSourceOptions {
   projectId?: string;
   /** Where the pristine snapshot is persisted between runs. */
   snapshotPath?: string;
+  /** Where the pristine Outpost managed config is recorded. See #41. */
+  outpostConfigPath?: string;
   baseUrl?: string;
   /**
    * Set when scenarios requiring Outpost can run. Outpost is a separate
@@ -80,6 +82,7 @@ export class FixedProjectSource implements ProjectSource {
   private readonly options: FixedProjectSourceOptions;
   private readonly projectId: string;
   private readonly snapshotPath: string;
+  private readonly outpostConfigPath: string;
   private cachedClient?: HookdeckClient;
   private cachedOutpostClient?: OutpostClient;
   private outpostTenantsAtAcquire?: Set<string>;
@@ -90,6 +93,8 @@ export class FixedProjectSource implements ProjectSource {
     this.options = options;
     this.projectId = options.projectId ?? 'evals-ci';
     this.snapshotPath = options.snapshotPath ?? '.hookdeck-pristine.json';
+    this.outpostConfigPath =
+      options.outpostConfigPath ?? '.outpost-pristine-config.json';
   }
 
   /**
@@ -142,7 +147,7 @@ export class FixedProjectSource implements ProjectSource {
     const snapshot = await this.loadOrCaptureSnapshot();
     await this.resetToPristine(snapshot);
     this.outpostTenantsAtAcquire = await this.listOutpostTenants();
-    this.outpostConfigAtAcquire = await this.readOutpostConfig();
+    this.outpostConfigAtAcquire = await this.loadOrCaptureOutpostConfig();
     this.operatorEventDestinationsAtAcquire =
       await this.readOperatorEventDestinations();
     return {
@@ -208,6 +213,56 @@ export class FixedProjectSource implements ProjectSource {
       return await outpost.request<Record<string, unknown>>('GET', '/config');
     } catch {
       return undefined;
+    }
+  }
+
+  /**
+   * The config a pristine project has, read from disk when we have recorded it.
+   *
+   * In-memory capture was not enough, and the failure was not hypothetical: on
+   * 21 August an agent trying to configure operator events sent 21 `PATCH
+   * /config` requests and left `TOPICS` empty. The run died before release, the
+   * *next* acquire captured the broken value as its baseline, and every seed
+   * afterwards failed with `422 invalid topics` — nineteen of twenty-four cells,
+   * and the original value was unrecoverable because it had already been
+   * overwritten before anyone read it.
+   *
+   * Deployment config is worse than a leaked tenant in two ways. It is global,
+   * so it breaks scenarios that never touch config; and it has no natural
+   * baseline, so "pristine" silently becomes whatever the last crash left.
+   *
+   * On disk it survives a crash, exactly as `.hookdeck-pristine.json` does for
+   * the project itself. Values that come back redacted are not recorded, so a
+   * mask can never be restored as though it were the setting.
+   */
+  private async loadOrCaptureOutpostConfig(): Promise<
+    Record<string, unknown> | undefined
+  > {
+    if (!this.outpostClient) return undefined;
+
+    try {
+      return JSON.parse(readFileSync(this.outpostConfigPath, 'utf8')) as Record<
+        string,
+        unknown
+      >;
+    } catch {
+      // No baseline recorded yet: today's values are the best available one.
+      const live = await this.readOutpostConfig();
+      if (!live) return undefined;
+      const recordable = Object.fromEntries(
+        Object.entries(live).filter(([, v]) => !looksRedacted(v))
+      );
+      try {
+        mkdirSync(dirname(this.outpostConfigPath), { recursive: true });
+        writeFileSync(
+          this.outpostConfigPath,
+          JSON.stringify(recordable, null, 2)
+        );
+      } catch {
+        // Recording is best effort; restoring from memory still works for a
+        // run that exits cleanly.
+      }
+      return live;
     }
   }
 

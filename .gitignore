@@ -26,6 +26,12 @@ dist/
 .hookdeck-pristine.json
 **/.hookdeck-pristine.json
 
+# The Outpost deployment's pristine managed config, recorded on first acquire so
+# a crashed run cannot make its damage permanent (#41). Machine-local, like the
+# project snapshot above.
+.outpost-pristine-config.json
+**/.outpost-pristine-config.json
+
 # Agent worktrees. Real git repos; never part of this one.
 .claude/worktrees/
 

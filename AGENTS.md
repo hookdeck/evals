@@ -329,6 +329,27 @@ release are not comparable, and the notes have to say so rather than showing a d
 that reads as improvement. The same applies to a sandbox CLI bump, which changes the
 product under test.
 
+**A run can be told not to publish.** Set the repository variable
+`EVALS_PUBLISH` to `false` and the weekly matrix still runs and still uploads
+its artifacts, while `results/` is left alone:
+
+```bash
+gh variable set EVALS_PUBLISH --body false    # hold publishing
+gh variable delete EVALS_PUBLISH              # resume
+```
+
+Use it whenever `main` carries something you already know is wrong — a scorer
+mid-repair, a scenario whose seed is being rewritten, a harness fix reviewed but
+unmerged. On 24 August the cron fired against a `main` whose prompt addendum was
+still omitting a credential, and was cancelled by hand at 47 of 72 cells,
+minutes ahead of publishing twelve failures that were ours rather than the
+agents'. That required somebody to be watching, and it was luck that anybody
+was.
+
+**A held run is still worth running.** The artifacts carry the transcripts, and
+transcripts are where the findings come from — the scoreboard has never produced
+one. Holding publication is not the same as skipping the week.
+
 ## Plans
 
 `.plans/` holds the planning documents. Start with

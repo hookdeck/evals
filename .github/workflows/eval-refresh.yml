@@ -450,6 +450,25 @@ jobs:
   publish-results:
     needs: [prepare, run-evals]
     runs-on: ubuntu-latest
+    # A way to say "run, but do not publish this week".
+    #
+    # Publishing was gated on the matrix succeeding and nothing else, so a run
+    # against a `main` we already knew was wrong would publish anyway. On 24
+    # August this fired at 06:14 with the addendum defect still on `main` — the
+    # one that made twelve baseline cells fail for a reason that was ours — and
+    # was cancelled by hand at roughly 47 of 72 cells, minutes ahead of this
+    # job. The fixes existed, reviewed, on an open PR. The cron could neither
+    # know that nor be told.
+    #
+    # Cancelling by hand needs somebody watching at the right moment, and nobody
+    # was; it came up in conversation by luck. Set the repository variable
+    # `EVALS_PUBLISH` to `false` and the matrix still runs and still uploads its
+    # artifacts — the evidence is kept — while `results/` is left alone.
+    #
+    # Deliberately a variable rather than a secret: it is configuration, it
+    # should be visible in the run log, and anyone reading a skipped publish
+    # should be able to see why without repository admin.
+    if: vars.EVALS_PUBLISH != 'false'
     steps:
       - name: Checkout
         uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
