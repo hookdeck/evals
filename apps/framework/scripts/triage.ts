@@ -77,6 +77,34 @@ const CAPABILITY_ENV: Record<string, string> = { outpost: 'OUTPOST_API_KEY' };
  */
 const PRODUCT_SKILLS = new Set(['hookdeck', 'event-gateway', 'outpost']);
 
+/**
+ * Phrases an agent uses when it is waiting for a person.
+ *
+ * The benchmark is single-turn, so a question gets no reply and the agent is
+ * scored on whatever state it left — usually nothing. That is not an agent
+ * failing the task; it is an agent checking before it touches a customer's
+ * project, which is the safer behaviour.
+ *
+ * Measured against the stored runs: **four of twelve failures are this**, three
+ * in `+skills` arms and one in a baseline (`outpost-003` on
+ * `claude-code-sonnet-5-no-skills`).
+ *
+ * An earlier version of this comment said all three were `+skills` and that the
+ * baseline never once stopped to ask, which was written from a hand-read of a
+ * subset before the detector existed. The detector disagreed with it on the
+ * first run. Worth leaving in the record, because the claim was doing work: an
+ * effect confined to one arm reads as *caused by* that arm, and this one is
+ * not — a skills-tells-agents-to-verify story is available and the evidence
+ * does not support it. Four cells is still enough to move a delta measured at
+ * two cells in twenty-four, whichever arms they fall in.
+ *
+ * Flagged rather than fixed, because declaring the benchmark autonomous in the
+ * base prompt would change behaviour everywhere and destroy the ability to
+ * measure how often this happens. See hookdeck/evals#57.
+ */
+const ASKED_AND_STOPPED =
+  /\b(confirm that|before I (inspect|proceed|change|touch|go further)|I need you to confirm|once you have (that|the) (secret|key|credential)|please confirm|can you confirm|need confirmation|waiting on (you|your)|let me know (if|whether) (you|I should))\b/i;
+
 /** Phrases an agent uses when it believes it finished. */
 const SUCCESS_CLAIM =
   /\b(everything (is )?(set up|working|verified)|successfully|all set|is now (set up|configured|working)|done!|completed successfully|verified end-to-end)\b/i;
@@ -170,6 +198,15 @@ function flagsFor(row: Row, requiredEnv: string[]): Flag[] {
     }
   }
 
+  if (row.passed === false && ASKED_AND_STOPPED.test(row.agentReport ?? '')) {
+    flags.push({
+      label: 'ASKED AND STOPPED',
+      detail:
+        'ended its turn with a question, and this benchmark has no way to answer — ' +
+        'scored as a failure, but it is not one about capability (#57)',
+    });
+  }
+
   if (row.passed === false && (row.toolCalls?.length ?? 0) === 0) {
     flags.push({ label: 'NO TOOL CALLS', detail: 'scored without acting' });
   }
@@ -239,7 +276,9 @@ function main() {
         ? 0
         : f.some((x) => x.label === 'UNCLEAN EXIT')
           ? 1
-          : 2;
+          : f.some((x) => x.label === 'ASKED AND STOPPED')
+            ? 2
+            : 3;
     return rank(a.flags) - rank(b.flags);
   });
 
