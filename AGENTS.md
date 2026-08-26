@@ -9,8 +9,8 @@ benchmark, it belongs in the README.
 
 ## Status
 
-Phases 0 and 1 are done. Phases 2 and 3 are substantially done: eighteen
-scenarios exist, fifteen benchmark and three regression, and every benchmark
+Phases 0 and 1 are done. Phases 2 and 3 are substantially done: twenty-two
+scenarios exist, nineteen benchmark and three regression, and every benchmark
 scenario has produced a valid result against all six experiments.
 
 **Do not keep a per-scenario status table here.** There was one and it went
@@ -32,19 +32,52 @@ for e in sorted(m): print(e, sum(1 for v in m[e].values() if v), '/', len(m[e]))
 `['hookdeck', 'event-gateway']`, `-no-skills` twins of each, and
 `codex-gpt-5.4-mini` in both arms as a deliberately weaker model.
 
-**What the numbers say.** Eight of fifteen scenarios discriminate, which is a
+**What the numbers say.** Nine of nineteen scenarios discriminate, which is a
 healthy benchmark rather than a flat one. The frontier agents pass nearly
 everything; the weak model is where most failures live, which is the floor
 working as intended.
 
 The skills axis is the interesting result and it is not uniform. Claude gains
-one scenario from skills, GPT-5.6 nets zero, and the weak model is **three
-worse with skills than without**, losing four scenarios it otherwise passes.
-That direction is a finding about our documentation rather than about the
-model, and there is a known mechanism: a skill that lists example values is read
-as an exhaustive list, which once led a weak model to conclude a supported
-provider was unsupported. Do not report the skills delta as a single number; it
-has a different sign at different capability levels.
+one scenario from skills, GPT-5.6 nets zero, and the weak model is **two worse
+with skills than without** — on the most recent published run it loses four
+scenarios and gains two. That direction is a finding about our documentation
+rather than about the model, and there is a known mechanism: a skill that lists
+example values is read as an exhaustive list, which once led a weak model to
+conclude a supported provider was unsupported. Do not report the skills delta as
+a single number; it has a different sign at different capability levels.
+
+**The weak-model figure is −2 and was written here as −3 for eleven days.** Both
+−3 readings are from 13 August and no run since has reproduced them: eight of
+the nine later runs read −2 and one read 0. 13 August is also the credit-outage
+day described under costs below, so treat anything measured that day as suspect
+until its rows are checked against the outage window — the point of that
+paragraph is that a bad population is identified by its cause, and this figure
+was never re-derived after the cause was found. Recompute from `results/runs/`
+rather than quoting this paragraph:
+
+```bash
+python3 -c "
+import json,glob,os
+from collections import defaultdict
+for f in sorted(glob.glob('results/runs/*.json')):
+    arms=defaultdict(lambda:[0,0])
+    for r in json.load(open(f))['results']:
+        e=r['experiment']
+        if not e.startswith('codex-gpt-5.4-mini'): continue
+        arms['base' if e.endswith('-no-skills') else 'skills'][0] += 1 if r['passed'] else 0
+        arms['base' if e.endswith('-no-skills') else 'skills'][1] += 1
+    s,b=arms['skills'],arms['base']
+    if s[1] and b[1]: print(os.path.basename(f)[:16], f'{s[0]}/{s[1]}', f'{b[0]}/{b[1]}', f'{s[0]-b[0]:+d}')
+"
+```
+
+**Do not read the Outpost-only +2 as contradicting it.** Loop 2's corrected
+measurement was `+skills` 12/12 against `-no-skills` 10/12 — but that is five
+Outpost scenarios across all three models, not fifteen-plus scenarios on the
+weak model, and the two populations answer different questions. They were
+conflated once in conversation into a claim that the delta's *sign* had flipped,
+which no run supports. State the scenario set and the model with any skills
+delta, or it will be compared against a number measuring something else.
 
 **Product findings come from runs, not speculation.** Several concern
 `hookdeck listen`: it crashes without a TTY unless given `--output compact`; a
