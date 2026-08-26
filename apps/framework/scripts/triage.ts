@@ -85,11 +85,18 @@ const PRODUCT_SKILLS = new Set(['hookdeck', 'event-gateway', 'outpost']);
  * failing the task; it is an agent checking before it touches a customer's
  * project, which is the safer behaviour.
  *
- * Measured on 25 August across 36 cells: three of twelve failures were this,
- * and **all three were in the `+skills` arm** while the baseline never once
- * stopped to ask. Plausibly a mechanism rather than noise — skills tell an
- * agent to verify its context, and a weaker model follows that literally. It
- * also inflates whatever the arm's failure count is being used to argue.
+ * Measured against the stored runs: **four of twelve failures are this**, three
+ * in `+skills` arms and one in a baseline (`outpost-003` on
+ * `claude-code-sonnet-5-no-skills`).
+ *
+ * An earlier version of this comment said all three were `+skills` and that the
+ * baseline never once stopped to ask, which was written from a hand-read of a
+ * subset before the detector existed. The detector disagreed with it on the
+ * first run. Worth leaving in the record, because the claim was doing work: an
+ * effect confined to one arm reads as *caused by* that arm, and this one is
+ * not — a skills-tells-agents-to-verify story is available and the evidence
+ * does not support it. Four cells is still enough to move a delta measured at
+ * two cells in twenty-four, whichever arms they fall in.
  *
  * Flagged rather than fixed, because declaring the benchmark autonomous in the
  * base prompt would change behaviour everywhere and destroy the ability to
