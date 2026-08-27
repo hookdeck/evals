@@ -661,6 +661,19 @@ whether it worked. Nobody else in the survey does both — Clerk instructs witho
 measuring, upstream does neither. See hookdeck/evals#57 for the five answers four
 other benchmarks give.
 
+**Measured, same day, on the four cells that had tripped the detector: it went to
+zero.** Three now pass. The fourth (`verification-002` on the weak model) made 68
+tool calls, stopped cleanly, scored 3/5 and failed on the handler-side signature
+checks — a capability failure on its merits rather than an agent waiting for a
+person. About $3 to find out.
+
+Read that as one measurement and not four: the detector going 4→0 is what the
+instruction targets and is the direct result, while the three flips to passing are
+consistent with it and are *not* evidence of it. These were failing cells re-run
+once with no control arm, and a failing cell that is re-run can flip on its own.
+Claiming the instruction bought three scenarios would be the same mistake as the
+9–0 skills result in Loop 2, at a smaller scale.
+
 **Prefer more attempts to more instruction.** `--runs 3` stops at the first pass,
 so it costs about 1.11× and it removes a stopped run's power to decide a cell
 without touching the prompt at all. It is the cheapest correction available and
