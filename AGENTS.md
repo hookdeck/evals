@@ -108,7 +108,7 @@ as six agent failures because of it.
 Runs bill per token and the numbers matter, because cadence is chosen against
 them and the choice is otherwise re-derived from scratch every time.
 
-Measured per full pass of fifteen scenarios:
+Measured per full pass of **fifteen** scenarios:
 
 | | |
 |---|---|
@@ -118,9 +118,30 @@ Measured per full pass of fifteen scenarios:
 | LLM judge (`gpt-5.5`) | about $0.10 |
 | Full matrix, six experiments | about $64 |
 
+**There are nineteen benchmark scenarios now, so scale those figures by about
+1.27: roughly $81 a full matrix.** The table is left at its measured denominator
+rather than rewritten, because the figures were measured and the scaling is
+arithmetic, and conflating the two is how the judge came to be reported at
+twenty-eight times its real cost. Re-measure rather than re-scale if a decision
+turns on it.
+
 Weekly frontier plus weak pair is roughly $185 a month. Everything weekly would
 be $279 against a $200 budget, and the `-no-skills` twins are what gets cut to
 monthly, because their delta moves slowly.
+
+**Multiple attempts are far cheaper than they look, because `--runs` stops at the
+first pass.** `STOP_ON_PASS` is the default, so a retry is only paid for on a cell
+that failed. At the current pass rates the expected attempts per cell at
+`--runs 3` is **1.11**, not 3 — and it is unevenly distributed, 1.06 for the
+frontier arms against 1.25 for the weak model, which is also where the signal is.
+
+The true multiplier is somewhat higher, because the attempts that repeat are by
+construction the failed ones and a failing cell tends to run to the timeout. It
+is `1 + 0.114k` where `k` is what a failed attempt costs relative to a typical
+one — 1.11× at k=1, 1.34× at k=3. **`k` is not known**: only 4 of 114 published
+rows carry `usage.costUsd` and all four passed, so there is no failed-cell cost
+data to derive it from. See #6. Budget a three-attempt matrix at $90–$110 and
+treat anything more precise as a residual rather than a measurement.
 
 **Failed runs cost the same as successful ones.** On 13 August the OpenAI credit
 balance reached zero mid-run; thirty-seven Codex jobs then started, failed and
@@ -611,6 +632,42 @@ whenever it comes up again. `gpt-5.4-mini` agreed on 15 of 15 including both
 real catches, so a switch is safe; it is just not worth making, because these
 checks are mostly negatives guarding against invented capabilities and the
 saving is trivial.
+
+**The base prompt is a treatment, not neutral scaffolding.** It is the one string
+every cell in every experiment shares, so a word added to it moves every number
+at once and is indistinguishable in a snapshot from the thing being measured.
+Change it the way a scenario or a CLI pin is changed: deliberately, in its own
+commit, and with the release saying results either side are not comparable.
+
+It carries **"Do not ask clarifying questions. Complete the task with the
+information provided."** since 27 August, borrowed verbatim from
+[clerk/clerk-evals](https://github.com/clerk/clerk-evals) — the closest
+architectural match to this benchmark, running the same two agent CLIs, which
+prepends that line to every eval prompt on its agentic path.
+
+The reason is that this benchmark is single-turn. A question gets no reply and
+the agent is scored on whatever state it left, usually nothing. Four cells in the
+stored runs ended that way, against a skills delta of two cells in twenty-four:
+the artefact was larger than the signal beside it.
+
+**An agent that stops to ask is not failing at anything, and must never be
+published as a capability failure.** τ-bench's airline policy *requires* an agent
+to "list the action details and obtain explicit user confirmation (yes) to
+proceed" before any action that updates the booking database. The behaviour this
+prompt suppresses is a pass requirement there, because that harness has a user to
+answer and ours does not. `triage` keeps flagging it (`ASKED_AND_STOPPED`) for
+exactly this reason: the instruction removes the confound, and the detector says
+whether it worked. Nobody else in the survey does both — Clerk instructs without
+measuring, upstream does neither. See hookdeck/evals#57 for the five answers four
+other benchmarks give.
+
+**Prefer more attempts to more instruction.** `--runs 3` stops at the first pass,
+so it costs about 1.11× and it removes a stopped run's power to decide a cell
+without touching the prompt at all. It is the cheapest correction available and
+should be reached for before anything is added to the base prompt. What cannot be
+copied is upstream's other route: Vercel and Convex avoid clarifying questions by
+writing prompts as requirement lists, and this repo has measured that adding an
+instruction to build *suppresses the very failure a scenario exists to catch*.
 
 **Classify what gates a scenario, and read failures along it.** Every scenario
 carries `gated_by` in its frontmatter: `discovery`, `judgement` or `mixed`. The
