@@ -37,6 +37,11 @@ interface Check {
   passed?: boolean;
 }
 
+interface DocsCall {
+  source?: string;
+  pages?: unknown[];
+}
+
 interface Row {
   experiment: string;
   eval: string;
@@ -44,6 +49,7 @@ interface Row {
   gatedBy?: GatedBy;
   suite?: string;
   checks?: Check[];
+  docs?: { calls?: DocsCall[] };
 }
 
 interface Snapshot {
@@ -151,6 +157,84 @@ function main() {
       console.log(`    ${id}`);
     }
   }
+
+  reportDocsReach(snapshot.results);
+}
+
+/**
+ * How each arm reached the documentation, and how often it failed to.
+ *
+ * A skill's job here is to point at the docs rather than restate them, so an
+ * agent fetching a docs URL *because a skill named it* is the skill working —
+ * not a confound, and not something to design out. That distinction is the whole
+ * reason this prints two numbers instead of one.
+ *
+ * What is worth watching is the other half, and printing it per experiment moved
+ * the answer. Aggregated by arm it reads as a skills effect — 296 calls in
+ * `-no-skills` against 83 in `+skills`, 58% empty against 37%. Split by
+ * experiment on the 25 August snapshot, most of that is the agent:
+ *
+ *     claude-code-sonnet-5              21 calls    0 empty (0%)
+ *     claude-code-sonnet-5-no-skills    64 calls    0 empty (0%)
+ *     codex-gpt-5.4-mini                43 calls   26 empty (60%)
+ *     codex-gpt-5.4-mini-no-skills     196 calls  144 empty (73%)
+ *     codex-gpt-5.6                     19 calls    5 empty (26%)
+ *     codex-gpt-5.6-no-skills           36 calls   30 empty (83%)
+ *
+ * **Both Claude arms are at zero.** Claude Code reaches docs with `web_fetch`,
+ * which returns a page; Codex leans on `web_search`, which frequently returns
+ * none. There is still a real skills effect inside each Codex pair — 60 against
+ * 73, 26 against 83 — but it is the smaller term, and the aggregate hid that by
+ * pooling two agents with different habits.
+ *
+ * So read this per row, never pooled: `reached` is signal about the docs and the
+ * skills, `empty` is mostly a fact about the agent's search path, and a delta
+ * that moves when `empty` moves is neither. See #61, and #2 for the scenario
+ * where this presented as a clean skills win.
+ */
+function reportDocsReach(rows: Row[]) {
+  const arms = new Map<
+    string,
+    { reached: number; empty: number; bySource: Map<string, number> }
+  >();
+
+  for (const row of rows) {
+    const calls = row.docs?.calls ?? [];
+    if (calls.length === 0) continue;
+    const arm = arms.get(row.experiment) ?? {
+      reached: 0,
+      empty: 0,
+      bySource: new Map<string, number>(),
+    };
+    for (const call of calls) {
+      if ((call.pages ?? []).length > 0) arm.reached += 1;
+      else arm.empty += 1;
+      const source = call.source ?? 'unknown';
+      arm.bySource.set(source, (arm.bySource.get(source) ?? 0) + 1);
+    }
+    arms.set(row.experiment, arm);
+  }
+
+  if (arms.size === 0) return;
+
+  console.log('\n  How each arm reached the docs:');
+  for (const [experiment, arm] of [...arms].sort()) {
+    const total = arm.reached + arm.empty;
+    const pct = Math.round((100 * arm.empty) / total);
+    const mix = [...arm.bySource]
+      .sort((a, b) => b[1] - a[1])
+      .map(([source, n]) => `${source} ${n}`)
+      .join(', ');
+    console.log(
+      `    ${experiment.padEnd(32)} ${String(total).padStart(4)} calls  ` +
+        `${String(arm.reached).padStart(4)} reached a page  ` +
+        `${String(arm.empty).padStart(4)} empty (${pct}%)  [${mix}]`
+    );
+  }
+  console.log(
+    '    A high empty rate is an external search index returning nothing, not a\n' +
+      '    documentation or skills gap. Do not read a delta that moves with it as one.'
+  );
 }
 
 /** What each scenario's frontmatter says right now, by eval id. */
