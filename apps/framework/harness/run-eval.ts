@@ -50,6 +50,7 @@ import {
   loadExperiments,
   readSessionSeedArgs,
 } from '../lib/discovery.js';
+import { harnessFingerprint, scenarioFingerprint } from '../lib/provenance.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..', '..', '..');
@@ -833,6 +834,13 @@ async function main() {
             // single number back to the job that produced it, which the page
             // claims they can.
             runId: process.env.GITHUB_RUN_ID,
+            // What this row was measured under, so `--merge` can tell a
+            // carried-forward row that is still current from one that is not.
+            // See `lib/provenance.ts` and #60.
+            provenance: {
+              harness: harnessFingerprint(basePromptFor(ev.mode), ROOT),
+              scenario: scenarioFingerprint(ev.dir),
+            },
             ...ev.metadata,
             ...res,
           })
