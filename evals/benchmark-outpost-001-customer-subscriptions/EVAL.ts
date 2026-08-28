@@ -29,6 +29,32 @@ import { waitForOrLast } from '@hookdeck-evals/hookdeck';
 /** Polling ceiling, not a sleep. */
 const DELIVERY_WAIT_MS = 45_000;
 
+/**
+ * The endpoint the ticket gives the agent, and the only one that counts as the
+ * customer receiving anything.
+ *
+ * Until 28 August the ticket said "their endpoint" and named none, so any
+ * reachable URL satisfied it. Across the six stored cells of this scenario the
+ * agents picked six different receivers — three Event Gateway sources on
+ * `hkdk.events`, a `webhook.site` inbox, a `mock.hookdeck.com` path, and a
+ * localtunnel *inside the agent's own sandbox*. Five passed. The sixth failed,
+ * and not for a reason worth publishing: its tunnel died with the container
+ * before scoring. The check was discriminating on whether an improvised
+ * receiver outlived the run.
+ *
+ * A customer's endpoint is not the integrator's to choose, so the ticket states
+ * it, `SOLUTION.ts` already used it, and delivery is scored against it.
+ * `mock.hookdeck.com` is what every other Outpost seed here delivers to and
+ * answers `200` to anything.
+ *
+ * This changes a published scenario: rows measured before it are not comparable
+ * with rows after. The scenario fingerprint in `lib/provenance.ts` records that
+ * for us, and the change is made while publishing is held
+ * (hookdeck/evals#66) rather than after the next matrix, so nothing is
+ * measured twice.
+ */
+const CUSTOMER_ENDPOINT = 'https://mock.hookdeck.com/api/v1/acme/orders';
+
 const scorer: ToolScorer = async (ctx) => {
   // `requires: [outpost]` in the frontmatter should have skipped this scenario
   // long before scoring, so reaching here means the gate is broken. Throw
@@ -78,20 +104,28 @@ const scorer: ToolScorer = async (ctx) => {
 
   const tenantId = String(tenant.id);
   const destinations = await listDestinations(ctx, tenantId);
+  // Everything downstream is scored against the customer's own endpoint, so a
+  // destination pointed somewhere else is not a partial success — it is the
+  // customer still receiving nothing.
+  const customerDestinations = destinations.filter(isCustomerEndpoint);
 
   const checks: CheckResult[] = [
     { name: 'created a tenant for the customer', passed: true },
     {
-      name: 'the customer has a destination to receive at',
-      passed: destinations.length > 0,
-      notes: destinations.length
+      name: 'the customer has a destination at the endpoint they gave us',
+      passed: customerDestinations.length > 0,
+      notes: customerDestinations.length
         ? undefined
-        : 'the tenant exists but has nowhere to deliver to',
+        : destinations.length
+          ? `destinations exist (${destinations.map(destinationUrl).filter(Boolean).join(', ') || 'none with a url'}) but none delivers to ${CUSTOMER_ENDPOINT}`
+          : 'the tenant exists but has nowhere to deliver to',
     },
   ];
 
-  if (destinations.length > 0) {
-    checks.push(await checkOrderEventDelivered(ctx, tenantId, destinations));
+  if (customerDestinations.length > 0) {
+    checks.push(
+      await checkOrderEventDelivered(ctx, tenantId, customerDestinations)
+    );
   }
 
   return { passed: checks.every((c) => c.passed), checks };
@@ -131,14 +165,10 @@ async function checkOrderEventDelivered(
   // header of `outpost-004` asserts "delivery is already proven against webhook
   // destinations by outpost-001" — it was not.
   //
-  // **This does not close the whole hole, and the remaining half is a scenario
-  // problem rather than a scorer one.** The ticket never says where the
-  // customer's endpoint is, so any reachable URL satisfies it: one agent stood
-  // up a localtunnel *inside its own sandbox*, delivered to itself, passed, and
-  // offered to "swap the temporary receiver URL for the real customer endpoint
-  // next". That receiver died with the container. Fixing it means giving the
-  // ticket an endpoint to deliver to, which changes a published scenario, so it
-  // is called out here rather than done quietly.
+  // The other half of the hole — any reachable URL counting as the customer —
+  // is closed by the caller, which passes only destinations pointed at
+  // `CUSTOMER_ENDPOINT`. See that constant for what the six stored cells of
+  // this scenario were actually being scored on.
   const before = await successCount(ctx, tenantId, destinations);
   await ctx.outpost?.('POST', '/publish', {
     tenant_id: tenantId,
@@ -167,6 +197,44 @@ async function checkOrderEventDelivered(
   };
 }
 
+/** A webhook destination's configured URL, if it has one. */
+function destinationUrl(
+  destination: Record<string, unknown>
+): string | undefined {
+  const config = destination.config;
+  if (!config || typeof config !== 'object') return undefined;
+  const url = (config as Record<string, unknown>).url;
+  return typeof url === 'string' ? url : undefined;
+}
+
+/**
+ * Does this destination deliver to the endpoint the ticket named?
+ *
+ * Lenient about the things a correct answer varies on and strict about the
+ * thing it does not. A trailing slash, a query string an agent added, and case
+ * in the scheme or host are all the same endpoint; a different host or a
+ * different path is a different customer's endpoint, or the agent's own.
+ *
+ * A destination of another type — SQS, a queue — has no `config.url` at all and
+ * fails here, which is correct: this ticket names an HTTP endpoint. Scoring
+ * queue delivery is `outpost-004`'s job.
+ */
+function isCustomerEndpoint(destination: Record<string, unknown>): boolean {
+  const url = destinationUrl(destination);
+  if (!url) return false;
+  try {
+    const actual = new URL(url);
+    const expected = new URL(CUSTOMER_ENDPOINT);
+    return (
+      actual.host.toLowerCase() === expected.host.toLowerCase() &&
+      actual.pathname.replace(/\/+$/, '') ===
+        expected.pathname.replace(/\/+$/, '')
+    );
+  } catch {
+    return false;
+  }
+}
+
 /**
  * The first topic on any destination that looks like it covers orders.
  *
@@ -190,7 +258,14 @@ function orderTopic(
   return undefined;
 }
 
-/** Attempts that actually delivered. */
+/**
+ * Attempts that actually delivered.
+ *
+ * `/tenants/{id}/destinations/{id}/attempts` is an `AttemptPaginatedResult`:
+ * `{ pagination, models }`, the same shape as Hookdeck's own list endpoints.
+ * Not `{ data }`, which never matches and silently counts every destination as
+ * having zero attempts.
+ */
 async function successCount(
   ctx: ToolEvalContext,
   tenantId: string,
@@ -208,30 +283,6 @@ async function successCount(
     );
     const rows = Array.isArray(body) ? body : (body?.models ?? []);
     total += rows.filter((a) => a.status === 'success').length;
-  }
-  return total;
-}
-
-async function attemptCount(
-  ctx: ToolEvalContext,
-  tenantId: string,
-  destinations: Record<string, unknown>[]
-): Promise<number> {
-  let total = 0;
-  for (const destination of destinations) {
-    const id = String(destination.id ?? '');
-    if (!id) continue;
-    // `/tenants/{id}/destinations/{id}/attempts` is an
-    // `AttemptPaginatedResult`: `{ pagination, models }`, the same shape as
-    // Hookdeck's own list endpoints. Not `{ data }`, which never matches and
-    // silently counted every destination as having zero attempts.
-    const body = await ctx.outpost?.<
-      Record<string, unknown>[] | { models?: unknown[] }
-    >(
-      'GET',
-      `/tenants/${encodeURIComponent(tenantId)}/destinations/${encodeURIComponent(id)}/attempts`
-    );
-    total += Array.isArray(body) ? body.length : (body?.models?.length ?? 0);
   }
   return total;
 }

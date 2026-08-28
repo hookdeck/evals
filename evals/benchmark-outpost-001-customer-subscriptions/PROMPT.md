@@ -17,4 +17,8 @@ We want our customers to be able to subscribe to events from our platform, so
 they can react when an order is placed rather than polling us for it.
 
 Set that up for our first customer, `acme`, so they receive order events at
-their endpoint. Then show me it works by sending one through.
+the endpoint they gave us:
+
+    https://mock.hookdeck.com/api/v1/acme/orders
+
+Then show me it works by sending one through.
