@@ -90,6 +90,19 @@ const SELECTED_EXPERIMENT_SUITE =
     ? EXPERIMENT_SUITE_FILTERS[0]
     : undefined;
 const RUNS = Number(readFlag('runs') ?? 1);
+
+/**
+ * How many attempts this scenario gets: `--runs`, raised to the scenario's own
+ * floor if it declares one.
+ *
+ * A floor and never a ceiling. A scenario that declares `min_attempts: 3`
+ * knows something the schedule does not — that its outcome varies at the
+ * bottom of the model range — and the schedule running `--runs 1` should not
+ * be able to publish a coin flip because of it. `--runs 5` still runs five.
+ */
+function runsFor(ev: EvalManifest): number {
+  return Math.max(RUNS, ev.metadata.minAttempts ?? 1);
+}
 const TIMEOUT_SEC = Number(readFlag('timeout-sec') ?? 720);
 const CONCURRENCY = Number(readFlag('concurrency') ?? 1);
 const STOP_ON_PASS = !args.has('--run-all-attempts');
@@ -448,7 +461,9 @@ async function runOne(
   let lastStoppedReason = 'not_started';
   let lastUsage: AgentRunResult['usage'];
 
-  for (let attempt = 1; attempt <= RUNS; attempt += 1) {
+  const runs = runsFor(ev);
+
+  for (let attempt = 1; attempt <= runs; attempt += 1) {
     // Tools mode: the eval's tool surface is MCP (platform-lite). A CLI agent
     // gets the same sandbox as local-stack minus the running stack — with its
     // skills installed — and reaches the in-container MCP servers' host-side
@@ -578,7 +593,7 @@ async function runOne(
 
   return {
     ...last,
-    attempts: RUNS,
+    attempts: runs,
     skills: buildSkillResult(availableSkills, lastToolCalls),
     docs: buildDocsResult(lastToolCalls),
     toolCalls: lastToolCalls,
@@ -621,10 +636,12 @@ function logRetryAttempt(
   attempt: number,
   result: ScoreResult
 ) {
-  if (!STOP_ON_PASS || result.passed || attempt >= RUNS) return;
+  const runs = runsFor(ev);
+  if (!STOP_ON_PASS || result.passed || attempt >= runs) return;
   const summary = formatRunSummary({ ...result, attempts: attempt });
+  const floor = runs > RUNS ? `, scenario floor ${runs}` : '';
   console.log(
-    `🔁 RETRY ${expName} x ${ev.id} (attempt ${attempt}/${RUNS} failed, ${summary})`
+    `🔁 RETRY ${expName} x ${ev.id} (attempt ${attempt}/${runs} failed${floor}, ${summary})`
   );
 }
 

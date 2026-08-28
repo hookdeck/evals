@@ -217,6 +217,29 @@ export type EvalMetadata = {
    * with `projectRunning: false`.
    */
   skipCliInstall?: boolean;
+  /**
+   * The fewest attempts this scenario may be run with, overriding a lower
+   * `--runs` for this scenario alone.
+   *
+   * For scenarios whose outcome is known to vary at the floor. `outpost-003`
+   * is the case that produced this: across three full passes it was stable for
+   * both frontier models on all six of their observations and split 2-1 for the
+   * weak model in both arms, because passing turns on which undocumented route
+   * the agent happens to guess (hookdeck/evals#34). A single attempt there
+   * publishes a coin flip against a named vendor.
+   *
+   * With stop-on-pass this costs nothing where the scenario passes first time,
+   * so the spend lands only on the cells that were already unreliable. It also
+   * makes the scenario's own variance the author's decision rather than a
+   * property of whichever `--runs` the schedule happens to use, and `attempts`
+   * on the published row records what was actually spent.
+   *
+   * A floor, never a ceiling: `--runs 3` against `min_attempts: 2` still runs
+   * three. Raising this does not make a flaky scenario sound — it makes the
+   * published number best-of-N, which is a different claim and one the row
+   * says out loud.
+   */
+  minAttempts?: number;
 };
 
 export type ParsedEvalMarkdown = {
@@ -242,6 +265,10 @@ export const evalMetadataSchema = z.object({
   skills: z.array(z.string().min(1)).optional(),
   extraSkills: z.array(z.string().min(1)).optional(),
   skipCliInstall: z.union([z.boolean(), z.stringbool()]).optional(),
+  // Capped rather than open-ended: this multiplies spend on the scenarios
+  // least likely to pass, and a typo of 30 in a file nobody re-reads would be
+  // discovered by the bill.
+  minAttempts: z.coerce.number().int().min(1).max(5).optional(),
 });
 
 // Collapse a YAML scalar into a comparable token: trim, lowercase, and fold
@@ -333,6 +360,7 @@ export const evalFrontmatterSchema = z.preprocess((raw) => {
       ? toIdentifierList((data.extraSkills ?? data.extra_skills) as unknown[])
       : undefined,
     skipCliInstall: data.skipCliInstall,
+    minAttempts: data.minAttempts ?? data.min_attempts,
   };
 }, evalMetadataSchema);
 

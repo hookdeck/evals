@@ -677,7 +677,17 @@ Claiming the instruction bought three scenarios would be the same mistake as the
 **Prefer more attempts to more instruction.** `--runs 3` stops at the first pass,
 so it costs about 1.11× and it removes a stopped run's power to decide a cell
 without touching the prompt at all. It is the cheapest correction available and
-should be reached for before anything is added to the base prompt. What cannot be
+should be reached for before anything is added to the base prompt.
+
+A scenario that knows its own outcome varies can say so, with `min_attempts` in
+its frontmatter. It is a floor on `--runs` for that scenario alone, capped at
+five, and with stop-on-pass it is paid for only on the cells that were already
+failing. `outpost-003` carries `min_attempts: 3`: across three full passes it
+was stable for both frontier models on all six of their observations and split
+2-1 for the weak model in both arms, because passing turns on which undocumented
+route the agent happens to guess. Use it where variance is measured rather than
+suspected, and remember what it buys — the published number becomes best-of-N,
+which the row's `attempts` field states rather than hides. What cannot be
 copied is upstream's other route: Vercel and Convex avoid clarifying questions by
 writing prompts as requirement lists, and this repo has measured that adding an
 instruction to build *suppresses the very failure a scenario exists to catch*.
