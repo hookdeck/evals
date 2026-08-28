@@ -69,6 +69,18 @@ const EVAL_FILTERS = readRepeatedFlag(rawArgs, 'eval');
 const SUITE_FILTERS = readSuiteFilters(rawArgs);
 const EXPERIMENT_SUITE_FILTERS = readExperimentSuiteFilters(rawArgs);
 const MERGE = rawArgs.includes('--merge');
+/**
+ * Drop carried-forward rows measured under a different harness or a different
+ * version of their own scenario, instead of publishing them.
+ *
+ * Opt-in, because a snapshot with holes and a snapshot with silent thirteen-day-
+ * old rows are both wrong and which is less wrong depends on what the snapshot
+ * is for. A release cut to report a measured change wants this on; a weekly
+ * refresh keeping the page populated probably does not. Without it the report
+ * below still prints, so the staleness is visible either way — which is the
+ * actual defect in #60. Nothing was ever *said*.
+ */
+const DROP_STALE = rawArgs.includes('--drop-stale');
 
 const OUTPUT_FLAG = readRepeatedFlag(rawArgs, 'output')[0];
 const outputPath = OUTPUT_FLAG ? resolve(ROOT, OUTPUT_FLAG) : OUTPUT_PATH;
@@ -330,6 +342,99 @@ async function loadEvalResults(): Promise<EvalResult[]> {
   );
 }
 
+interface Provenanced {
+  experiment: string;
+  eval: string;
+  ranAt?: string;
+  provenance?: { harness?: string; scenario?: string };
+}
+
+/**
+ * Which carried-forward rows were measured under something else.
+ *
+ * "Something else" is decided against the rows this run just produced rather
+ * than against the working tree, so the comparison is between two measurements
+ * rather than between a measurement and whatever happens to be checked out. A
+ * scenario is compared only against a fresh row for that same scenario: the
+ * harness moved under everything at once, but `outpost-002` being rewritten says
+ * nothing about `filtering-001`.
+ *
+ * A row with no `provenance` at all predates this field. Those are reported
+ * separately and never counted as current — not knowing what a row was measured
+ * under is the condition this exists to surface, and treating it as fine would
+ * mean every row published before today silently passes.
+ */
+function splitStale<T extends Provenanced>(carried: T[], fresh: T[]) {
+  const harness = fresh.find((r) => r.provenance?.harness)?.provenance?.harness;
+  const scenarios = new Map<string, string>();
+  for (const row of fresh) {
+    if (row.provenance?.scenario)
+      scenarios.set(row.eval, row.provenance.scenario);
+  }
+
+  const current: T[] = [];
+  const stale: Array<{ row: T; why: string }> = [];
+  for (const row of carried) {
+    if (!row.provenance) {
+      stale.push({ row, why: 'no provenance recorded' });
+      continue;
+    }
+    if (harness && row.provenance.harness !== harness) {
+      stale.push({ row, why: 'harness changed' });
+      continue;
+    }
+    const expected = scenarios.get(row.eval);
+    if (expected && row.provenance.scenario !== expected) {
+      stale.push({ row, why: 'scenario changed' });
+      continue;
+    }
+    current.push(row);
+  }
+  return { current, stale };
+}
+
+/** Says what the merge is about to publish that this run did not measure. */
+function reportCarried(
+  carried: Provenanced[],
+  stale: Array<{ row: Provenanced; why: string }>
+) {
+  if (carried.length === 0) return;
+
+  const dates = new Map<string, number>();
+  for (const row of carried) {
+    const day = (row.ranAt ?? 'unknown').slice(0, 10);
+    dates.set(day, (dates.get(day) ?? 0) + 1);
+  }
+  const spread = [...dates]
+    .sort()
+    .map(([day, n]) => `${day} ${n}`)
+    .join(', ');
+  console.log(
+    `\ncarrying ${carried.length} row(s) this run did not measure — by date: ${spread}`
+  );
+
+  if (stale.length === 0) {
+    console.log('  all current: same harness, same scenario files.');
+    return;
+  }
+
+  const byReason = new Map<string, number>();
+  for (const { why } of stale) byReason.set(why, (byReason.get(why) ?? 0) + 1);
+  console.log(
+    `  ${stale.length} measured under something else — ` +
+      [...byReason].map(([why, n]) => `${why}: ${n}`).join(', ')
+  );
+  for (const { row, why } of stale.slice(0, 10)) {
+    console.log(`    ${row.eval} x ${row.experiment}  (${why})`);
+  }
+  if (stale.length > 10) console.log(`    …and ${stale.length - 10} more`);
+  console.log(
+    DROP_STALE
+      ? '  --drop-stale: removing these rather than publishing them.'
+      : '  publishing them anyway. Pass --drop-stale to leave the cells absent instead.'
+  );
+}
+
 async function main() {
   const newResults = await loadEvalResults();
   const hasFilters =
@@ -350,10 +455,14 @@ async function main() {
     const replaced = new Set(
       newResults.map((r) => `${r.experiment}::${r.eval}`)
     );
-    results = [
-      ...existing.filter((r) => !replaced.has(`${r.experiment}::${r.eval}`)),
-      ...newResults,
-    ].sort(
+    const carried = existing.filter(
+      (r) => !replaced.has(`${r.experiment}::${r.eval}`)
+    );
+
+    const { current, stale } = splitStale(carried, newResults);
+    reportCarried(carried, stale);
+
+    results = [...(DROP_STALE ? current : carried), ...newResults].sort(
       (a, b) =>
         a.experiment.localeCompare(b.experiment) || a.eval.localeCompare(b.eval)
     );

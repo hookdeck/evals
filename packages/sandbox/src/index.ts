@@ -3,7 +3,13 @@ export type {
   DockerSandboxOptions,
   RunCommandOptions,
 } from './docker-sandbox.js';
-export { ensureSandboxImage, SANDBOX_DOCKERFILE_PATH } from './image.js';
+export {
+  ensureSandboxImage,
+  SANDBOX_DOCKERFILE_PATH,
+  // Exported for provenance: the CLI pin is part of what a published row was
+  // measured under, and a bump changes the product under test. See #60.
+  HOOKDECK_CLI_VERSION,
+} from './image.js';
 export {
   toAgentSandbox,
   resolveSandboxPath,
