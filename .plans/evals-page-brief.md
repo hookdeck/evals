@@ -20,12 +20,12 @@ table we do not keep. A cost column would be populated for one agent and empty f
 the other, which is worse than absent.
 
 **Scale is smaller than the placeholder suggests.** The questionnaire's example reads
-"6 experiments x 40 evals". Today: eighteen scenarios, fifteen benchmark and three
-regression, against five published experiments, so the public grid is at most
-**5 x 15**. The regression suite is deliberately excluded from the scoreboard so
-narrow failure cases cannot drag or inflate the published numbers. Design for tens of
-cells, not hundreds; a layout that needs density to look intentional will look empty
-for months.
+"6 experiments x 40 evals". As of 28 August: twenty-two scenarios, nineteen benchmark
+and three regression, against six published experiments, so the public grid is at most
+**6 x 19** — 114 cells, which is what the current snapshot holds. The regression suite
+is deliberately excluded from the scoreboard so narrow failure cases cannot drag or
+inflate the published numbers. Design for a hundred-odd cells, not thousands; a layout
+that needs density to look intentional will look empty for months.
 
 **The grid is sparse, and it stays sparse.** Several scenarios have never run against
 several experiments, and one is capability-gated behind Outpost credentials so it
@@ -79,7 +79,7 @@ some with notes, some with a judge's prose. Four rows covering every state the U
 to render are in `reference/results-sample.json`, validated against the same schema
 the site parses.
 
-## One warning
+## Two warnings
 
 The results app in this repo is supabase/evals with our data in it. It carries their
 logo, a "Back to Supabase" header, a "with a Supabase project" footer, a hero reading
@@ -87,3 +87,12 @@ logo, a "Back to Supabase" header, a "with a Supabase project" footer, a hero re
 descriptions were theirs too until they were rewritten. Mocking from the app as it
 stands copies their branding and their copy. Retargeting it is Phase 3 work and it
 gates the page design rather than following it.
+
+The published page is being iterated on by the website team as of 28 August, so
+`/evals` in the website repository is not a stable base to design against either, and
+changes to it should be held until that work lands. Two explanatory gaps are waiting on
+it: the page never says what the paired columns mean
+([#29](https://github.com/hookdeck/evals/issues/29)) and the deliberately weaker model
+is published with nothing marking it deliberate
+([#30](https://github.com/hookdeck/evals/issues/30)). Both are written and held as a
+draft pull request rather than merged.

@@ -30,12 +30,22 @@ from the proposal, the divergences are listed at the end.
 Roughly 20 working days of Phil's time to launch-ready, plus the page and launch blog
 running in parallel from the end of Phase 3.
 
-**Status 18 Aug: phases 0 to 3 delivered. Phase 4 is live and has produced one closed
-loop, a negative one.** Eighteen scenarios (fifteen benchmark, three regression), six
-experiments, a public repository publishing to `results/` weekly and monthly, and the
-first release ([v0.1.0](https://github.com/hookdeck/evals/releases/tag/v0.1.0)) packaging
-a run. The scoreboard is open as a pull request on the website, green, carrying the
-results table, the three counters and a changelog read from releases.
+**Status 28 Aug: phases 0 to 3 delivered. Phase 4 is live and has produced one closed
+loop, a negative one.** Twenty-two scenarios (nineteen benchmark, three regression), six
+experiments, a public repository publishing to `results/` weekly and monthly, and three
+releases: [v0.1.0](https://github.com/hookdeck/evals/releases/tag/v0.1.0) the baseline,
+[v0.2.0](https://github.com/hookdeck/evals/releases/tag/v0.2.0) a correction — eight of
+v0.1.0's twenty failures turned out to be our own scoring, in two scenarios, both cases
+of a scorer asserting *how* an outcome was reached rather than whether it was — and
+[v0.3.0](https://github.com/hookdeck/evals/releases/tag/v0.3.0) taking Outpost from one
+scenario to five. The scoreboard is live on the website, carrying the results table, the
+three counters and a changelog read from releases, and it publishes from a release rather
+than from whatever ran last, so an automated run cannot move the public numbers.
+
+**Publishing is held as of 27 August**, because the base prompt changed and no snapshot
+yet exists that was measured end to end under it. The condition for clearing it is on
+[#66](https://github.com/hookdeck/evals/issues/66) rather than here, so it is read from
+one place.
 
 Loop 1 closed with **no measurable improvement**: the CLI defect was real and shipped in
 2.5.0, but a control run showed the four failures used to justify it were variance. See
@@ -65,12 +75,19 @@ carried such a table and both went stale within a day. `results/latest.json` is
 authoritative, and GitHub Issues carries what is left to do.
 
 **The aided delta is not zero, and it is not one number.** This section previously
-recorded it as zero on the evidence then available. The first clean full matrix, on
-13 August, measures it as **+1 for Claude Sonnet 5, 0 for GPT-5.6, and -3 for
-GPT-5.4-mini**, which loses four scenarios with our skills that it passes without
-them. A skills delta reported as a single figure hides a sign change, and the negative
-one is a finding about our documentation rather than about the model. Tracked as an
-issue.
+recorded it as zero on the evidence then available, and then as **-3** for the weakest
+model. Both -3 readings come from 13 August, the credit-outage day, and no run since has
+reproduced them: the eight runs after it read **-2** (one read 0). As of 26 August the
+figures are **+1 for Claude Sonnet 5, 0 for GPT-5.6, and -2 for GPT-5.4-mini**. The sign
+replicated; the magnitude did not. A skills delta reported as a single figure hides a
+sign change, and the negative one is a finding about our documentation rather than about
+the model. Tracked as an issue.
+
+The composition matters more than the number and has changed completely since 13 August.
+One scenario is worse with skills in every published run and no other manages it; the
+rest of the original -3 dissolved into no difference. Reading the delta from a total is
+how a single execution republished into seven snapshots came to be reported as a
+result holding across eight runs.
 
 For scale, supabase/evals' own published results show +3, +1, +1, 0 and -1 across five
 agents, so a mixed and occasionally negative delta is not anomalous. What is new is
@@ -78,13 +95,14 @@ that ours is negative *specifically on the weakest model*, which points at a mec
 rather than at noise.
 
 **Investigate and resolve moved up and are now the thin part.** They were scheduled
-last because they are hardest to seed. They now hold two scenarios each against
-eleven for build, so a single flip moves a published stage score by fifty points.
+last because they are hardest to seed. Against thirteen build scenarios they now hold
+two and four, so a single flip on investigate still moves a published stage score by
+fifty points.
 Tracked as an issue.
 
 Still open: `evals-local`, and the org-key questions for the platform team. The
-concurrency one has a number behind it: ninety pairs take about six hours serialised
-on one project.
+concurrency one has a number behind it, and the number has grown with the suite: the
+monthly matrix is a hundred and fourteen pairs, serialised on one project.
 
 **What launch now waits on is no longer tracked here.** It went stale within a day of
 being written, which is the third time a list in a markdown file has done that in this
@@ -1267,20 +1285,31 @@ which are the ones that have produced every product finding.
 
 ### What a weekly full run costs
 
-12 benchmark scenarios, 6 experiments (docs-only, +MCP, +skills, on Claude Code and
-Codex), 2 attempts with stop-on-pass. At a 70% pass rate that is about 1.3 attempts
-per pair.
+Superseded twice, and the arithmetic below is the shape rather than the number. The
+original estimate assumed 12 benchmark scenarios and six experiments spanning
+docs-only, +MCP and +skills. Both halves changed: the arms became `+skills` and
+`-no-skills` — the MCP server is read-only and ships in the CLI, so an MCP arm could
+only ever have moved investigate and resolve — and the suite grew.
 
-- 12 x 6 x 1.3 = **94 agent runs**
-- 94 x $0.45 (median weighted up for BM13) = **$42**
-- LLM judge on BM7 and the regression suite, plus the regression runs themselves
-  (cheap, no environment): **about $6**
-- GitHub Actions: 94 jobs x 6 min = 560 minutes per week. **Free on a public repo.**
-  On a private repo, about $19/month.
+What the schedule actually runs, as of 28 August:
 
-**A weekly full run costs roughly $50 in model spend, about $2,600 a year.** Wall
-clock is 2 to 3 hours per shard until the org key lands, then about 60 minutes.
-Neither is a problem for a scheduled job.
+| | Experiments | Pairs | Attempts |
+|---|---|---|---|
+| Weekly | 4 (frontier agents, plus the weak pair) | 4 x 19 = **76** | `runs=1` |
+| Monthly | 6 (adds the `-no-skills` twins) | 6 x 19 = **114** | `runs=1` |
+
+**The per-pair cost has not been re-measured since the suite grew**, and the two
+figures in this file disagree: the ten-scenario re-baseline above puts the mean at
+$1.44, while the most recent costing — a three-attempt matrix over nineteen scenarios
+and six experiments, on [#24](https://github.com/hookdeck/evals/issues/24) — comes to
+$90-110, or nearer $0.80 a run. The difference is composition: the expensive scenarios
+are the ones that run the agent's code, and they are a smaller fraction of nineteen
+than they were of ten. Anyone scheduling against these numbers should re-measure from
+a run's artifacts first.
+
+GitHub Actions minutes remain free on a public repo. Wall clock, not cost, is the
+binding constraint until the org key lands: 114 pairs serialised on one project is the
+better part of a working day.
 
 Adding Opus 5 (roughly 1.7x Sonnet's per-token price) and two secondary models through
 the AI Gateway takes this to roughly **$150 per week, about $7,800 a year**. Treat
@@ -1293,10 +1322,16 @@ supabase/evals' `eval-refresh.yml` sets `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, a
 
 ### Cadence
 
-- **Weekly benchmark.** $50 a week is not a number that needs defending.
-- **Regression suite on every docs, MCP, or skills change.** 3 scenarios x 6
-  experiments = 18 runs with no environment, under $5 and under 10 minutes. This is
-  the cheap loop and it should fire often.
+- **Weekly benchmark**, monthly for the full matrix. See the costing above: the weekly
+  figure is no longer $50 and has not been re-measured since the suite reached
+  nineteen benchmark scenarios.
+- **Regression suite on every docs or skills change.** 3 scenarios x 6 experiments =
+  18 runs with no environment, under $5 and under 10 minutes. This is the cheap loop
+  and it should fire often. It is not yet wired to a docs-repo trigger.
+- **A repository variable holds publication.** `EVALS_PUBLISH=false` lets the schedule
+  keep running and keep collecting transcripts while nothing reaches the website.
+  Built after a cron nearly published twelve failures that were ours, and cancelling it
+  by hand needed somebody watching at the right moment.
 - **Benchmark on new model releases, by manual dispatch.** This is what a public
   scoreboard's audience wants, and it is what the ecosystem roadmap asks this harness
   to be the home for. It replaces the proposal's per-release trigger, which would fire
@@ -1615,17 +1650,20 @@ actually run, so it fails the selection rule. Revisit at GA if usage grows.
 
 ## Open questions
 
-1. **Org-level API key: timeline and scope.** Expected within a month. Does it cover
-   project *deletion* as well as creation? Deletion is what makes `ApiProjectSource` a
-   clean swap rather than create-plus-wipe. Needed before Phase 3, since it decides
-   whether the weekly run starts sharded or parallel. Platform team, ten minutes.
+1. **Org-level API key: timeline and scope.** Does it cover project *deletion* as well
+   as creation? Deletion is what makes `ApiProjectSource` a clean swap rather than
+   create-plus-wipe. Phase 3 shipped without it — one shared project, `max-parallel: 1`
+   behind a queueing concurrency group — so this is no longer a blocker and is instead
+   the difference between a matrix that finishes in an hour and one that takes the
+   better part of a day. Platform team, ten minutes.
 2. **Per-organization project cap.** No limit found in `core` (grepped for
    `max_teams`, `team_limit`, `projects_limit`), but absence of a grep hit is not
    confirmation. Only matters once `ApiProjectSource` is creating a project per run.
    Platform team, same conversation as (1).
-3. **Secondary models on the scoreboard.** Three models cost about $50 a week, five
-   about $150. The precondition is now met: the 13 August run is the first clean
-   full matrix. Tracked as a GitHub issue rather than here.
+3. **Secondary models on the scoreboard.** The precondition is met — the 13 August run
+   was the first clean full matrix — and the cost of adding a model scales with the
+   suite, which has grown since the $50-a-week figure was written. Tracked as a GitHub
+   issue rather than here.
 4. **Plugin decision (Q5).** Needs to be made before product marketing freezes the page copy.
 5. ~~**Whether `.plans/` ships publicly.**~~ Resolved 13 August. The repository is
    public and `.plans/` ships with it. Private-repo file paths were removed before
