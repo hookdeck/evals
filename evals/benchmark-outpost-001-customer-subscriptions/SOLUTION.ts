@@ -28,8 +28,11 @@ export default async function solve(ctx: ToolEvalContext): Promise<void> {
   await outpost('POST', `/tenants/${TENANT}/destinations`, {
     type: 'webhook',
     topics: ['order.created'],
-    // A reachable endpoint, because the check requires the event to arrive
-    // rather than merely to be attempted.
+    // The endpoint the ticket names, because the check requires the event to
+    // arrive at the *customer's* endpoint rather than at one the integrator
+    // picked. This URL was already here when the ticket named none, which is
+    // how the mismatch was found: the reference answer delivered somewhere the
+    // scorer had no opinion about.
     config: { url: 'https://mock.hookdeck.com/api/v1/acme/orders' },
   });
 }
