@@ -4,20 +4,17 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "check": "pnpm typecheck && pnpm test && pnpm test:framework",
+    "check": "pnpm typecheck && pnpm test",
     "test": "vitest run",
     "eval": "node --env-file=../../.env --import tsx/esm harness/run-eval.ts",
     "eval:dry": "node --env-file=../../.env --import tsx/esm harness/run-eval.ts --dry",
     "eval:smoke": "node --env-file=../../.env --import tsx/esm harness/run-eval.ts --smoke",
     "typecheck": "tsc --noEmit",
-    "test:framework": "node --env-file-if-exists=../../.env --import tsx/esm scripts/smoke-framework.ts",
     "export-results": "node --import tsx/esm scripts/export-results.ts",
     "score-only": "node --env-file=../../.env --import tsx/esm scripts/score-only.ts",
     "compare-snapshots": "node --import tsx/esm scripts/compare-snapshots.ts",
     "report-results": "node --import tsx/esm scripts/report-results.ts",
-    "triage": "node --import tsx/esm scripts/triage.ts",
-    "demo:mcp": "node --env-file=../../.env --import tsx/esm scripts/mcp-demo.ts",
-    "demo:executor": "node --env-file=../../.env --import tsx/esm scripts/executor-demo.ts"
+    "triage": "node --import tsx/esm scripts/triage.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "catalog:",
