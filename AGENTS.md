@@ -682,6 +682,31 @@ copied is upstream's other route: Vercel and Convex avoid clarifying questions b
 writing prompts as requirement lists, and this repo has measured that adding an
 instruction to build *suppresses the very failure a scenario exists to catch*.
 
+**The published score is scenarios completed, and checks are evidence rather
+than a score.** One row is one scenario — a ticket an agent was given — and its
+`passed` is the AND of every check in it. That is what the harness records, what
+`results/latest.json` publishes, what a release quotes and what the website
+prints. Upstream is the same: supabase/evals computes `passed / results.length`
+and never aggregates checks into a number.
+
+Decided against the alternative on 29 August, after the website briefly shipped
+check-level percentages to give partial credit for partial work. The idea is
+reasonable and it does not survive contact with scorers that short-circuit:
+**a scorer stops as soon as there is nothing left to check, so a run that fails
+at the first hurdle returns `0/1` where a near-miss returns `4/5`.** Failing
+worse becomes cheaper than failing partially, and each agent's denominator ends
+up set by its own failures — 59, 62 and 65 checks across six arms of the same
+nineteen scenarios. On the 25 August snapshot it put the deliberately weaker
+model at 97% against a frontier agent's 95%, where by scenarios they tie at 89%,
+and the page ranked them in that order. Check counts also become weights: they
+run from one to five per scenario, set by how each scorer happens to be written.
+
+Two things follow for scorer authors. A check list is **not** comparable between
+runs of the same scenario, so never compute a rate from it or compare its length
+across cells. And an early return is still the right shape — a scorer that
+cannot find a tenant has nothing to say about delivery — so the fix is at the
+consumer, not here.
+
 **Classify what gates a scenario, and read failures along it.** Every scenario
 carries `gated_by` in its frontmatter: `discovery`, `judgement` or `mixed`. The
 test is one question — **if we improved our docs and skills, could this cell go
