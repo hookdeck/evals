@@ -137,6 +137,45 @@ describe('cliVersion frontmatter', () => {
   });
 });
 
+describe('min_attempts frontmatter', () => {
+  const front = (extra: string[]) =>
+    [
+      '---',
+      'stage: build',
+      'suite: benchmark',
+      'product: outpost',
+      'topic: alerting',
+      ...extra,
+      '---',
+      'Set up alerting.',
+    ].join('\n');
+
+  it('reads the snake_case key the scenario files use', () => {
+    expect(
+      parseEvalMarkdown(front(['min_attempts: 3'])).metadata.minAttempts
+    ).toBe(3);
+  });
+
+  it('reads the camelCase key too, like every other key here', () => {
+    expect(
+      parseEvalMarkdown(front(['minAttempts: 2'])).metadata.minAttempts
+    ).toBe(2);
+  });
+
+  it('is absent when unset, so the scenario takes --runs as given', () => {
+    expect(parseEvalMarkdown(front([])).metadata.minAttempts).toBeUndefined();
+  });
+
+  it('rejects a floor above the cap, which would only be found on the bill', () => {
+    expect(() => parseEvalMarkdown(front(['min_attempts: 30']))).toThrow();
+  });
+
+  it('rejects zero and fractions rather than silently flooring them', () => {
+    expect(() => parseEvalMarkdown(front(['min_attempts: 0']))).toThrow();
+    expect(() => parseEvalMarkdown(front(['min_attempts: 1.5']))).toThrow();
+  });
+});
+
 describe('skills frontmatter', () => {
   const buildMarkdown = (extra: string) =>
     [
