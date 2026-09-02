@@ -265,13 +265,16 @@ The parsed format is three sections of one-line items:
 - <title> · #<issue>
 ```
 
-**The title is a noun phrase naming the subject, not a sentence making a claim.**
-"CLI guest account creation", "No-terminal CLI auth", "More Outpost coverage
-scenarios". A title that reads as a headline — "Every number now comes from one run",
-"The CLI no longer works behind your back" — is editorial: it argues rather than
-names, and it is the wrong register for a changelog entry someone is scanning.
-v0.1.0 to v0.3.0 were renamed to this form on 2 September; the sentences they carried
-before are what the notes are for.
+**The title says what happened to what.** A verb and its subject: "Fixed CLI guest
+account creation", "Documented no-terminal CLI auth", "Expanded Outpost coverage to
+five scenarios". Two failure modes, both made here on 2 September before the third
+attempt stuck:
+
+- *Editorial* — "Every number now comes from one run", "The CLI no longer works behind
+  your back in a guest project". A headline argues; a changelog entry is scanned.
+- *Subject with no verb* — "No-terminal CLI auth", "CLI guest account creation". Names
+  the area and leaves out whether it was fixed, documented or found, which is the only
+  thing a reader wants from a changelog line.
 
 **It names the product finding or fix**, not the state of our instrument, and it is
 short — the website renders the release name as the heading of its changelog card, so
