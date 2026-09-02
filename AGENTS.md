@@ -225,6 +225,22 @@ when there is a measured change to report, not on a schedule.
 commit, so the release points at exactly the data it describes, and
 `results/runs/<timestamp>.json` is the immutable snapshot behind it.
 
+**It is a GitHub release, not a bare tag.** The website reads the releases API, resolves
+the most recent release to its tag, and reads `results/` at that ref — so a tag pushed
+without a release publishes nothing, and the page keeps showing the previous snapshot.
+Cutting one is a single command against the results commit rather than the branch tip:
+
+```bash
+gh release create v0.4.0 --target <results-commit-sha> \
+  --title "<the product finding or fix>" --notes-file <draft>
+```
+
+Lightweight tags, created by that command; nothing here needs an annotated tag or a
+signature. v0.1.0 and v0.2.0 point at their results commits. **v0.3.0 points at the
+merge commit of its release PR**, which happens to carry the same tree and so works,
+but it is not what this paragraph asks for — check `git log -1 <tag>` names a publish
+commit before announcing anything from it.
+
 The notes carry:
 
 - the run: id, date, and a link to the workflow run
