@@ -265,13 +265,22 @@ The parsed format is three sections of one-line items:
 - <title> · #<issue>
 ```
 
-**The title names the product finding or fix**, not the state of our instrument.
+**The title names the product finding or fix**, not the state of our instrument, and
+it is short — the website renders the release name as the heading of its changelog
+card, so eight words is a working ceiling and a wrapped title is the symptom of a
+long one.
 A release note is read by someone building on Hookdeck: what changed for them, or
 what we learned about the product they are using. "The CLI no longer works behind your
 back in a guest project" and "Agents can now authenticate the CLI without a terminal"
 are the pattern. "Outpost coverage goes from one scenario to five" (v0.3.0) is not —
 it titles the release with our own coverage, which is a fact about the benchmark. When
 nothing shipped, title it with the finding.
+
+**The first paragraph is the summary the page renders.** The website takes whole
+sentences from it up to 120 characters and shows them under the title, so it has to
+read as a lede on its own — not a scene-setting sentence that only works with the rest
+of the paragraph behind it. Both halves of the card come from the release; nothing
+about a release is configured in the website.
 
 **Write the notes with the `hookdeck-voice` skill loaded.** They are public,
 Hookdeck-branded content that a blog post or changelog entry links to, and they were
