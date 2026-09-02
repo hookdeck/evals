@@ -232,7 +232,7 @@ Cutting one is a single command against the results commit rather than the branc
 
 ```bash
 gh release create v0.4.0 --target <results-commit-sha> \
-  --title "<the product finding or fix>" --notes-file <draft>
+  --title "<verb + subject>" --notes-file <draft>
 ```
 
 Lightweight tags, created by that command; nothing here needs an annotated tag or a
@@ -251,6 +251,13 @@ The notes carry:
 **The website reads these releases and renders them as a changelog**, so the notes are
 public copy rather than internal shorthand. Write them for someone who has not read
 the issues.
+
+**Nothing about a release is configured in the website.** Its changelog card takes the
+title from the release name and the summary from the first paragraph of the notes.
+That was not true until 2 September: three tags had hand-written titles and blurbs
+hardcoded in the component, so the page and the releases it linked to disagreed, and a
+fourth release would have rendered with no summary at all — see hookdeck/website#789.
+If a card ever looks wrong, the fix belongs in the release, not in the site.
 
 The parsed format is three sections of one-line items:
 
@@ -276,15 +283,17 @@ attempt stuck:
   the area and leaves out whether it was fixed, documented or found, which is the only
   thing a reader wants from a changelog line.
 
-**It names the product finding or fix**, not the state of our instrument, and it is
-short — the website renders the release name as the heading of its changelog card, so
-four or five words is the target and a wrapped title is the symptom of a long one.
-A release note is read by someone building on Hookdeck: what changed for them, or
-what we learned about the product they are using. "The CLI no longer works behind your
-back in a guest project" and "Agents can now authenticate the CLI without a terminal"
-are the pattern. "Outpost coverage goes from one scenario to five" (v0.3.0) is not —
-it titles the release with our own coverage, which is a fact about the benchmark. When
-nothing shipped, title it with the finding.
+**It is short**, because the website renders the release name as the heading of its
+changelog card: four or five words is the target, and a wrapped title is the symptom
+of a long one.
+
+**It says what the release actually did.** A release note is read by someone building
+on Hookdeck, so a product fix or a product finding is the headline when there is one.
+When the release is work on the instrument — v0.4.0, "Fixed how results are scored and
+published" — title it as that. Promoting a finding to the headline of a release that
+fixed nothing invites the reader to look for a fix that is not there, and titling
+instrument work as though it were a product change is the same mistake pointing the
+other way.
 
 **The first paragraph is the summary the page renders.** The website takes whole
 sentences from it up to 120 characters and shows them under the title, so it has to
