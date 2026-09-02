@@ -225,6 +225,22 @@ when there is a measured change to report, not on a schedule.
 commit, so the release points at exactly the data it describes, and
 `results/runs/<timestamp>.json` is the immutable snapshot behind it.
 
+**It is a GitHub release, not a bare tag.** The website reads the releases API, resolves
+the most recent release to its tag, and reads `results/` at that ref — so a tag pushed
+without a release publishes nothing, and the page keeps showing the previous snapshot.
+Cutting one is a single command against the results commit rather than the branch tip:
+
+```bash
+gh release create v0.4.0 --target <results-commit-sha> \
+  --title "<verb + subject>" --notes-file <draft>
+```
+
+Lightweight tags, created by that command; nothing here needs an annotated tag or a
+signature. v0.1.0 and v0.2.0 point at their results commits. **v0.3.0 points at the
+merge commit of its release PR**, which happens to carry the same tree and so works,
+but it is not what this paragraph asks for — check `git log -1 <tag>` names a publish
+commit before announcing anything from it.
+
 The notes carry:
 
 - the run: id, date, and a link to the workflow run
@@ -236,18 +252,65 @@ The notes carry:
 public copy rather than internal shorthand. Write them for someone who has not read
 the issues.
 
+**Nothing about a release is configured in the website.** Its changelog card takes the
+title from the release name and the summary from the first paragraph of the notes.
+That was not true until 2 September: three tags had hand-written titles and blurbs
+hardcoded in the component, so the page and the releases it linked to disagreed, and a
+fourth release would have rendered with no summary at all — see hookdeck/website#789.
+If a card ever looks wrong, the fix belongs in the release, not in the site.
+
 The parsed format is three sections of one-line items:
 
 ```markdown
 ## Shipped
 - <title> · <where> · #<issue>
 
-## Benchmark
-- <title> · #<issue>
-
 ## Discovered
 - <title> · #<issue>
+
+## Benchmark
+- <title> · #<issue>
 ```
+
+**The title says what happened to what.** A verb and its subject: "Fixed CLI guest
+account creation", "Documented no-terminal CLI auth", "Expanded Outpost coverage to
+five scenarios". Two failure modes, both made here on 2 September before the third
+attempt stuck:
+
+- *Editorial* — "Every number now comes from one run", "The CLI no longer works behind
+  your back in a guest project". A headline argues; a changelog entry is scanned.
+- *Subject with no verb* — "No-terminal CLI auth", "CLI guest account creation". Names
+  the area and leaves out whether it was fixed, documented or found, which is the only
+  thing a reader wants from a changelog line.
+
+**It is short**, because the website renders the release name as the heading of its
+changelog card: four or five words is the target, and a wrapped title is the symptom
+of a long one.
+
+**It says what the release actually did.** A release note is read by someone building
+on Hookdeck, so a product fix or a product finding is the headline when there is one.
+When the release is work on the instrument — v0.4.0, "Fixed how results are scored and
+published" — title it as that. Promoting a finding to the headline of a release that
+fixed nothing invites the reader to look for a fix that is not there, and titling
+instrument work as though it were a product change is the same mistake pointing the
+other way.
+
+**The first paragraph is the summary the page renders.** The website takes whole
+sentences from it up to 120 characters and shows them under the title, so it has to
+read as a lede on its own — not a scene-setting sentence that only works with the rest
+of the paragraph behind it. Both halves of the card come from the release; nothing
+about a release is configured in the website.
+
+**Write the notes with the `hookdeck-voice` skill loaded.** They are public,
+Hookdeck-branded content that a blog post or changelog entry links to, and they were
+written three times without it. American English, no hype vocabulary, specific over
+generic, honest about maturity.
+
+**In that order: Shipped, Discovered, Benchmark.** What a reader has a stake in comes
+first — what changed for them, then what we found out about the product — and the
+repairs to our own instrument come last. The website does not group by section, so
+this is the order of the release page itself, which is where anyone following a link
+from a blog post or a changelog entry arrives.
 
 `Shipped` is a change to the product, the docs or the skills. `Benchmark` is a repair
 to our own instrument, and only ones that have shipped. `Discovered` is a **product**
