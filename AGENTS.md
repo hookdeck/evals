@@ -242,12 +242,31 @@ The parsed format is three sections of one-line items:
 ## Shipped
 - <title> · <where> · #<issue>
 
-## Benchmark
-- <title> · #<issue>
-
 ## Discovered
 - <title> · #<issue>
+
+## Benchmark
+- <title> · #<issue>
 ```
+
+**The title names the product finding or fix**, not the state of our instrument.
+A release note is read by someone building on Hookdeck: what changed for them, or
+what we learned about the product they are using. "The CLI no longer works behind your
+back in a guest project" and "Agents can now authenticate the CLI without a terminal"
+are the pattern. "Outpost coverage goes from one scenario to five" (v0.3.0) is not —
+it titles the release with our own coverage, which is a fact about the benchmark. When
+nothing shipped, title it with the finding.
+
+**Write the notes with the `hookdeck-voice` skill loaded.** They are public,
+Hookdeck-branded content that a blog post or changelog entry links to, and they were
+written three times without it. American English, no hype vocabulary, specific over
+generic, honest about maturity.
+
+**In that order: Shipped, Discovered, Benchmark.** What a reader has a stake in comes
+first — what changed for them, then what we found out about the product — and the
+repairs to our own instrument come last. The website does not group by section, so
+this is the order of the release page itself, which is where anyone following a link
+from a blog post or a changelog entry arrives.
 
 `Shipped` is a change to the product, the docs or the skills. `Benchmark` is a repair
 to our own instrument, and only ones that have shipped. `Discovered` is a **product**
