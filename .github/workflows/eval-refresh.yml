@@ -476,6 +476,16 @@ jobs:
           # skills/ symlinks into the agent-skills submodule; without it a
           # skills experiment installs nothing and silently scores as baseline.
           submodules: recursive
+          # Full history, because the commit step below may have to rebase onto
+          # a branch that moved while the matrix ran — and did, on 1 September.
+          # A shallow clone has no merge base with `origin/main`, so
+          # `git rebase` fails and the retry loop exhausts its attempts with
+          # nothing it can do. That run published nothing and, worse, is red on
+          # a page that links to it as evidence: 115 of its 116 jobs succeeded
+          # and the failure was this step. Re-running it cannot fix that,
+          # because a re-run checks out the original commit and the original
+          # workflow file, so the fix only protects the runs after it.
+          fetch-depth: 0
 
       - name: Install pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
@@ -585,7 +595,12 @@ jobs:
           # The published contract and its history. Staged explicitly rather
           # than with `git add -A`, so a stray file a run happens to leave in
           # the working tree cannot ride along into a published commit.
-          git add results/latest.json results/index.json results/runs
+          # `totals.json` too: `publish-snapshot` writes it — it is the "runs
+          # recorded" counter the page shows — and it was never staged here, so
+          # every CI publish left it at whatever the last hand-publish had
+          # written. Found on 2 September, when a hand-publish moved it from 222
+          # to 348 and nothing in CI ever would have.
+          git add results/latest.json results/index.json results/totals.json results/runs
 
           if git diff --cached --quiet; then
             echo "No eval result changes to commit"
