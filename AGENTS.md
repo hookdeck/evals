@@ -265,10 +265,17 @@ The parsed format is three sections of one-line items:
 - <title> · #<issue>
 ```
 
-**The title names the product finding or fix**, not the state of our instrument, and
-it is short — the website renders the release name as the heading of its changelog
-card, so eight words is a working ceiling and a wrapped title is the symptom of a
-long one.
+**The title is a noun phrase naming the subject, not a sentence making a claim.**
+"CLI guest account creation", "No-terminal CLI auth", "More Outpost coverage
+scenarios". A title that reads as a headline — "Every number now comes from one run",
+"The CLI no longer works behind your back" — is editorial: it argues rather than
+names, and it is the wrong register for a changelog entry someone is scanning.
+v0.1.0 to v0.3.0 were renamed to this form on 2 September; the sentences they carried
+before are what the notes are for.
+
+**It names the product finding or fix**, not the state of our instrument, and it is
+short — the website renders the release name as the heading of its changelog card, so
+four or five words is the target and a wrapped title is the symptom of a long one.
 A release note is read by someone building on Hookdeck: what changed for them, or
 what we learned about the product they are using. "The CLI no longer works behind your
 back in a guest project" and "Agents can now authenticate the CLI without a terminal"
