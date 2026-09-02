@@ -541,6 +541,21 @@ together (one has "correlation" in its name); ours need one lookup each. Write
 for correlation, make a plausible wrong answer available, and prefer a silent
 failure to an error: every scenario that has discriminated so far failed quietly.
 
+**A scenario joins the benchmark once something has failed it, not before.**
+CONTRIBUTING.md has asked for this since before the first scenario existed and
+nothing checked it, so five scenarios reached the published suite with no agent
+ever having failed them — four of them written from an argument about what users
+probably do rather than from a case where somebody got it wrong.
+
+```bash
+pnpm --filter @hookdeck-evals/framework scenario-criteria
+```
+
+reports both rules — citation and observed failure — plus what the suite covers
+by product and stage. Run it before proposing a scenario. A scenario nothing
+fails is still publishable as a floor; what is not defensible is finding out
+afterwards.
+
 **Test the floor before concluding a scenario carries no signal.** All three
 build scenarios pass on every Sonnet 5 configuration, which read as no signal
 until `codex-gpt-5.4-mini-no-skills` failed two of them. Flat at the top of the
