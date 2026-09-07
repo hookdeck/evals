@@ -9,8 +9,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-alerting-001-delivery-alerts",
-    "ranAt": "2026-09-01T08:05:52.679Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T06:24:52.462Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -52,73 +52,43 @@
       "calls": [
         {
           "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/issue-triggers.md 2>&1 | head -c 6000",
+          "query": "curl -s https://hookdeck.com/docs/issue-triggers.md 2>&1 | head -300",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/issue-triggers.md"
             }
           ],
-          "resultChars": 6000
+          "resultChars": 9388
         },
         {
           "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/api/issue-triggers.md 2>&1 | head -c 8000",
+          "query": "curl -s https://hookdeck.com/docs/api/issue-triggers.md 2>&1 | head -300",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/api/issue-triggers.md"
             }
           ],
-          "resultChars": 8000
+          "resultChars": 28985
         },
         {
           "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/api/notifications.md 2>&1 | head -c 6000",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api/notifications.md"
-            }
-          ],
-          "resultChars": 6000
-        },
-        {
-          "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/issue-triggers.md 2>&1 | sed -n '150,320p'",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/issue-triggers.md"
-            }
-          ],
-          "resultChars": 3032
-        },
-        {
-          "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/issue-triggers.md 2>&1 | sed -n '110,150p'",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/issue-triggers.md"
-            }
-          ],
-          "resultChars": 962
-        },
-        {
-          "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/issues.md 2>&1 | head -c 5000",
+          "query": "curl -s https://hookdeck.com/docs/issues.md 2>&1 | sed -n '1,150p'",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/issues.md"
             }
           ],
-          "resultChars": 4999
+          "resultChars": 6246
         },
         {
           "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/issues.md 2>&1 | sed -n '/Configure notifications/,/^## /p' | head -c 3000",
+          "query": "curl -s https://hookdeck.com/docs/projects.md 2>&1 | sed -n '1,200p'",
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/issues.md"
+              "url": "https://hookdeck.com/docs/projects.md"
             }
           ],
-          "resultChars": 3000
+          "resultChars": 22361
         }
       ]
     },
@@ -137,8 +107,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-dedupe-001-duplicate-events",
-    "ranAt": "2026-09-01T08:25:51.299Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T06:35:44.023Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -187,8 +157,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-delivery-001-slow-consumer",
-    "ranAt": "2026-09-01T08:43:41.496Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T06:45:09.590Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -219,6 +189,7 @@
         "event-gateway"
       ],
       "loaded": [
+        "hookdeck",
         "event-gateway"
       ]
     },
@@ -226,13 +197,43 @@
       "calls": [
         {
           "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/destinations.md 2>&1 | head -200",
+          "query": "curl -s https://hookdeck.com/docs/destinations.md | head -200",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/destinations.md"
             }
           ],
           "resultChars": 11033
+        },
+        {
+          "source": "shell_fetch",
+          "query": "curl -s https://hookdeck.com/docs/retries.md | head -150",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/retries.md"
+            }
+          ],
+          "resultChars": 5733
+        },
+        {
+          "source": "shell_fetch",
+          "query": "curl -s https://hookdeck.com/docs/retries.md | sed -n '150/260p'; echo \"===full check for timeout config===\"; curl -s https://hookdeck.com/docs/retries.md | grep -n -i \"timeout\\|response_status_codes\\|strategy\\|interval\\|count\" ",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/retries.md"
+            }
+          ],
+          "resultChars": 3462
+        },
+        {
+          "source": "shell_fetch",
+          "query": "curl -s https://hookdeck.com/docs/retries.md | tail -n +280 | head -80",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/retries.md"
+            }
+          ],
+          "resultChars": 6157
         }
       ]
     },
@@ -251,8 +252,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-delivery-002-rate-limited-endpoint",
-    "ranAt": "2026-09-01T08:55:01.270Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T06:52:56.475Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -305,8 +306,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-filtering-001-enterprise-orders",
-    "ranAt": "2026-09-01T09:09:16.826Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T07:08:11.696Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -321,7 +322,7 @@
       {
         "name": "did not claim regex filtering or channels exist",
         "passed": true,
-        "judgeNotes": "Assistant correctly states Hookdeck filters have no regex operator and uses a transformation for regex logic. No regex filter rule or channel/channel partitioning feature was claimed."
+        "judgeNotes": "The assistant correctly states regex is not supported in native Hookdeck filter rules and uses a transformation for regex-like logic. It does not claim regex filtering is available or describe channel/channel partitioning."
       },
       {
         "name": "current-format references still reach the endpoint",
@@ -346,26 +347,24 @@
     "docs": {
       "calls": [
         {
-          "source": "web_fetch",
-          "query": "Does Hookdeck's filter syntax support regex matching on string fields? List all available operators, especially anything related to regex, pattern matching, or string matching. Show the exact JSON syntax for a regex operator if one exists.",
-          "hasContent": true,
+          "source": "shell_fetch",
+          "query": "curl -s https://hookdeck.com/docs/filters.md",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/filters.md"
             }
           ],
-          "resultChars": 890
+          "resultChars": 25833
         },
         {
-          "source": "web_fetch",
-          "query": "Show the exact JSON structure for a connection's \"rules\" array when adding a transform rule (type \"transform\"), including whether transformation code goes inline or requires creating a separate Transformation resource first, and what field names are used (e.g. transformation, transform, code).",
-          "hasContent": true,
+          "source": "shell_fetch",
+          "query": "curl -s https://hookdeck.com/docs/transformations.md | head -150",
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/api/connections.md"
+              "url": "https://hookdeck.com/docs/transformations.md"
             }
           ],
-          "resultChars": 215
+          "resultChars": 5238
         }
       ]
     },
@@ -384,8 +383,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-filtering-002-high-value-retries",
-    "ranAt": "2026-09-01T09:33:06.098Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T07:20:01.611Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -420,7 +419,19 @@
       ]
     },
     "docs": {
-      "calls": []
+      "calls": [
+        {
+          "source": "web_fetch",
+          "query": "What are the constraints on retry rule count and interval (max count, max interval, max total duration) for linear and exponential strategies?",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/retries.md"
+            }
+          ],
+          "resultChars": 983
+        }
+      ]
     },
     "prompt": "Only orders above £500 should go to the manual review queue. Everything smaller\nis handled automatically and shouldn't reach it.\n\nAlso, review's endpoint goes down occasionally and we've lost orders that way.\nIf a delivery fails, keep trying for a while rather than giving up.",
     "promptSourcePath": "evals/benchmark-filtering-002-high-value-retries/PROMPT.md",
@@ -437,8 +448,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-investigate-001-failing-deliveries",
-    "ranAt": "2026-09-01T09:49:41.589Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T07:30:11.742Z",
+    "runId": "34090396233",
     "stage": "investigate",
     "product": [
       "event-gateway"
@@ -457,12 +468,12 @@
       {
         "name": "identified the failing destination and that it is rejecting",
         "passed": true,
-        "judgeNotes": "Identifies analytics-api/orders-to-analytics as failing and states the destination endpoint/URL returns HTTP 422, rejecting the requests while fulfilment succeeds."
+        "judgeNotes": "Identifies analytics-api/orders-to-analytics as the failing destination and explains that its delivery attempts fail because the receiving endpoint returns HTTP 422/client error."
       },
       {
         "name": "did not invent a cause it could not have observed",
         "passed": true,
-        "judgeNotes": "The assistant attributes the issue to the configured analytics destination URL forcing HTTP 422 responses, which is observable from project state. It does not assert an unsupported forbidden cause such as rate limiting, Hookdeck dropping/loss, size limits, disabled connections, or nonexistent features."
+        "judgeNotes": "The assistant’s cause is derived from project configuration and delivery responses: the analytics destination URL includes status=422 and deliveries fail with 422. No prohibited invented cause is asserted as established fact."
       }
     ],
     "skills": {
@@ -492,8 +503,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-investigate-002-partial-outage",
-    "ranAt": "2026-09-01T10:02:51.641Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T07:39:48.280Z",
+    "runId": "34090396233",
     "stage": "investigate",
     "product": [
       "event-gateway"
@@ -503,21 +514,22 @@
     ],
     "suite": "benchmark",
     "gatedBy": "mixed",
-    "passed": true,
+    "passed": false,
     "checks": [
       {
         "name": "looked past the events list",
-        "passed": true
+        "passed": false,
+        "notes": "only the events list was read, and every event in it succeeded"
       },
       {
         "name": "identified the filter as the cause and what it excludes",
         "passed": true,
-        "judgeNotes": "The assistant clearly identifies the connection filter requiring channel == web as the root cause, explains that non-web orders are ignored at ingestion and never become events, and explicitly names POS/mobile as excluded channels. It also states nothing is failing."
+        "judgeNotes": "The assistant identifies the connection filter as the reason: only channel \"web\" passes. It also states POS/non-web orders are excluded and never become deliverable events. Although it mentions 'silently dropped' in places, the substantive explanation matches the rubric."
       },
       {
         "name": "did not report the system as healthy",
         "passed": true,
-        "judgeNotes": "The assistant did not claim everything was working or that all orders were delivered. It identified that visible deliveries succeeded while missing orders were filtered/ignored before event creation, which is allowed."
+        "judgeNotes": "The assistant did not claim everything was working or that all orders were delivered. It identified filtered/ignored requests as missing despite successful delivered events, which is acceptable for this check."
       }
     ],
     "skills": {
@@ -547,8 +559,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-localdev-001-listen-locally",
-    "ranAt": "2026-09-01T10:14:47.184Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T07:50:11.034Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -600,8 +612,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-001-customer-subscriptions",
-    "ranAt": "2026-09-01T10:31:14.520Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T08:04:21.199Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "outpost"
@@ -640,14 +652,47 @@
       "calls": [
         {
           "source": "web_fetch",
-          "query": "Extract the exact curl commands and API base URL for: creating a tenant, creating a webhook destination for a tenant, listing/checking topics, and publishing an event. Include headers, auth, and endpoint paths.",
+          "query": "Extract the full curl quickstart flow: how to create a tenant, get a tenant token, create a webhook destination, list topics, and publish an event. Include exact API base URL, endpoints, headers, and JSON body shapes.",
           "hasContent": true,
           "pages": [
             {
               "url": "https://hookdeck.com/docs/outpost/quickstarts/hookdeck-outpost-curl"
             }
           ],
-          "resultChars": 1394
+          "resultChars": 1679
+        },
+        {
+          "source": "web_fetch",
+          "query": "Explain what topics are, how topic naming conventions work (e.g. is there a generic 'orders' topic vs specific 'order.created' topics), and how destinations subscribe to topics.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/features/topics"
+            }
+          ],
+          "resultChars": 1432
+        },
+        {
+          "source": "web_fetch",
+          "query": "List all REST API endpoints for listing events, getting event details, and getting delivery/attempt status for a destination or tenant. Include exact paths and methods.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api"
+            }
+          ],
+          "resultChars": 1268
+        },
+        {
+          "source": "web_fetch",
+          "query": "Give the exact REST endpoints (method + path) for: listing events for a tenant, getting a single event by id, and listing delivery attempts for an event or destination.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api/inspect.md"
+            }
+          ],
+          "resultChars": 384
         }
       ]
     },
@@ -666,8 +711,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-002-disabled-destination",
-    "ranAt": "2026-09-01T10:46:09.395Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T08:16:15.351Z",
+    "runId": "34090396233",
     "stage": "resolve",
     "product": [
       "outpost"
@@ -721,8 +766,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-003-operator-events",
-    "ranAt": "2026-09-01T11:10:31.141Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T08:36:04.505Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "outpost"
@@ -765,47 +810,69 @@
       "calls": [
         {
           "source": "web_fetch",
-          "query": "List all doc pages related to alerts, notifications, destination disabled events, delivery failures, consecutive failures, webhooks about Outpost events, admin/organization webhooks or event subscriptions.",
+          "query": "List any pages related to alerts, notifications, monitoring, destination disabled, or consecutive delivery failures.",
           "hasContent": true,
           "pages": [
             {
               "url": "https://hookdeck.com/docs/outpost/llms.txt"
             }
           ],
-          "resultChars": 1445
+          "resultChars": 1256
         },
         {
           "source": "web_fetch",
-          "query": "Give full details: what operator events exist (especially destination disabled, consecutive delivery failures), how to configure the webhook/URL to receive them, what the payload looks like, and any configuration for consecutive failure thresholds/alerts before disabling.",
+          "query": "Give the full content of this page: what operator events exist (especially destination disabled and consecutive delivery failure events), how to configure them, required config fields, endpoint URL setup, thresholds, and any API/CLI/env var examples.",
           "hasContent": true,
           "pages": [
             {
               "url": "https://hookdeck.com/docs/outpost/features/operator-events.md"
             }
           ],
-          "resultChars": 2532
+          "resultChars": 2831
         },
         {
           "source": "web_fetch",
-          "query": "Find any API endpoints related to configuring operator/organization-level webhook alerts, event subscriptions for alert.destination.disabled or alert.destination.consecutive_failure, or admin settings for the Outpost project. List endpoint paths and methods.",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api"
-            }
-          ],
-          "resultChars": 1136
-        },
-        {
-          "source": "web_fetch",
-          "query": "Return the full raw content of this page verbatim, especially any sections about managed Outpost (Hookdeck Cloud) configuration vs self-hosted configuration, and how to set up the HTTP destination URL for operator events on managed Outpost.",
+          "query": "For managed Hookdeck Outpost deployments, how do you configure \"Hookdeck Monitoring settings\" to set up operator events / alerts (destination disabled, consecutive failure)? Is this done via API, CLI, or only via the Hookdeck Console dashboard? Give exact steps or endpoint if available.",
           "hasContent": true,
           "pages": [
             {
               "url": "https://hookdeck.com/docs/outpost/features/operator-events"
             }
           ],
-          "resultChars": 1433
+          "resultChars": 754
+        },
+        {
+          "source": "web_fetch",
+          "query": "List all API endpoints related to project settings, monitoring, alerts, operator events, or notification configuration. I need to know if there's a REST API to configure operator event topics and the HTTP sink URL for alerts (e.g. destination disabled alerts), as opposed to only the dashboard UI.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api"
+            }
+          ],
+          "resultChars": 1086
+        },
+        {
+          "source": "web_fetch",
+          "query": "Explain exactly under what conditions an Outpost destination gets automatically disabled, and whether this requires ALERT_AUTO_DISABLE_DESTINATION to be enabled. Also explain what happens to events for a disabled destination.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/features/event-delivery.md"
+            }
+          ],
+          "resultChars": 1121
+        },
+        {
+          "source": "web_fetch",
+          "query": "Quote verbatim any sentence describing exactly when the alert.destination.disabled topic fires — does it fire only when auto-disable happens due to consecutive failures, or also when a destination is disabled manually via the API/dashboard/portal? Also quote anything about ALERT_AUTO_DISABLE_DESTINATION needing to be true for alert.destination.disabled or alert.destination.consecutive_failure to fire.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/features/operator-events"
+            }
+          ],
+          "resultChars": 856
         }
       ]
     },
@@ -824,8 +891,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-004-queue-destination",
-    "ranAt": "2026-09-01T11:48:21.109Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T08:59:16.375Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "outpost"
@@ -870,6 +937,7 @@
       ],
       "loaded": [
         "hookdeck",
+        "event-gateway",
         "outpost"
       ]
     },
@@ -877,27 +945,57 @@
       "calls": [
         {
           "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/outpost/llms.txt 2>&1 | head -50",
+          "query": "curl -s https://hookdeck.com/docs/destinations.md | head -200",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/destinations.md"
+            }
+          ],
+          "resultChars": 11033
+        },
+        {
+          "source": "shell_fetch",
+          "query": "curl -s https://hookdeck.com/docs/outpost/llms.txt | head -100",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/outpost/llms.txt"
             }
           ],
-          "resultChars": 4039
+          "resultChars": 6742
         },
         {
           "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/outpost/api.md 2>&1 | grep -n -i \"destination\" | head -80",
+          "query": "curl -s https://hookdeck.com/docs/outpost/quickstarts/hookdeck-outpost-curl.md",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/quickstarts/hookdeck-outpost-curl.md"
+            }
+          ],
+          "resultChars": 6070
+        },
+        {
+          "source": "shell_fetch",
+          "query": "curl -s https://hookdeck.com/docs/outpost/destinations/aws-sqs.md",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/destinations/aws-sqs.md"
+            }
+          ],
+          "resultChars": 2301
+        },
+        {
+          "source": "shell_fetch",
+          "query": "curl -s https://hookdeck.com/docs/outpost/api.md | grep -n -i \"destinations\" | head -50",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/outpost/api.md"
             }
           ],
-          "resultChars": 340
+          "resultChars": 272
         },
         {
           "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/outpost/api/configure.md 2>&1 | sed -n '1,250p'",
+          "query": "curl -s https://hookdeck.com/docs/outpost/api/configure.md | sed -n '1,250p'",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/outpost/api/configure.md"
@@ -907,7 +1005,7 @@
         },
         {
           "source": "shell_fetch",
-          "query": "curl -s https://hookdeck.com/docs/outpost/api/configure.md 2>&1 | sed -n '250,500p'",
+          "query": "curl -s https://hookdeck.com/docs/outpost/api/configure.md | sed -n '250,500p'",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/outpost/api/configure.md"
@@ -932,8 +1030,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-005-topic-scoping",
-    "ranAt": "2026-09-01T12:03:04.156Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T09:09:53.367Z",
+    "runId": "34090396233",
     "stage": "resolve",
     "product": [
       "outpost"
@@ -973,7 +1071,7 @@
         "outpost"
       ],
       "loaded": [
-        "hookdeck",
+        "event-gateway",
         "outpost"
       ]
     },
@@ -995,8 +1093,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-resolve-001-paused-connection",
-    "ranAt": "2026-09-01T12:19:21.483Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T09:20:42.342Z",
+    "runId": "34090396233",
     "stage": "resolve",
     "product": [
       "event-gateway"
@@ -1023,6 +1121,7 @@
         "event-gateway"
       ],
       "loaded": [
+        "hookdeck",
         "event-gateway"
       ]
     },
@@ -1044,8 +1143,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-resolve-002-scoped-redelivery",
-    "ranAt": "2026-09-01T12:33:18.490Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T09:29:15.384Z",
+    "runId": "34090396233",
     "stage": "resolve",
     "product": [
       "event-gateway"
@@ -1093,8 +1192,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-transform-001-reshape-payload",
-    "ranAt": "2026-09-01T12:51:03.444Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T09:39:41.712Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -1125,7 +1224,6 @@
         "event-gateway"
       ],
       "loaded": [
-        "hookdeck",
         "event-gateway"
       ]
     },
@@ -1147,8 +1245,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-verification-001-stripe-express",
-    "ranAt": "2026-09-01T13:11:36.863Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T09:52:41.952Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -1188,6 +1286,7 @@
         "event-gateway"
       ],
       "loaded": [
+        "hookdeck",
         "event-gateway"
       ],
       "selfInstalled": [
@@ -1212,8 +1311,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-verification-002-elevenlabs-callbacks",
-    "ranAt": "2026-09-01T13:44:49.536Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T10:14:42.849Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -1253,10 +1352,12 @@
         "event-gateway"
       ],
       "loaded": [
+        "hookdeck",
         "event-gateway"
       ],
       "selfInstalled": [
-        "elevenlabs-webhooks"
+        "elevenlabs-webhooks",
+        "hookdeck/webhook-skills"
       ]
     },
     "docs": {
@@ -2989,8 +3090,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-alerting-001-delivery-alerts",
-    "ranAt": "2026-09-01T08:08:04.924Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T06:27:41.219Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -3025,12 +3126,71 @@
         "event-gateway"
       ],
       "loaded": [
-        "hookdeck",
         "event-gateway"
       ]
     },
     "docs": {
-      "calls": []
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api Hookdeck issue triggers API notifications",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/issue-triggers Hookdeck issue triggers notifications email slack webhook",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/issue-triggers",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/issue-triggers"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/issue-triggers connections list example issue trigger",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/issue-triggers \"connections\": [\" Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc 'curl -sS https://hookdeck.com/docs/issue-triggers | rg -n \"first_attempt|last_attempt|connections|strategy|delivery\"'",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/issue-triggers"
+            }
+          ],
+          "resultChars": 32321
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc 'curl -sS https://hookdeck.com/docs/api | rg -n \"issue trigger|issue-triggers|connections|strategy|delivery\"'",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ],
+          "resultChars": 1048534
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/api | rg -n -C 4 'IssueTrigger|issue trigger|issue-triggers|DeliveryIssue|delivery issue|first_attempt|last_attempt'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ],
+          "resultChars": 1048540
+        }
+      ]
     },
     "prompt": "We found out our fulfilment endpoint had been rejecting orders for most of a day\nbecause nobody was watching. I don't want to find out that way again.\n\nSet it up so we get told when deliveries to that endpoint keep failing.",
     "promptSourcePath": "evals/benchmark-alerting-001-delivery-alerts/PROMPT.md",
@@ -3047,8 +3207,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-dedupe-001-duplicate-events",
-    "ranAt": "2026-09-01T08:29:42.623Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T06:37:53.251Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -3097,8 +3257,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-delivery-001-slow-consumer",
-    "ranAt": "2026-09-01T08:45:33.407Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T06:48:44.944Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -3151,8 +3311,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-delivery-002-rate-limited-endpoint",
-    "ranAt": "2026-09-01T08:56:34.250Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T07:00:18.346Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -3206,8 +3366,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-filtering-001-enterprise-orders",
-    "ranAt": "2026-09-01T09:12:24.898Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T07:10:16.768Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -3222,7 +3382,7 @@
       {
         "name": "did not claim regex filtering or channels exist",
         "passed": true,
-        "judgeNotes": "Assistant explicitly states Hookdeck filters don’t expose a regex operator and uses $startsWith instead. No channel/channel partitioning feature described."
+        "judgeNotes": "The assistant explicitly says regex is not supported and uses a supported $startsWith operator. It does not claim regex filtering is available or mention channel/channel partitioning."
       },
       {
         "name": "current-format references still reach the endpoint",
@@ -3248,15 +3408,23 @@
     "docs": {
       "calls": [
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/filters.md | sed -n '1,240p'\"",
-          "hasContent": true,
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/filters regex Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/filters",
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/filters.md"
+              "url": "https://hookdeck.com/docs/filters"
             }
-          ],
-          "resultChars": 4795
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "'regex' in https://hookdeck.com/docs/filters",
+          "pages": []
         }
       ]
     },
@@ -3275,8 +3443,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-filtering-002-high-value-retries",
-    "ranAt": "2026-09-01T09:36:13.217Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T07:22:56.568Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -3330,8 +3498,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-investigate-001-failing-deliveries",
-    "ranAt": "2026-09-01T09:51:50.173Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T07:32:53.596Z",
+    "runId": "34090396233",
     "stage": "investigate",
     "product": [
       "event-gateway"
@@ -3350,12 +3518,12 @@
       {
         "name": "identified the failing destination and that it is rejecting",
         "passed": true,
-        "judgeNotes": "Identifies orders-to-analytics/analytics destination as failing, while fulfilment succeeds, and states it failed with HTTP 422 from the analytics endpoint/URL."
+        "judgeNotes": "Identifies analytics/orders-to-analytics as the failing leg and explains the destination endpoint URL was returning HTTP 422, while fulfilment succeeded."
       },
       {
         "name": "did not invent a cause it could not have observed",
         "passed": true,
-        "judgeNotes": "The assistant bases the cause on observed Hookdeck state: destination URL includes status=422 and delivery attempts failed with HTTP 422. It does not assert any prohibited invented cause such as rate limiting, dropped/lost deliveries, payload limit, paused connection, or nonexistent feature."
+        "judgeNotes": "The assistant attributes the cause to the configured destination URL forcing HTTP 422 responses, based on project configuration and delivery responses. This is an allowed observation, not an invented unsupported cause."
       }
     ],
     "skills": {
@@ -3386,8 +3554,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-investigate-002-partial-outage",
-    "ranAt": "2026-09-01T10:04:27.361Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T07:41:25.320Z",
+    "runId": "34090396233",
     "stage": "investigate",
     "product": [
       "event-gateway"
@@ -3397,21 +3565,22 @@
     ],
     "suite": "benchmark",
     "gatedBy": "mixed",
-    "passed": true,
+    "passed": false,
     "checks": [
       {
         "name": "looked past the events list",
-        "passed": true
+        "passed": false,
+        "notes": "only the events list was read, and every event in it succeeded"
       },
       {
         "name": "identified the filter as the cause and what it excludes",
         "passed": true,
-        "judgeNotes": "Identifies the connection filter as the cause and states that only web orders pass while non-web/pos orders are ignored and produce no event."
+        "judgeNotes": "Identifies the connection filter (`channel = web`) as the reason, and states non-web/pos orders are ignored and never become delivered events."
       },
       {
         "name": "did not report the system as healthy",
         "passed": true,
-        "judgeNotes": "The assistant did not claim everything was working or that all orders were delivered; it identified a filter dropping some orders."
+        "judgeNotes": "The assistant did not say everything is working, no problem was found, or all orders were delivered. It identified missing orders as ignored by a filter, which is acceptable for this check."
       }
     ],
     "skills": {
@@ -3420,6 +3589,7 @@
         "event-gateway"
       ],
       "loaded": [
+        "hookdeck",
         "event-gateway"
       ]
     },
@@ -3441,8 +3611,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-localdev-001-listen-locally",
-    "ranAt": "2026-09-01T10:17:13.771Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T07:53:43.765Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -3473,7 +3643,6 @@
         "event-gateway"
       ],
       "loaded": [
-        "hookdeck",
         "event-gateway"
       ]
     },
@@ -3495,8 +3664,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-001-customer-subscriptions",
-    "ranAt": "2026-09-01T10:33:34.910Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T08:06:52.464Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "outpost"
@@ -3533,7 +3702,85 @@
       ]
     },
     "docs": {
-      "calls": []
+      "calls": [
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/outpost/llms.txt | sed -n '1,220p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/llms.txt"
+            }
+          ],
+          "resultChars": 11412
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/outpost/api.md | sed -n '1,260p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api.md"
+            }
+          ],
+          "resultChars": 5554
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/outpost/quickstarts/hookdeck-outpost-curl.md | sed -n '1,260p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/quickstarts/hookdeck-outpost-curl.md"
+            }
+          ],
+          "resultChars": 6070
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/outpost/publishing/events.md | sed -n '1,260p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/publishing/events.md"
+            }
+          ],
+          "resultChars": 4894
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/outpost/api/inspect.md | sed -n '1,260p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api/inspect.md"
+            }
+          ],
+          "resultChars": 7595
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/outpost/api/configure.md | sed -n '1,260p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api/configure.md"
+            }
+          ],
+          "resultChars": 5832
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/outpost/api/configure.md | sed -n '260,520p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api/configure.md"
+            }
+          ],
+          "resultChars": 5957
+        }
+      ]
     },
     "prompt": "We want our customers to be able to subscribe to events from our platform, so\nthey can react when an order is placed rather than polling us for it.\n\nSet that up for our first customer, `acme`, so they receive order events at\nthe endpoint they gave us:\n\n    https://mock.hookdeck.com/api/v1/acme/orders\n\nThen show me it works by sending one through.",
     "promptSourcePath": "evals/benchmark-outpost-001-customer-subscriptions/PROMPT.md",
@@ -3550,8 +3797,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-002-disabled-destination",
-    "ranAt": "2026-09-01T10:53:11.391Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T08:23:49.779Z",
+    "runId": "34090396233",
     "stage": "resolve",
     "product": [
       "outpost"
@@ -3561,17 +3808,15 @@
     ],
     "suite": "benchmark",
     "gatedBy": "discovery",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "the customer can receive again",
-        "passed": false,
-        "notes": "all 1 of acme's destinations are still disabled, so nothing published to acme will be delivered"
+        "passed": true
       },
       {
         "name": "the events the customer missed were delivered",
-        "passed": false,
-        "notes": "0 of 3 missed events delivered: the destination may be receiving again, but the customer is still missing the outage window"
+        "passed": true
       },
       {
         "name": "the other customer was left alone",
@@ -3608,8 +3853,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-003-operator-events",
-    "ranAt": "2026-09-01T11:13:32.649Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T08:43:22.885Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "outpost"
@@ -3652,8 +3897,203 @@
     "docs": {
       "calls": [
         {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost alerts destination disabled consecutive delivery failures webhook",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/outpost/features/operator-events",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/features/operator-events"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost \"Config API\" monitoring settings alert consecutive failure count",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost/api \"project settings\" \"monitoring\" outpost",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/outpost/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:github.com/hookdeck/outpost openapi.yaml alerts operation events",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "'operation_events' in https://github.com/hookdeck/outpost/blob/main/docs/apis/openapi.yaml",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs \"Monitoring settings\" Hookdeck API project",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api hookdeck monitoring settings project api",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api/2024-09-01 project settings monitoring hooks alerts",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api monitoring settings project hookdeck api operator events sink",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:github.com/hookdeck hookdeck openapi project settings monitoring api",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:github.com/hookdeck hookdeck openapi projects api settings monitoring",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:github.com/hookdeck \"OPERATION_EVENTS_HTTP_URL\" \"hookdeck\"",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/platform \"project settings\" api hookdeck monitoring",
+          "pages": []
+        },
+        {
           "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/outpost/llms.txt | sed -n '1,200p'\"",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/api/2024-09-01 | rg -n \\\"api\\\\.hookdeck\\\\.com|openapi|2024-09-01|servers\\\" | sed -n '1,120p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/2024-09-01"
+            }
+          ],
+          "resultChars": 1048538
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/api | rg -n \\\"api\\\\.hookdeck\\\\.com|openapi|2024-09-01|servers\\\" | sed -n '1,120p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ],
+          "resultChars": 1048538
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs \"Webhook Notifications\" Hookdeck source_id topics",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/issues",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/issues"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost \"operator events\" \"API\" \"notifications\"",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/platform operator events webhook api monitoring settings",
+          "pages": []
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/outpost/features/operator-events | rg -n \\\"OPERATION_EVENTS|Monitoring settings|Config API|HTTP_URL|source_id|notifications/webhooks|disabled\\\" | sed -n '1,200p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/features/operator-events"
+            }
+          ],
+          "resultChars": 17282
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/platform/outpost-projects | rg -n \\\"OPERATION_EVENTS|operator events|Monitoring|notifications/webhooks|source_id|HTTP_URL|auto_disable|consecutive_failure\\\" | sed -n '1,200p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/platform/outpost-projects"
+            }
+          ],
+          "resultChars": 14716
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/api/2024-09-01 | rg -n \\\"notifications/webhooks|notifications/email|notifications/slack|issue-triggers|issue triggers|project settings\\\" | sed -n '1,120p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/2024-09-01"
+            }
+          ],
+          "resultChars": 1048540
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/api/2024-09-01 | rg -n \\\"operator-events|operation-events|monitoring|notifications/webhooks|alert\\\\.destination|ALERT_AUTO_DISABLE_DESTINATION|OPERATION_EVENTS_HTTP_URL\\\" | sed -n '1,120p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/2024-09-01"
+            }
+          ],
+          "resultChars": 1048530
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/api/2024-09-01 | rg -n \\\"alert\\\\.destination|OPERATION_EVENTS|operator events|Monitoring settings|/settings/project/monitoring|notifications/webhooks\\\" | sed -n '1,120p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/2024-09-01"
+            }
+          ],
+          "resultChars": 1048530
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/api/2024-09-01 | rg -n \\\"issue_trigger|issue trigger|notifications/webhooks|topic.*issue|source_id\\\" | sed -n '1,120p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/2024-09-01"
+            }
+          ],
+          "resultChars": 1048540
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -c \"curl -fsSL https://hookdeck.com/docs/outpost/llms.txt | sed -n '1,220p'\"",
           "hasContent": true,
           "pages": [
             {
@@ -3664,7 +4104,18 @@
         },
         {
           "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/outpost/api/configure.md | sed -n '1,260p'\"",
+          "query": "/bin/bash -c 'curl -fsSL https://hookdeck.com/docs/platform/outpost-projects.md | rg -n \"Monitoring|operator events|alerts|destination\" -i'",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/platform/outpost-projects.md"
+            }
+          ],
+          "resultChars": 1004
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -c \"curl -fsSL https://hookdeck.com/docs/outpost/api/configure.md | sed -n '1,260p'\"",
           "hasContent": true,
           "pages": [
             {
@@ -3675,128 +4126,7 @@
         },
         {
           "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/outpost/features/operator-events.md | sed -n '1,260p'\"",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/features/operator-events.md"
-            }
-          ],
-          "resultChars": 8210
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/outpost/api.md | sed -n '1,240p'\"",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api.md"
-            }
-          ],
-          "resultChars": 5554
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc 'curl -fsSL https://hookdeck.com/docs/outpost/api/configure.md | rg -n \"alert|monitor|operation|destination.disabled|consecutive_failure|ALERT_\"'",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api/configure.md"
-            }
-          ],
-          "resultChars": 860
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc 'curl -fsSL https://hookdeck.com/docs/outpost/api.md | rg -n \"monitor|operator|alert|configuration\"'",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api.md"
-            }
-          ],
-          "resultChars": 248
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc 'curl -fsSL https://hookdeck.com/docs/outpost/api/resources.md | rg -n \"alert|operator|topic|configuration|monitor\"'",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api/resources.md"
-            }
-          ],
-          "resultChars": 909
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/outpost/api/resources.md | sed -n '150,230p'\"",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api/resources.md"
-            }
-          ],
-          "resultChars": 1667
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/outpost/api/configure.md | sed -n '940,1040p'\"",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api/configure.md"
-            }
-          ],
-          "resultChars": 520
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/outpost/api/configure.md | sed -n '820,940p'\"",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api/configure.md"
-            }
-          ],
-          "resultChars": 6413
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/outpost/api/configure.md | sed -n '840,900p'\"",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api/configure.md"
-            }
-          ],
-          "resultChars": 3697
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/outpost/api/configure.md | sed -n '760,840p'\"",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api/configure.md"
-            }
-          ],
-          "resultChars": 1997
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc 'curl -fsSL https://hookdeck.com/docs/platform/outpost-projects.md | rg -n \"monitor|alert|operator|sink|outpost\"'",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/platform/outpost-projects.md"
-            }
-          ],
-          "resultChars": 291
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/platform/outpost-projects.md | sed -n '1,260p'\"",
+          "query": "/bin/bash -c \"curl -fsSL https://hookdeck.com/docs/platform/outpost-projects.md | sed -n '1,220p'\"",
           "hasContent": true,
           "pages": [
             {
@@ -3807,36 +4137,91 @@
         },
         {
           "source": "shell_fetch",
-          "query": "/bin/bash -lc 'curl -fsSL https://hookdeck.com/docs/platform/organizations.md | rg -n \"outpost|project|monitor|alert\"'",
+          "query": "/bin/bash -c 'curl -fsSL https://hookdeck.com/docs/outpost/self-hosting/configuration.md | rg -n \"ALERT|OPERATION|operator|monitor|webhook|event\" -i'",
           "hasContent": true,
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/platform/organizations.md"
+              "url": "https://hookdeck.com/docs/outpost/self-hosting/configuration.md"
             }
           ],
-          "resultChars": 1245
+          "resultChars": 4313
         },
         {
           "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/platform/llms.txt | sed -n '1,240p'\"",
+          "query": "/bin/bash -c \"curl -fsSL https://hookdeck.com/docs/outpost/self-hosting/configuration.md | sed -n '140,220p'\"",
           "hasContent": true,
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/platform/llms.txt"
+              "url": "https://hookdeck.com/docs/outpost/self-hosting/configuration.md"
             }
           ],
-          "resultChars": 49
+          "resultChars": 657
         },
         {
           "source": "shell_fetch",
-          "query": "/bin/bash -lc 'curl -fsSL https://hookdeck.com/docs/platform/outpost-projects.md | rg -n \"Monitoring|monitoring|settings/project/monitoring|operation events|alerts\"'",
+          "query": "/bin/bash -c \"curl -fsSL https://hookdeck.com/docs/outpost/features/operator-events.md | sed -n '1,260p'\"",
           "hasContent": true,
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/platform/outpost-projects.md"
+              "url": "https://hookdeck.com/docs/outpost/features/operator-events.md"
             }
           ],
-          "resultChars": 208
+          "resultChars": 8210
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -c 'curl -fsSL https://hookdeck.com/docs/api.md | rg -n \"notification|webhook|project|settings|monitoring|outpost\" -i'",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api.md"
+            }
+          ],
+          "resultChars": 3430
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -c 'curl -fsSL https://hookdeck.com/docs/api/configure.md | rg -n \"project|notification|webhook|monitoring|outpost|settings\" -i'",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/configure.md"
+            }
+          ],
+          "resultChars": 2882
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -c \"curl -fsSL https://hookdeck.com/docs/api.md | sed -n '430,470p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api.md"
+            }
+          ],
+          "resultChars": 1909
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -c \"curl -fsSL https://hookdeck.com/docs/api/configure.md | sed -n '2958,3038p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/configure.md"
+            }
+          ],
+          "resultChars": 1762
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -c \"curl -fsSL https://hookdeck.com/docs/outpost/features/operator-events.md | sed -n '1,220p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/features/operator-events.md"
+            }
+          ],
+          "resultChars": 6836
         }
       ]
     },
@@ -3855,8 +4240,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-004-queue-destination",
-    "ranAt": "2026-09-01T11:50:44.628Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T09:01:49.666Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "outpost"
@@ -3922,8 +4307,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-005-topic-scoping",
-    "ranAt": "2026-09-01T12:05:43.659Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T09:13:16.384Z",
+    "runId": "34090396233",
     "stage": "resolve",
     "product": [
       "outpost"
@@ -3968,52 +4353,7 @@
       ]
     },
     "docs": {
-      "calls": [
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api authentication x-api-key bearer api.outpost.hookdeck.com 2025-07-01",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/outpost/api",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api authentication \"Outpost API\"",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api tenants destinations topics subscriptions outpost",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api create destination tenant webhook url topics body",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api \"config.url\" destination topics",
-          "pages": []
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/llms.txt | sed -n '1,220p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/llms.txt"
-            }
-          ],
-          "resultChars": 11412
-        }
-      ]
+      "calls": []
     },
     "prompt": "Acme have been in touch. Their integration is choking on order cancellations —\nthey don't handle them and each one throws an error on their side. Their order\nconfirmations are working fine and they rely on those.\n\nStop the cancellations.",
     "promptSourcePath": "evals/benchmark-outpost-005-topic-scoping/PROMPT.md",
@@ -4030,8 +4370,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-resolve-001-paused-connection",
-    "ranAt": "2026-09-01T12:23:04.450Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T09:23:43.352Z",
+    "runId": "34090396233",
     "stage": "resolve",
     "product": [
       "event-gateway"
@@ -4063,18 +4403,7 @@
       ]
     },
     "docs": {
-      "calls": [
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -s https://hookdeck.com/docs/api.md | sed -n '1,180p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api.md"
-            }
-          ],
-          "resultChars": 6064
-        }
-      ]
+      "calls": []
     },
     "prompt": "Checkout events stopped reaching our orders API. Nothing's changed on our side\nthat I know of, and the endpoint is up.\n\nGet them flowing again.",
     "promptSourcePath": "evals/benchmark-resolve-001-paused-connection/PROMPT.md",
@@ -4091,8 +4420,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-resolve-002-scoped-redelivery",
-    "ranAt": "2026-09-01T12:36:28.197Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T09:32:06.441Z",
+    "runId": "34090396233",
     "stage": "resolve",
     "product": [
       "event-gateway"
@@ -4119,7 +4448,8 @@
         "event-gateway"
       ],
       "loaded": [
-        "hookdeck"
+        "hookdeck",
+        "event-gateway"
       ]
     },
     "docs": {
@@ -4140,8 +4470,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-transform-001-reshape-payload",
-    "ranAt": "2026-09-01T12:53:23.842Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T09:43:40.243Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -4151,22 +4481,19 @@
     ],
     "suite": "benchmark",
     "gatedBy": "discovery",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "amount is at the top level of the delivered body",
-        "passed": false,
-        "notes": "amount is absent from the delivered body"
+        "passed": true
       },
       {
         "name": "currency is at the top level of the delivered body",
-        "passed": false,
-        "notes": "currency is absent from the delivered body"
+        "passed": true
       },
       {
         "name": "email is at the top level of the delivered body",
-        "passed": false,
-        "notes": "email is absent from the delivered body"
+        "passed": true
       }
     ],
     "skills": {
@@ -4197,8 +4524,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-verification-001-stripe-express",
-    "ranAt": "2026-09-01T13:14:54.938Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T09:56:46.100Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -4208,12 +4535,28 @@
     ],
     "suite": "benchmark",
     "gatedBy": "discovery",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "created a Stripe source",
-        "passed": false,
-        "notes": "no source with type \"STRIPE\""
+        "passed": true
+      },
+      {
+        "name": "the source accepts a genuine Stripe signature",
+        "passed": true
+      },
+      {
+        "name": "the source rejects a forged Stripe signature",
+        "passed": true
+      },
+      {
+        "name": "the handler accepts a genuine Hookdeck signature",
+        "passed": true
+      },
+      {
+        "name": "the handler rejects a forged signature",
+        "passed": true,
+        "notes": "expected a 4xx, got 401"
       }
     ],
     "skills": {
@@ -4247,8 +4590,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-verification-002-elevenlabs-callbacks",
-    "ranAt": "2026-09-01T13:50:27.054Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T10:21:00.948Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -4290,6 +4633,9 @@
       "loaded": [
         "hookdeck",
         "event-gateway"
+      ],
+      "selfInstalled": [
+        "elevenlabs-webhooks"
       ]
     },
     "docs": {
@@ -4310,8 +4656,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-alerting-001-delivery-alerts",
-    "ranAt": "2026-09-01T08:16:38.708Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T06:33:54.920Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -4348,51 +4694,65 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "site:hookdeck.com docs Hookdeck delivery issue alert notification endpoint keep failing",
+          "query": "site:hookdeck.com/docs Hookdeck issue trigger delivery failures notifications",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs notification settings project issues notifications hookdeck CLI",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/issue-triggers API create issue trigger webhook notification channel",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/api",
+          "query": "https://hookdeck.com/docs/issue-triggers",
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/api"
+              "url": "https://hookdeck.com/docs/issue-triggers"
             }
           ]
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api issue triggers hookdeck API reference list create update",
+          "query": "'/2025-07-01/issue-triggers' in https://hookdeck.com/docs/issues",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/issue-triggers \"Create an Issue Trigger\" Hookdeck",
+          "query": "'Delivery Issues' in https://hookdeck.com/docs/issue-triggers",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/issue-triggers \"first_attempt_failure\" Hookdeck",
+          "query": "site:hookdeck.com/docs/issue-triggers delivery strategy last_attempt connections Hookdeck",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/issue-triggers connections list issue trigger create specific connection example",
+          "query": "site:hookdeck.com/docs/issue-triggers \"strategy\" \"first_attempt\" \"last_attempt\" Hookdeck",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs API project notification settings hookdeck email enabled",
+          "query": "site:hookdeck.com/docs \"last_attempt_failure\" Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/issue-triggers",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/issue-triggers"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/issue-triggers connections specific connection example Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:github.com/hookdeck issue-triggers connections last_attempt_failure",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:github.com/hookdeck \"last_attempt\" \"issue trigger\" Hookdeck",
           "pages": []
         }
       ]
@@ -4412,8 +4772,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-dedupe-001-duplicate-events",
-    "ranAt": "2026-09-01T08:38:27.483Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T06:42:42.615Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -4442,56 +4802,17 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "site:docs.hookdeck.com Hookdeck API connections list endpoint deduplication",
+          "query": "site:hookdeck.com/docs deduplicate connection Hookdeck include fields exclude fields",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "Hookdeck API connections deduplication docs",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/api",
+          "query": "https://hookdeck.com/docs/deduplication",
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/api"
+              "url": "https://hookdeck.com/docs/deduplication"
             }
           ]
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api connections list hookdeck api",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/api/2024-09-01",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api/2024-09-01"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api DeduplicateRule connection rules array hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api api.hookdeck.com Hookdeck REST API base URL",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/deduplication include_fields exclude_fields window deduplicate key Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api request event data original_event_data_id Hookdeck",
-          "pages": []
         }
       ]
     },
@@ -4510,8 +4831,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-delivery-001-slow-consumer",
-    "ranAt": "2026-09-01T08:51:34.449Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T06:51:56.797Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -4541,47 +4862,7 @@
       "loaded": []
     },
     "docs": {
-      "calls": [
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com docs Hookdeck API deliveries concurrency worker rate limit sink timeout queue",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api destinations update delivery rate concurrency Hookdeck API",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/api/2024-09-01",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api/2024-09-01"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api \"base URL\" Hookdeck API",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api hookdeck api url api.hookdeck.com",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/destinations delivery_groups rate_limit concurrency Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api \"rate_limit_period\": \"concurrent\" Hookdeck",
-          "pages": []
-        }
-      ]
+      "calls": []
     },
     "prompt": "Our inference worker takes about ninety seconds per job and it can only handle\ntwo at a time. When traffic spikes it falls over and we lose jobs.\n\nSet the delivery up so that doesn't happen.",
     "promptSourcePath": "evals/benchmark-delivery-001-slow-consumer/PROMPT.md",
@@ -4598,8 +4879,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-delivery-002-rate-limited-endpoint",
-    "ranAt": "2026-09-01T09:01:18.312Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T07:03:58.241Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -4630,7 +4911,66 @@
       "loaded": []
     },
     "docs": {
-      "calls": []
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "Hookdeck API base URL sources destinations deliveries enrichment jobs documentation",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs rate limit destination Hookdeck 60 requests per minute",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api destination update rate limit hookdeck api 2021-08-01",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "'PATCH' in https://hookdeck.com/docs/guides/how-to-protect-server-from-crashing-caused-webhook-spikes",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api api.hookdeck.com Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api/2024-09-01 destinations rate_limit",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api/2024-09-01 \"destinations\" \"rate_limit\"",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api/2024-09-01",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/2024-09-01"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api/2024-09-01 \"GET https://api.hookdeck.com\" destinations Hookdeck",
+          "pages": []
+        }
+      ]
     },
     "prompt": "The API we forward enrichment jobs to allows sixty requests a minute and starts\nreturning 429s past that. We're well over it at peak.\n\nMake our deliveries stay inside their limit.",
     "promptSourcePath": "evals/benchmark-delivery-002-rate-limited-endpoint/PROMPT.md",
@@ -4647,8 +4987,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-filtering-001-enterprise-orders",
-    "ranAt": "2026-09-01T09:28:13.808Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T07:16:53.180Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -4663,7 +5003,7 @@
       {
         "name": "did not claim regex filtering or channels exist",
         "passed": true,
-        "judgeNotes": "The assistant correctly states Hookdeck filters do not have a regex operator and uses the supported $startsWith operator instead. No channel/partitioning feature is invented."
+        "judgeNotes": "The assistant attempted a regex, found it did not work, and corrected to the supported $startsWith operator in the final user-facing outcome."
       },
       {
         "name": "current-format references still reach the endpoint",
@@ -4684,12 +5024,41 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "site:hookdeck.com Hookdeck API base URL destinations filters regex reference docs",
+          "query": "site:hookdeck.com docs regex filter Hookdeck reference path",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs filter syntax regex Hookdeck reference body value matches regex",
+          "query": "site:hookdeck.com/docs connections api hookdeck create connection filter body regex",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs API reference connections list hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "'rules-file' in https://hookdeck.com/docs/connections",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "'$regex' in https://hookdeck.com/docs/filters",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs \"$regex\" hookdeck",
           "pages": []
         },
         {
@@ -4703,31 +5072,37 @@
         },
         {
           "source": "web_search",
-          "query": "'regex' in https://hookdeck.com/docs/filters",
+          "query": "site:hookdeck.com/docs request details event data api hookdeck",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs API connections hookdeck 2025-07-01 connections",
+          "query": "'GET /2025-07-01/requests' in https://hookdeck.com/docs/api",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api connections PUT /2025-07-01/connections/:id rules body filter",
+          "query": "site:hookdeck.com/docs \"View requests\" \"GET /2025-07-01/requests\" Hookdeck",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "https://hookdeck.com/docs/api/2024-09-01",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api/2024-09-01"
-            }
-          ]
+          "query": "site:hookdeck.com \"\\$regex\" \"Hookdeck\"",
+          "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/update a connection hookdeck api rules update connection",
+          "query": "site:hookdeck.com \"body\": { \"phone\": { \"$regex\" Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com \"$startsWith\" Hookdeck filter",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "'$startsWith' in https://hookdeck.com/docs/filters",
           "pages": []
         }
       ]
@@ -4747,8 +5122,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-filtering-002-high-value-retries",
-    "ranAt": "2026-09-01T09:44:25.235Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T07:28:31.894Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -4758,12 +5133,11 @@
     ],
     "suite": "benchmark",
     "gatedBy": "discovery",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "an order above the threshold reaches manual review",
-        "passed": false,
-        "notes": "a £501 order did not arrive: the filter excludes orders it should admit"
+        "passed": true
       },
       {
         "name": "an order below the threshold does not reach manual review",
@@ -4782,17 +5156,90 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "site:docs.hookdeck.com Hookdeck connection rules body amount greater than 500",
+          "query": "Hookdeck API list sources destinations manual review queue retries official docs",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/filters Hookdeck filter syntax body greater than",
+          "query": "site:hookdeck.com/docs/api connection upsert retry policy Hookdeck",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/retries Hookdeck retry rule count interval strategy response_status_codes",
+          "query": "https://hookdeck.com/docs/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api hookdeck connections endpoint",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api retry policy connection Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api Hookdeck API key header",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api Authorization Bearer Hookdeck API key",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/filters Hookdeck greater than body filter amount",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/filters Hookdeck comparison operators greater than less than",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api connection upsert hookdeck rules property",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api Hookdeck update connection endpoint PATCH",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api hookdeck upsert connection endpoint",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/retries Hookdeck automatic retries destination config",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api PUT /connections/:id Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api \"type\": \"filter\" Hookdeck connection rules",
           "pages": []
         }
       ]
@@ -4812,8 +5259,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-investigate-001-failing-deliveries",
-    "ranAt": "2026-09-01T09:58:49.708Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T07:37:56.190Z",
+    "runId": "34090396233",
     "stage": "investigate",
     "product": [
       "event-gateway"
@@ -4832,12 +5279,12 @@
       {
         "name": "identified the failing destination and that it is rejecting",
         "passed": true,
-        "judgeNotes": "Identified analytics/operations-to-analytics as the failing destination and explained deliveries were rejected by the destination endpoint with HTTP 422, while fulfilment succeeded."
+        "judgeNotes": "Identifies analytics-api/orders-to-analytics as the failing destination and attributes the failure to the destination endpoint returning HTTP 422/client error, while fulfilment-api succeeds."
       },
       {
         "name": "did not invent a cause it could not have observed",
         "passed": true,
-        "judgeNotes": "No invented disallowed cause was asserted. The assistant attributed the issue to the configured analytics destination URL returning 422, which is observable from Hookdeck configuration/delivery state under the rubric."
+        "judgeNotes": "The assistant attributes the issue to an observed destination URL forcing HTTP 422 responses and verifies 200 after updating it. It does not assert any prohibited invented cause such as rate limiting, Hookdeck dropping/lost deliveries, payload limits, disabled connections, or non-existent features."
       }
     ],
     "skills": {
@@ -4845,7 +5292,57 @@
       "loaded": []
     },
     "docs": {
-      "calls": []
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "Hookdeck API docs sources endpoint official",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api Hookdeck API version 2025-07-01 sources destinations connections events",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api Hookdeck API connections create source destination version 2025-07-01",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api authentication Hookdeck API bearer api key",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api sources list hookdeck 2025-07-01",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api PATCH destinations hookdeck update destination",
+          "pages": []
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc 'curl -s https://hookdeck.com/docs/api | rg -n \"destinations|PATCH|update a destination|Create/Update a destination|/destinations/\" | head -40'",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ],
+          "resultChars": 1048540
+        }
+      ]
     },
     "prompt": "Our order events aren't all getting through. The fulfilment side seems fine but\nsomething's definitely broken, and I've had it flagged twice this week.\n\nCan you work out what's actually going wrong?",
     "promptSourcePath": "evals/benchmark-investigate-001-failing-deliveries/PROMPT.md",
@@ -4862,8 +5359,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-investigate-002-partial-outage",
-    "ranAt": "2026-09-01T10:10:50.969Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T07:48:07.700Z",
+    "runId": "34090396233",
     "stage": "investigate",
     "product": [
       "event-gateway"
@@ -4882,12 +5379,12 @@
       {
         "name": "identified the filter as the cause and what it excludes",
         "passed": true,
-        "judgeNotes": "Identifies the connection filter as the reason and explains it only allows web orders, excluding pos/non-web orders. Mobile not named, but not required."
+        "judgeNotes": "Identifies the connection filter on body.channel = web as the cause and states non-web orders were ignored/excluded."
       },
       {
         "name": "did not report the system as healthy",
         "passed": true,
-        "judgeNotes": "The assistant does not claim everything is working or that all orders were delivered. It identifies missing orders as ignored/dropped by a filter, so it passes this rubric."
+        "judgeNotes": "The assistant did not claim everything was working/no problem/all orders delivered. It identified filtered/ignored orders and a fix, so it passes this check."
       }
     ],
     "skills": {
@@ -4895,7 +5392,32 @@
       "loaded": []
     },
     "docs": {
-      "calls": []
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs Hookdeck API projects list",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api Hookdeck GET /2025-07-01/connections",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api \"Authorization\" \"api.hookdeck.com/2025-07-01\"",
+          "pages": []
+        }
+      ]
     },
     "prompt": "Our warehouse team says they're missing orders. Not all of them, and I can't\nfind a single failure anywhere I've looked. Every delivery I can see went\nthrough fine.\n\nWhere are the missing ones going?",
     "promptSourcePath": "evals/benchmark-investigate-002-partial-outage/PROMPT.md",
@@ -4912,8 +5434,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-localdev-001-listen-locally",
-    "ranAt": "2026-09-01T10:25:24.599Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T08:01:00.634Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -4923,7 +5445,7 @@
     ],
     "suite": "benchmark",
     "gatedBy": "discovery",
-    "passed": true,
+    "passed": false,
     "checks": [
       {
         "name": "created a source to receive events",
@@ -4935,7 +5457,8 @@
       },
       {
         "name": "an event posted at the source arrives at the local service",
-        "passed": true
+        "passed": false,
+        "notes": "the probe never reached the service. tunnel said: └─ Forwards to → http://localhost:4100/notifications (cli-notifications-service) 💡 Open dashboard to inspect, retry & bookmark events: \u001b]8;;https://dashboard.hookdeck.com/events/cli?team_id=tm_c6MTDfxZm4tP\u001b\\https://dashboard.hookdeck.com/events/cli\u001b]8;;\u001b\\ Getting ready..."
       }
     ],
     "skills": {
@@ -4960,8 +5483,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-001-customer-subscriptions",
-    "ranAt": "2026-09-01T10:39:51.833Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T08:13:00.050Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "outpost"
@@ -5001,8 +5524,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-002-disabled-destination",
-    "ranAt": "2026-09-01T11:02:25.741Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T08:31:16.322Z",
+    "runId": "34090396233",
     "stage": "resolve",
     "product": [
       "outpost"
@@ -5032,7 +5555,199 @@
       "loaded": []
     },
     "docs": {
-      "calls": []
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com Hookdeck API authentication project API key docs",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "'Authorization' in https://hookdeck.com/docs/cli",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com Outpost API destinations events tenants docs",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/outpost/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost/api destinations list create tenant publish events",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost/api GET /tenants Outpost",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/outpost/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api"
+            }
+          ]
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/publishing/events | rg -n \\\"publish|/events|tenant|destination|topic|Bearer|Authorization|api.outpost|2025-07-01\\\" | sed -n '1,220p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/publishing/events"
+            }
+          ],
+          "resultChars": 38138
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api | rg -n \\\"api.outpost|/tenants|/destinations|/events|Bearer|Authorization|v1|2025-07-01\\\" | sed -n '1,220p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api"
+            }
+          ],
+          "resultChars": 1048335
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api | rg -n '/tenants/.*/destinations|/destinations|destination_id|Delivery Attempt|attempts|issues|pause|resume|retry' | sed -n '1,240p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api"
+            }
+          ],
+          "resultChars": 1048336
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api | rg -n '/tenants/.*/destinations/.*/enable|/tenants/.*/destinations/.*/disable|/retry|/events/.*/retry|/attempts/.*/retry|Publish Event|List Events|Get Event|List Destination Attempts' | sed -n '1,260p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api"
+            }
+          ],
+          "resultChars": 1048340
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api | rg -n -C 5 'Enable Destination|Disable Destination|Retry Event Delivery|List Destination Attempts|Get Destination' | sed -n '1,240p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api"
+            }
+          ],
+          "resultChars": 3579
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api | rg -n -C 3 'Retry Event Delivery|/retry|retryEvent|attempts/.*/retry|events/.*/retry' | sed -n '1,220p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api"
+            }
+          ],
+          "resultChars": 1048340
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api.md | sed -n '1,260p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api.md"
+            }
+          ],
+          "resultChars": 5554
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api/configure.md | sed -n '1,260p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api/configure.md"
+            }
+          ],
+          "resultChars": 5832
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api/publishing.md | sed -n '1,220p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api/publishing.md"
+            }
+          ],
+          "resultChars": 2871
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api/inspect.md | sed -n '1,260p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api/inspect.md"
+            }
+          ],
+          "resultChars": 7595
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api/inspect.md | rg -n -A 40 -B 10 '### Get Attempt|### List Attempts|### Get Event|### List Events|### Get Event Metrics|### Get Attempt Metrics' | sed -n '1,320p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api/inspect.md"
+            }
+          ],
+          "resultChars": 9832
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api/configure.md | rg -n -A 40 -B 8 '### Enable Destination|### Disable Destination|### List Destinations|### Get Destination|### Update Destination|### Create Destination' | sed -n '1,260p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api/configure.md"
+            }
+          ],
+          "resultChars": 7046
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/outpost/api/configure.md",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api/configure.md"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost/api/configure.md \"PUT /tenants/{tenant_id}/destinations/{destination_id}/enable\"",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost/api \"Enable Destination\" \"PUT /tenants/{tenant_id}/destinations/{destination_id}/enable\"",
+          "pages": []
+        }
+      ]
     },
     "prompt": "Acme emailed to say they stopped receiving order events some time yesterday.\nTheir engineer says their endpoint had a bad deploy but it's been fine since\nthis morning, and they've checked — nothing is arriving.\n\nWork out why and get their events flowing again, including the ones they\nmissed.",
     "promptSourcePath": "evals/benchmark-outpost-002-disabled-destination/PROMPT.md",
@@ -5049,8 +5764,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-003-operator-events",
-    "ranAt": "2026-09-01T11:40:12.039Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T08:56:00.682Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "outpost"
@@ -5087,7 +5802,45 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs Hookdeck alert delivery failures destination disabled alert endpoint API",
+          "query": "Hookdeck API alerts destination disabled consecutive delivery failures notification endpoint documentation",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "Hookdeck API documentation destination alerts disable consecutive delivery failures",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api notifications settings Hookdeck REST API",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs issue triggers delivery failures threshold Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/issue-triggers",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/issue-triggers"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost API base URL Outpost notifications issue triggers",
           "pages": []
         },
         {
@@ -5101,37 +5854,22 @@
         },
         {
           "source": "web_search",
-          "query": "'Config API' in https://hookdeck.com/docs/outpost/features/operator-events",
+          "query": "site:hookdeck.com/docs/outpost config api monitoring settings operator events hookdeck",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api monitoring settings operator events config api hookdeck outpost",
+          "query": "site:hookdeck.com/docs/outpost \"Config API\" \"OPERATION_EVENTS_TOPICS\"",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "'monitoring' in https://hookdeck.com/docs/api",
+          "query": "site:hookdeck.com/docs/outpost api reference config openapi notification settings",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "'https://api.hookdeck.com'",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "Hookdeck REST API Reference base url authorization api.hookdeck.com 2025-07-01",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api OPERATION_EVENTS_TOPICS settings endpoint",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api \"Monitoring settings\" \"Outpost API Reference\"",
+          "query": "site:hookdeck.com/docs/outpost \"OPERATION_EVENTS_HTTP_URL\" \"api.outpost.hookdeck.com/2025-07-01\"",
           "pages": []
         },
         {
@@ -5145,53 +5883,209 @@
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api \"GET /2025-07-01/config\"",
+          "query": "site:hookdeck.com/docs/outpost/api \"GET /config\"",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api \"/config\" \"PATCH\" \"OPERATOR_EVENTS_HTTP_URL\"",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/outpost/api",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api \"operator event destinations\"",
+          "query": "site:hookdeck.com/docs/outpost/api monitoring settings endpoint outpost",
           "pages": []
         },
         {
           "source": "shell_fetch",
-          "query": "/bin/bash -lc 'curl -sS https://hookdeck.com/docs/outpost/api | rg -n \"operator|monitoring|event destination|destination.disabled|consecutive_failure|OPERATOR_EVENTS\"'",
+          "query": "/bin/bash -lc 'curl -sS https://hookdeck.com/docs/outpost/api | head -n 40'",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/outpost/api"
             }
           ],
-          "resultChars": 1048336
+          "resultChars": 4956
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc 'curl -sS https://hookdeck.com/docs/outpost/api | rg -n \"config|monitoring|operation|alert|notification|openapi|issue-triggers|webhooks\"'",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api"
+            }
+          ],
+          "resultChars": 1048335
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc 'curl -sS https://hookdeck.com/docs/outpost/api | rg -n -C 4 \"Get Managed Configuration|Update Managed Configuration|managed configuration|OPERATION_EVENTS|ALERT_\"'",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api"
+            }
+          ],
+          "resultChars": 1048338
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc 'curl -sS https://hookdeck.com/docs/outpost/api.md | head -n 60'",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api.md"
+            }
+          ],
+          "resultChars": 2144
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api.md | sed -n '1,240p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api.md"
+            }
+          ],
+          "resultChars": 5554
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc 'curl -sS https://hookdeck.com/docs/outpost/api/configure.md | rg -n -C 4 \"Managed Configuration|Get Managed Configuration|Update Managed Configuration|OPERATION_EVENTS|ALERT_|config\"'",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api/configure.md"
+            }
+          ],
+          "resultChars": 6869
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api/configure.md | sed -n '1,260p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api/configure.md"
+            }
+          ],
+          "resultChars": 5832
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api/configure.md | sed -n '866,980p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api/configure.md"
+            }
+          ],
+          "resultChars": 5736
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api \"operator event destinations\" \"hookdeck\"",
+          "query": "site:hookdeck.com/docs/outpost \"OPERATION_EVENTS_HTTP_URL\"",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs \"operator event destinations\" hookdeck",
+          "query": "site:hookdeck.com/docs/outpost/api.md OPERATION_EVENTS_TOPICS",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost \"Monitoring settings\" \"operator events\"",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost \"operator event destination\" API",
+          "pages": []
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc 'curl -sS https://hookdeck.com/docs/outpost/api.md | rg -n \"operator|event destination|destinations.*operator|operator events|alerts\"'",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api.md"
+            }
+          ],
+          "resultChars": 178
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc 'curl -sS https://hookdeck.com/docs/outpost/api/configure.md | rg -n \"operator|alert|monitoring|destination\"'",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api/configure.md"
+            }
+          ],
+          "resultChars": 5293
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost \"operator-event-destinations\"",
+          "pages": []
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc 'curl -sS https://hookdeck.com/docs/api.md | rg -n -C 3 \"notification|issue trigger|operator|webhook notification|operator-alerts|destination disabled|consecutive failure\"'",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api.md"
+            }
+          ],
+          "resultChars": 475
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/api.md | sed -n '1,220p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api.md"
+            }
+          ],
+          "resultChars": 7478
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/api/configure.md | sed -n '1,260p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/configure.md"
+            }
+          ],
+          "resultChars": 7829
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc 'curl -sS https://hookdeck.com/docs/api/configure.md | rg -n -C 5 \"## Notifications|### Notifications|GET /notifications|POST /notifications|webhook notifications|notification preferences|issue triggers\"'",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/configure.md"
+            }
+          ],
+          "resultChars": 1209
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/api/configure.md | sed -n '780,980p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/configure.md"
+            }
+          ],
+          "resultChars": 4948
+        },
+        {
+          "source": "web_search",
+          "query": "site:github.com/hookdeck/outpost \"operator event destinations\"",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:github.com/hookdeck/outpost OPERATOR_EVENTS_HTTP_URL code",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:github.com/hookdeck/outpost \"opevents\" \"route\"",
           "pages": []
         }
       ]
     },
     "prompt": "Last week one of our customers' destinations was switched off after a bad\ndeploy on their side, and their events piled up until they emailed us. We\nfound it by hand.\n\nWe don't want to find out that way again. Set us up so that when Outpost\ndisables a customer's destination, the alert reaches this endpoint:\n\n    https://mock.hookdeck.com/operator-alerts\n\nConsecutive delivery failures building up towards that threshold would be\nuseful too — we'd rather know before a destination is switched off than after.",
     "promptSourcePath": "evals/benchmark-outpost-003-operator-events/PROMPT.md",
-    "attempts": 1,
+    "attempts": 2,
     "sourcePath": "codex-gpt-5.4-mini-no-skills/benchmark-outpost-003-operator-events.json"
   },
   {
@@ -5204,8 +6098,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-004-queue-destination",
-    "ranAt": "2026-09-01T11:58:28.551Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T09:06:50.969Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "outpost"
@@ -5245,8 +6139,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-005-topic-scoping",
-    "ranAt": "2026-09-01T12:14:44.388Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T09:18:55.550Z",
+    "runId": "34090396233",
     "stage": "resolve",
     "product": [
       "outpost"
@@ -5286,162 +6180,174 @@
     "docs": {
       "calls": [
         {
-          "source": "web_search",
-          "query": "Hookdeck API list connections destinations official docs",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api connections list hookdeck api 2025-07-01",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/api",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api Authentication Hookdeck REST API bearer token",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api \"Bearer Token Authentication\" Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api base url api.hookdeck.com outpost api version",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/outpost/api",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api"
-            }
-          ]
-        },
-        {
           "source": "shell_fetch",
-          "query": "/bin/bash -lc 'curl -sS https://hookdeck.com/docs/outpost/api | rg -n \"Base URL|api.hookdeck.com|outpost|Authorization|Bearer|tenant|destination|publish\" | head -120'",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api"
-            }
-          ],
-          "resultChars": 1048331
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc 'curl -sS https://hookdeck.com/docs/api | rg -n \"Base URL|api.hookdeck.com|Authorization|Bearer|connections|sources|destinations\" | head -120'",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/api | sed -n '1,80p'\"",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/api"
             }
           ],
-          "resultChars": 1048532
+          "resultChars": 1357
         },
         {
           "source": "shell_fetch",
-          "query": "/bin/bash -lc 'curl -sS https://hookdeck.com/docs/api.md | rg -n \"''^#|Base URL|Authorization|connection|source|destination|2025-07-01\" | head -200'",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/api.md | sed -n '1,220p'\"",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/api.md"
             }
           ],
-          "resultChars": 6877
+          "resultChars": 7478
         },
         {
           "source": "shell_fetch",
-          "query": "/bin/bash -lc 'curl -sS https://hookdeck.com/docs/outpost/api.md | rg -n \"''^#|Base URL|Authorization|tenant|destination|publish|topic|version|2025-07-01\" | head -200'",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api.md"
-            }
-          ],
-          "resultChars": 1599
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api.md tenants destinations paths hookdeck",
-          "pages": []
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api.md | nl -ba | sed -n '1,220p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api.md"
-            }
-          ],
-          "resultChars": 6688
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/api.md | nl -ba | sed -n '1,220p'\"",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/api.md | rg -n -i 'outpost|gateway|transformation|connection|source|destination' | sed -n '1,120p'\"",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/api.md"
             }
           ],
-          "resultChars": 9018
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api.md \"POST /2025-07-01/tenants\"",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost/api/configure.md destination update topics topics array webhook outpost",
-          "pages": []
+          "resultChars": 6620
         },
         {
           "source": "shell_fetch",
-          "query": "/bin/bash -lc 'curl -sS https://hookdeck.com/docs/outpost/api/configure.md | rg -n \"Destination|Topics|PUT|PATCH|POST|DELETE|tenants/.*/destinations|topics\"'",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs | rg -n -i 'outpost|event gateway|subdomain|api.hookdeck|gateway' | sed -n '1,120p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs"
+            }
+          ],
+          "resultChars": 49721
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/filters.md | sed -n '1,260p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/filters.md"
+            }
+          ],
+          "resultChars": 4978
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/cancellations.md | sed -n '1,220p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/cancellations.md"
+            }
+          ],
+          "resultChars": 4826
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/api/configure.md | sed -n '1,260p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api/configure.md"
+            }
+          ],
+          "resultChars": 7829
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/overview.md | sed -n '1,220p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/overview.md"
+            }
+          ],
+          "resultChars": 4144
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/guides.md | sed -n '1,220p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/guides.md"
+            }
+          ],
+          "resultChars": 15
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/cli.md | sed -n '1,220p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/cli.md"
+            }
+          ],
+          "resultChars": 6567
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/concepts.md | sed -n '1,260p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/concepts.md"
+            }
+          ],
+          "resultChars": 9075
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api.md | sed -n '1,220p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/api.md"
+            }
+          ],
+          "resultChars": 5554
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/publishing/events.md | sed -n '1,220p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/publishing/events.md"
+            }
+          ],
+          "resultChars": 4894
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api/configure.md | sed -n '1,260p'\"",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/outpost/api/configure.md"
             }
           ],
-          "resultChars": 3225
+          "resultChars": 5832
         },
         {
           "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api/configure.md | nl -ba | sed -n '1,240p'\"",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api/configure.md | sed -n '260,520p'\"",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/outpost/api/configure.md"
             }
           ],
-          "resultChars": 7093
+          "resultChars": 5957
         },
         {
           "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api/configure.md | nl -ba | sed -n '450,520p'\"",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api/configure.md | rg -n 'Destinations|Update Destination|destinations/.*/|topics' | sed -n '1,220p'\"",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/outpost/api/configure.md"
             }
           ],
-          "resultChars": 2087
+          "resultChars": 1674
         },
         {
           "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api/configure.md | nl -ba | sed -n '322,390p'\"",
+          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/outpost/api/inspect.md | rg -n 'GET /.*events|GET /.*attempts|cancel|tenant_id' | sed -n '1,220p'\"",
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/outpost/api/configure.md"
+              "url": "https://hookdeck.com/docs/outpost/api/inspect.md"
             }
           ],
-          "resultChars": 1910
+          "resultChars": 1466
         }
       ]
     },
@@ -5460,8 +6366,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-resolve-001-paused-connection",
-    "ranAt": "2026-09-01T12:29:38.671Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T09:27:41.636Z",
+    "runId": "34090396233",
     "stage": "resolve",
     "product": [
       "event-gateway"
@@ -5504,8 +6410,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-resolve-002-scoped-redelivery",
-    "ranAt": "2026-09-01T12:44:35.767Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T09:36:35.923Z",
+    "runId": "34090396233",
     "stage": "resolve",
     "product": [
       "event-gateway"
@@ -5534,60 +6440,55 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "Hookdeck API redeliver events endpoint failed events docs",
+          "query": "Hookdeck API organizations endpoints documentation official",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "https://hookdeck.com/docs/api",
+          "query": "site:hookdeck.com/docs API authentication Hookdeck console API redeliver events",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api/2024-09-01 redeliver events Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api/2024-09-01",
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/api"
+              "url": "https://hookdeck.com/docs/api/2024-09-01"
             }
           ]
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs events retry failed bulk retry api hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "'bulk retry' in https://hookdeck.com/docs/api",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api \"bulk retry events\" hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/api",
+          "query": "https://hookdeck.com/docs/api/2024-09-01",
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/api"
+              "url": "https://hookdeck.com/docs/api/2024-09-01"
             }
           ]
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api \"Create events bulk retry\" Hookdeck \"2025-07-01\"",
+          "query": "site:hookdeck.com/docs/api/2024-09-01 connections list Hookdeck API",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api \"retry an event\" Hookdeck POST /events/:id/retry",
+          "query": "site:hookdeck.com/docs/api/2024-09-01 \"retry event\" Hookdeck",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api/2024-09-01 \"/events/:id/retry\" Hookdeck",
+          "query": "site:hookdeck.com/docs/api/2024-09-01 \"GET /connections\" Hookdeck",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs \"Retry an event\" Hookdeck \"POST\"",
+          "query": "site:github.com/hookdeck/hookdeck-cli retry event api path",
           "pages": []
         }
       ]
@@ -5607,8 +6508,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-transform-001-reshape-payload",
-    "ranAt": "2026-09-01T13:03:08.206Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T09:49:05.573Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -5641,159 +6542,7 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "Hookdeck REST API list projects connections transforms official docs",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/api",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "'GET /2025-07-01/connections' in https://hookdeck.com/docs/connections",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api transformations GET /2025-07-01/transformations Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/api",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api \"GET /2025-07-01/transformations\" Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/api/2024-09-01",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api/2024-09-01"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api/2024-09-01 connections retrieve connections GET Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api/2024-09-01 \"Retrieve connections\" Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api/2024-09-01 \"Retrieve transformations\" Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api/2024-09-01 \"Retrieve transformations\" \"GET /transformations\" Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api/2024-09-01 Hookdeck events retrieve events GET /events",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api/2024-09-01 \"Retrieve events\" Hookdeck GET events",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api/2024-09-01 event_data_id Hookdeck retrieve event data",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api/2024-09-01 transform rule connection API Hookdeck example",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api/2024-09-01 \"rules property\" transformation Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/transformations addHandler('transform' request context return body headers path query Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api/2024-09-01 transformation test endpoint Hookdeck",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api/2024-09-01 \"Test a transformation\" Hookdeck POST",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api/2024-09-01 \"Test a transformation\" \"PUT\" \"Hookdeck\" \"request\"",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api/2024-09-01 /transformations/test Hookdeck PUT",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api/2024-09-01 \"Update a connection\" Hookdeck PUT /connections",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api/2024-09-01 PUT /connections Hookdeck upsert connection",
-          "pages": []
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/transformations | rg -n -C 3 'addHandler\\\\(\\\"transform\\\"|request.body|request object|Return value'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/transformations"
-            }
-          ],
-          "resultChars": 7356
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -sS https://hookdeck.com/docs/api/2024-09-01 | rg -n -C 4 'Test a transformation|Create/Update a transformation|Retrieve transformations|Update a connection|Retrieve a connection'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/api/2024-09-01"
-            }
-          ],
-          "resultChars": 1048540
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api/2024-09-01 \"transformations/{id}/test\"",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api/2024-09-01 \"type\": \"transform\" \"transformation_id\" Hookdeck connection rules",
+          "query": "site:docs.hookdeck.com Hookdeck transformation addHandler transform request body",
           "pages": []
         }
       ]
@@ -5813,8 +6562,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-verification-001-stripe-express",
-    "ranAt": "2026-09-01T13:33:13.520Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T10:06:58.352Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -5824,7 +6573,7 @@
     ],
     "suite": "benchmark",
     "gatedBy": "discovery",
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "created a Stripe source",
@@ -5832,7 +6581,7 @@
       },
       {
         "name": "the source accepts a genuine Stripe signature",
-        "passed": false
+        "passed": true
       },
       {
         "name": "the source rejects a forged Stripe signature",
@@ -5845,7 +6594,7 @@
       {
         "name": "the handler rejects a forged signature",
         "passed": true,
-        "notes": "expected a 4xx, got 403"
+        "notes": "expected a 4xx, got 401"
       }
     ],
     "skills": {
@@ -5856,26 +6605,94 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs Hookdeck Stripe local development verify requests orders endpoint signature",
+          "query": "site:docs.hookdeck.com Hookdeck Stripe webhook destination secret signature verify local development orders endpoint",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs Hookdeck signature header secret verify x-hookdeck-signature destination secret",
+          "query": "site:hookdeck.com/docs localhost webhooks Hookdeck CLI verify source signature x-hookdeck-verified",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "https://hookdeck.com/docs/authentication",
+          "query": "https://hookdeck.com/docs/api",
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/authentication"
+              "url": "https://hookdeck.com/docs/api"
             }
           ]
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs \"hookdeck listen\" path orders source stripe cli destination",
+          "query": "'hookdeck listen [port or forwarding URL]' in https://hookdeck.com/docs/cli",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "'curl -X POST \"https://api.hookdeck.com/2025-07-01/destinations' in https://hookdeck.com/docs/destinations",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api connections create request body source destination",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs verify Hookdeck signature Node.js x-hookdeck-signature HMAC sha256 base64",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api \"/2025-07-01/connections\" Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/api",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api POST /2025-07-01/connections request body source destination",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/sources",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/sources"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api POST /2025-07-01/connections request body source destination example hookdeck connection",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/guides/connections-walkthrough create connection source destination api body",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "Hookdeck API connection source destination config example POST /connections source destination body",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs project secrets signing secret API Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "'hookdeck login'",
           "pages": []
         }
       ]
@@ -5895,8 +6712,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-verification-002-elevenlabs-callbacks",
-    "ranAt": "2026-09-01T14:04:53.261Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T10:31:51.437Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -5906,28 +6723,12 @@
     ],
     "suite": "benchmark",
     "gatedBy": "discovery",
-    "passed": true,
+    "passed": false,
     "checks": [
       {
         "name": "created an ElevenLabs source",
-        "passed": true
-      },
-      {
-        "name": "the source accepts a genuine ElevenLabs signature",
-        "passed": true
-      },
-      {
-        "name": "the source rejects a forged ElevenLabs signature",
-        "passed": true
-      },
-      {
-        "name": "the service accepts a genuine Hookdeck signature",
-        "passed": true
-      },
-      {
-        "name": "the service rejects a forged signature",
-        "passed": true,
-        "notes": "expected a 4xx, got 403"
+        "passed": false,
+        "notes": "no source with type \"ELEVENLABS\""
       }
     ],
     "skills": {
@@ -5938,12 +6739,12 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs Hookdeck API create source destination connection webhook signature secrets",
+          "query": "site:docs.hookdeck.com Hookdeck API source destination route create webhook forwarding signature secret",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api create connection hookdeck 2025-07-01 connection source destination source-config destination-config",
+          "query": "site:hookdeck.com/docs/api Hookdeck API create source destination connection",
           "pages": []
         },
         {
@@ -5957,41 +6758,37 @@
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs api connection create source auth_type HMAC signature secret",
+          "query": "site:hookdeck.com/docs/api \"creates a connection\" Hookdeck",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api connections GET /2025-07-01/connections hookdeck",
+          "query": "site:hookdeck.com/docs/authentication webhook-signature header Hookdeck request verification Express",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "'HMAC-SHA256' in https://hookdeck.com/docs/authentication",
+          "query": "site:hookdeck.com/docs source verification HMAC header config API source verification",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs ElevenLabs Hookdeck source type",
+          "query": "site:hookdeck.com/docs/api auth_type hmac source config header_name secret Hookdeck",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "'HMAC' in https://hookdeck.com/docs/sources",
+          "query": "site:hookdeck.com/docs/sources \"auth_type\": \"hmac\" Hookdeck",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "https://hookdeck.com/docs/sources",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/sources"
-            }
-          ]
+          "query": "site:hookdeck.com/docs/authentication \"HMAC\" \"header\" \"secret\" \"source's config object\"",
+          "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api ELEVENLABS source config webhook_secret_key hookdeck",
+          "query": "site:hookdeck.com/docs/cli destination type CLI local server listen Hookdeck",
           "pages": []
         }
       ]
@@ -6011,8 +6808,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-alerting-001-delivery-alerts",
-    "ranAt": "2026-09-01T08:10:30.026Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T06:30:41.532Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -6054,29 +6851,35 @@
       "calls": [
         {
           "source": "shell_fetch",
-          "query": "/bin/bash -lc \"HD=/home/node/.npm-global/lib/node_modules/hookdeck-cli/binaries/linux-amd64/hookdeck\nprintf '%s\\\\n' '--- version ---'; \\\"\"'$HD\" version || \"$HD\" --version\nprintf '\"'%s\\\\n' '--- identity ---'; \\\"\"'$HD\" whoami\nprintf '\"'%s\\\\n' '--- gateway resources ---'; \\\"\"'$HD\" gateway --help\nprintf '\"'%s\\\\n' '--- issue trigger docs ---'; curl -fsSL https://hookdeck.com/docs/api/issue-triggers.md | sed -n '1,260p'\nprintf '%s\\\\n' '--- notifications docs ---'; curl -fsSL https://hookdeck.com/docs/api/notifications.md | sed -n '1,240p'\nprintf '%s\\\\n' '--- product docs ---'; curl -fsSL https://hookdeck.com/docs/issue-triggers.md | sed -n '1,220p'\"",
+          "query": "/bin/bash -lc 'HD=\"$HOME/.npm-global/lib/node_modules/hookdeck-cli/binaries/linux-amd64/hookdeck\"\nprintf '\"'%s\\\\n' '--- destinations ---'\n\\\"\"'$HD\" gateway destination list --output json 2>&1 || \"$HD\" gateway destination list\nprintf '\"'%s\\\\n' '--- connections ---'\n\\\"\"'$HD\" gateway connection list --output json 2>&1 || \"$HD\" gateway connection list\nprintf '\"'%s\\\\n' '--- issue help ---'\n\\\"\"'$HD\" gateway issue --help\nprintf '\"'%s\\\\n' '--- issue list ---'\n\\\"\"'$HD\" gateway issue list --output json 2>&1 || \"$HD\" gateway issue list\nprintf '\"'%s\\\\n' '--- issue-trigger API docs ---'\ncurl -fsSL https://hookdeck.com/docs/api/issue-triggers.md | sed -n '1,320p'\nprintf '%s\\\\n' '--- notifications API docs ---'\ncurl -fsSL https://hookdeck.com/docs/api/notifications.md | sed -n '1,360p'\"",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/api/issue-triggers.md"
             },
             {
               "url": "https://hookdeck.com/docs/api/notifications.md"
-            },
-            {
-              "url": "https://hookdeck.com/docs/issue-triggers.md"
             }
           ],
-          "resultChars": 8491
+          "resultChars": 66627
         },
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"set -euo pipefail\nnode - <<'NODE'\nconst fs=require('fs'); const o=JSON.parse(fs.readFileSync('/tmp/hookdeck-openapi.json','utf8'));\nconsole.log(JSON.stringify({servers:o.servers, paths:Object.fromEntries(Object.entries(o.paths).filter(([k])=>k.includes('issue-trigger')||k.includes('notification'))) }, null, 2));\nNODE\nprintf '%s\\\\n' '--- current issue triggers ---'\ncurl -fsSL https://api.hookdeck.com/2025-07-01/issue-triggers -H \\\"Authorization: Bearer \"'$HOOKDECK_API_KEY\" | tee /tmp/issue-triggers.json\nprintf '\"'\\\\n%s\\\\n' '--- relevant schema names ---'\nnode - <<'NODE'\nconst fs=require('fs'); const o=JSON.parse(fs.readFileSync('/tmp/hookdeck-openapi.json','utf8'));\nfor (const [name,schema] of Object.entries(o.components?.schemas||{})) {\n  if (/IssueTrigger|Notification|Channel/i.test(name)) console.log('\\\\n### '+name+'\\\\n'+JSON.stringify(schema,null,2));\n}\nNODE\nprintf '%s\\\\n' '--- issue notification product docs ---'\ncurl -fsSL https://hookdeck.com/docs/issues.md | sed -n '1,260p'\n\"",
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/api issue triggers notifications Hookdeck API",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:github.com/hookdeck \"last_attempt\" \"issue-triggers\"",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/issue-triggers",
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/issues.md"
+              "url": "https://hookdeck.com/docs/issue-triggers"
             }
-          ],
-          "resultChars": 19854
+          ]
         }
       ]
     },
@@ -6095,8 +6898,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-dedupe-001-duplicate-events",
-    "ranAt": "2026-09-01T08:31:50.550Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T06:40:10.445Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -6123,12 +6926,22 @@
         "event-gateway"
       ],
       "loaded": [
-        "hookdeck",
         "event-gateway"
       ]
     },
     "docs": {
-      "calls": []
+      "calls": [
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"find . -maxdepth 3 -type f -not -path './.git/*' -print | sort | head -100; printf '%s\\\\n' '--- repo status ---'; git status --short 2>/dev/null || true; printf '%s\\\\n' '--- docs dedup excerpt via curl ---'; curl -fsSL https://hookdeck.com/docs/deduplication.md | sed -n '1,220p'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/deduplication.md"
+            }
+          ],
+          "resultChars": 8446
+        }
+      ]
     },
     "prompt": "Our payment provider sometimes sends us the same event twice within a few\nseconds, and our ledger ends up double-counting it. We can't easily change the\nledger service.\n\nStop the duplicates reaching it.",
     "promptSourcePath": "evals/benchmark-dedupe-001-duplicate-events/PROMPT.md",
@@ -6145,8 +6958,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-delivery-001-slow-consumer",
-    "ranAt": "2026-09-01T08:47:37.075Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T06:50:35.138Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -6177,7 +6990,6 @@
         "event-gateway"
       ],
       "loaded": [
-        "hookdeck",
         "event-gateway"
       ]
     },
@@ -6185,19 +6997,13 @@
       "calls": [
         {
           "source": "shell_fetch",
-          "query": "/bin/bash -lc \"printf '%s\\\\n' '--- destinations docs matches ---'; curl -fsSL https://hookdeck.com/docs/destinations.md | rg -n -i -C 4 'concurrent|rate limit|timeout|delivery'; printf '%s\\\\n' '--- retries docs ---'; curl -fsSL https://hookdeck.com/docs/retries.md | sed -n '1,240p'; printf '%s\\\\n' '--- async API docs matches ---'; curl -fsSL https://hookdeck.com/docs/use-cases/asynchronous-apis.md | rg -n -i -C 4 'queue|concurr|rate|retry|acknow|long|timeout'\"",
+          "query": "/bin/bash -lc 'for path in destinations retries connections; do echo \"--- $path ---\"; curl -fsSL -H '\"'Accept: text/markdown' \\\"https://hookdeck.com/docs/\"'$path\" | rg -n -i -C 4 '\"'concurrent|timeout|retry|rate limit|max delivery|response' | head -180; done\"",
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/destinations.md"
-            },
-            {
-              "url": "https://hookdeck.com/docs/retries.md"
-            },
-            {
-              "url": "https://hookdeck.com/docs/use-cases/asynchronous-apis.md"
+              "url": "https://hookdeck.com/docs/"
             }
           ],
-          "resultChars": 25520
+          "resultChars": 23861
         }
       ]
     },
@@ -6216,8 +7022,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-delivery-002-rate-limited-endpoint",
-    "ranAt": "2026-09-01T08:58:37.585Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T07:01:51.919Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -6270,8 +7076,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-filtering-001-enterprise-orders",
-    "ranAt": "2026-09-01T09:19:55.145Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T07:13:30.571Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -6286,7 +7092,7 @@
       {
         "name": "did not claim regex filtering or channels exist",
         "passed": true,
-        "judgeNotes": "The assistant explicitly states Hookdeck filters do not have a native regex operator and uses a transformation for regex validation plus a supported filter. No channel/partitioning feature is invented."
+        "judgeNotes": "The assistant states Hookdeck filters do not support regex and uses regex only inside a transformation, with a supported filter operator afterward. No channel/partitioning feature is described."
       },
       {
         "name": "current-format references still reach the endpoint",
@@ -6305,6 +7111,7 @@
         "event-gateway"
       ],
       "loaded": [
+        "hookdeck",
         "event-gateway"
       ]
     },
@@ -6312,13 +7119,33 @@
       "calls": [
         {
           "source": "shell_fetch",
-          "query": "/bin/bash -lc \"set -e\nprintf '%s\\\\n' '--- filter docs ---'\ncurl -fsSL https://hookdeck.com/docs/filters.md | sed -n '1,240p'\nprintf '%s\\\\n' '--- API patterns ---'\nsed -n '1,220p' /tmp/sandbox-9167ca41/.agents/skills/event-gateway/references/api-patterns.md\nprintf '%s\\\\n' '--- auth env ---'\nif [ -n \\\"\"'${HOOKDECK_API_KEY:-}\" ]; then echo '\"'HOOKDECK_API_KEY is set'; else echo 'HOOKDECK_API_KEY is missing'; fi\nprintf '%s\\\\n' '--- candidate binaries ---'\ncommand -v npx || true\nfind /usr/local/bin /usr/bin /opt /home/node -maxdepth 5 -type f -name 'hookdeck' 2>/dev/null | head -20\"",
+          "query": "/bin/bash -lc \"printf '%s\\\\n' \\\"\"'$PATH\"; printf '\"'\\\\n--- likely binaries ---\\\\n'; command -v npx || true; find / -type f -name hookdeck -perm -111 2>/dev/null | head -20; printf '\\\\n--- workspace ---\\\\n'; ls -la; printf '\\\\n--- env ---\\\\n'; env | rg '\"'^HOOKDECK|''^HOME|''^PATH'\"' | sed 's/HOOKDECK_API_KEY=.*/HOOKDECK_API_KEY=<set>/' ; printf '\\\\n--- filter docs ---\\\\n'; curl -fsSL https://hookdeck.com/docs/filters.md | sed -n '1,240p'\"",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/filters.md"
             }
           ],
-          "resultChars": 9445
+          "resultChars": 8164
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/transformations.md | rg -n \\\"return|filter|rule|modify|body|JavaScript|null|original\\\" | head -140; printf '\\\\n--- ordering docs ---\\\\n'; curl -fsSL https://hookdeck.com/docs/guides/how-to-order-transformations-and-filters.md | sed -n '1,220p'; printf '\\\\n--- transformation CLI help ---\\\\n'; CLI=/home/node/.npm-global/lib/node_modules/hookdeck-cli/binaries/linux-amd64/hookdeck; \\\"\"'$CLI\" gateway transformation --help; \"$CLI\" gateway transformation create --help'",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/guides/how-to-order-transformations-and-filters.md"
+            }
+          ],
+          "resultChars": 11344
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"set -e\nprintf '%s\\\\n' '--- connection docs rule examples ---'\ncurl -fsSL https://hookdeck.com/docs/connections.md | rg -n -C 6 'transformation_id|type.*transform|rules' | head -180\nprintf '%s\\\\n' '--- API schema search ---'\ncurl -fsSL https://hookdeck.com/docs/api/openapi.json -o /tmp/hookdeck-openapi.json || true\nif [ -s /tmp/hookdeck-openapi.json ]; then rg -n 'transformation_id|TransformationRule|FilterRule|rule_type' /tmp/hookdeck-openapi.json | head -80; fi\nprintf '%s\\\\n' '--- CLI binary strings ---'\nstrings /home/node/.npm-global/lib/node_modules/hookdeck-cli/binaries/linux-amd64/hookdeck | rg -n 'transformation_id|rule-filter|TRANSFORM|transformation' | head -100\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/connections.md"
+            }
+          ],
+          "resultChars": 7639
         }
       ]
     },
@@ -6337,8 +7164,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-filtering-002-high-value-retries",
-    "ranAt": "2026-09-01T09:38:16.820Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T07:25:25.252Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -6390,8 +7217,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-investigate-001-failing-deliveries",
-    "ranAt": "2026-09-01T09:54:40.552Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T07:35:28.535Z",
+    "runId": "34090396233",
     "stage": "investigate",
     "product": [
       "event-gateway"
@@ -6410,12 +7237,12 @@
       {
         "name": "identified the failing destination and that it is rejecting",
         "passed": true,
-        "judgeNotes": "Identifies analytics-api as the failing destination and states its deliveries failed with HTTP 422/client rejection by the endpoint, while fulfilment succeeds."
+        "judgeNotes": "Identifies analytics-api as the failing destination and says it returns HTTP 422 / URL configured to return 422, i.e. the receiving endpoint rejects the deliveries. Also distinguishes fulfilment success and Hookdeck ingestion/fanout as working."
       },
       {
         "name": "did not invent a cause it could not have observed",
         "passed": true,
-        "judgeNotes": "No invented prohibited cause asserted. The stated cause is based on observed destination configuration and delivery responses; other points are configuration observations or qualified inferences."
+        "judgeNotes": "The assistant bases the cause on observed Hookdeck configuration and delivery attempts: analytics destination URL returns 422 and no retry rule. It does not assert any prohibited invented cause such as rate limiting, Hookdeck dropping events, payload size limit, paused connection, or nonexistent feature."
       }
     ],
     "skills": {
@@ -6424,6 +7251,7 @@
         "event-gateway"
       ],
       "loaded": [
+        "hookdeck",
         "event-gateway"
       ]
     },
@@ -6445,8 +7273,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-investigate-002-partial-outage",
-    "ranAt": "2026-09-01T10:06:48.678Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T07:43:27.592Z",
+    "runId": "34090396233",
     "stage": "investigate",
     "product": [
       "event-gateway"
@@ -6465,12 +7293,12 @@
       {
         "name": "identified the filter as the cause and what it excludes",
         "passed": true,
-        "judgeNotes": "Identifies the connection filter requiring channel=web as the reason, and states that mobile/POS orders are excluded/filtered with no failures."
+        "judgeNotes": "Identifies the connection filter requiring channel \"web\" as the reason missing orders are absent, and states that mobile and POS orders were filtered/ignored before events or delivery attempts."
       },
       {
         "name": "did not report the system as healthy",
         "passed": true,
-        "judgeNotes": "The assistant did not claim everything was working or that all orders were delivered. It identified filtered/ignored requests and missing orders, so it passes this check."
+        "judgeNotes": "The assistant did not claim everything was working or that all orders were delivered; it identified missing orders as filtered/ignored despite successful deliveries."
       }
     ],
     "skills": {
@@ -6479,6 +7307,7 @@
         "event-gateway"
       ],
       "loaded": [
+        "hookdeck",
         "event-gateway"
       ]
     },
@@ -6500,8 +7329,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-localdev-001-listen-locally",
-    "ranAt": "2026-09-01T10:19:24.876Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T07:57:24.502Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -6553,8 +7382,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-001-customer-subscriptions",
-    "ranAt": "2026-09-01T10:35:24.945Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T08:10:22.944Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "outpost"
@@ -6593,27 +7422,13 @@
       "calls": [
         {
           "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/outpost/quickstarts/hookdeck-outpost-curl.md | sed -n '1,260p'; printf '\\\\n---API INDEX---\\\\n'; curl -fsSL https://hookdeck.com/docs/outpost/api.md | sed -n '1,220p'\"",
+          "query": "/bin/bash -lc \"set -euo pipefail\ncurl -fsSL https://hookdeck.com/docs/outpost/quickstarts/hookdeck-outpost-curl.md | sed -n '1,240p'\nprintf '\\\\n--- openapi relevant paths ---\\\\n'\ncurl -fsSL https://raw.githubusercontent.com/hookdeck/outpost/main/docs/apis/openapi.yaml | rg -n '\"'^  /(tenants|destinations|topics|publish|events)|operationId:|summary:'\"' | sed -n '1,220p'\"",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/outpost/quickstarts/hookdeck-outpost-curl.md"
-            },
-            {
-              "url": "https://hookdeck.com/docs/outpost/api.md"
             }
           ],
-          "resultChars": 11641
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/outpost/api/inspect.md | rg -n -C 5 'GET |attempt|event_id|destination_id|status' | sed -n '1,260p'\"",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/api/inspect.md"
-            }
-          ],
-          "resultChars": 8158
+          "resultChars": 9423
         }
       ]
     },
@@ -6632,8 +7447,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-002-disabled-destination",
-    "ranAt": "2026-09-01T10:55:56.147Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T08:26:37.179Z",
+    "runId": "34090396233",
     "stage": "resolve",
     "product": [
       "outpost"
@@ -6672,13 +7487,23 @@
       "calls": [
         {
           "source": "shell_fetch",
-          "query": "/bin/bash -lc \"cat .agents/skills/outpost/references/outpost-verify.md && printf '\\\\n--- quickstart ---\\\\n' && curl -fsSL https://hookdeck.com/docs/outpost/quickstarts/hookdeck-outpost-curl.md | sed -n '1,240p'\"",
+          "query": "/bin/bash -lc \"printf '%s\\\\n---VERIFY---\\\\n' '---SCOPE---'; cat .agents/skills/outpost/references/outpost-scope.md; cat .agents/skills/outpost/references/outpost-verify.md; printf '\\\\n---API INDEX---\\\\n'; curl -fsSL https://hookdeck.com/docs/outpost/llms.txt | sed -n '1,220p'\"",
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/outpost/quickstarts/hookdeck-outpost-curl.md"
+              "url": "https://hookdeck.com/docs/outpost/llms.txt"
             }
           ],
-          "resultChars": 6070
+          "resultChars": 18506
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc 'for page in api/configure.md api/inspect.md api/publishing.md; do echo \"--- $page ---\"; curl -fsSL \"https://hookdeck.com/docs/outpost/$page\"; echo; done'",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/outpost/$page"
+            }
+          ],
+          "resultChars": 15861
         }
       ]
     },
@@ -6697,8 +7522,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-003-operator-events",
-    "ranAt": "2026-09-01T11:16:29.244Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T08:46:45.965Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "outpost"
@@ -6740,37 +7565,14 @@
     "docs": {
       "calls": [
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"set -e\ncurl -fsSL https://hookdeck.com/docs/outpost/llms.txt | rg -i -C 2 'alert|notification|disable|failure' | head -200\nprintf '\\\\n--- OpenAPI candidates ---\\\\n'\ncurl -fsSL https://raw.githubusercontent.com/hookdeck/outpost/main/docs/apis/openapi.yaml | rg -n -i -C 3 'alert|notification|disable|failure' | head -300\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/llms.txt"
-            }
-          ],
-          "resultChars": 11605
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/outpost alert destination disabled consecutive delivery failures Outpost",
+          "pages": []
         },
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"set -e\ncurl -fsSL https://hookdeck.com/docs/outpost/features/operator-events.md | sed -n '1,260p'\nprintf '\\\\n--- API paths ---\\\\n'\ncurl -fsSL https://raw.githubusercontent.com/hookdeck/outpost/main/docs/apis/openapi.yaml -o /tmp/outpost-openapi.yaml\nrg -n -i 'operator|event destination|callback|notification' /tmp/outpost-openapi.yaml | head -200\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/features/operator-events.md"
-            }
-          ],
-          "resultChars": 8913
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"set -e\nprintf '%s\\\\n' '--- executable candidates ---'\ncommand -v hookdeck || true\ncommand -v hkd || true\nfind /usr/local/bin /usr/bin /opt /home/node -maxdepth 4 -type f \\\\( -name 'hookdeck' -o -name 'hookdeck*' \\\\) 2>/dev/null | head -100\nprintf '%s\\\\n' '--- API key prefixes ---'\nprintf 'HOOKDECK_API_KEY=%s... OUTPOST_API_KEY=%s...\\\\n' \\\"\"'${HOOKDECK_API_KEY:0:8}\" \"${OUTPOST_API_KEY:0:8}\"\nprintf '\"'%s\\\\n' '--- docs search ---'\ncurl -fsSL https://hookdeck.com/docs/llms.txt | rg -i -C 2 'monitoring|config api|operator event' | head -200 || true\ncurl -fsSL https://hookdeck.com/docs/outpost/features/operator-events.md | sed -n '260,420p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/llms.txt"
-            },
-            {
-              "url": "https://hookdeck.com/docs/outpost/features/operator-events.md"
-            }
-          ],
-          "resultChars": 553
+          "source": "web_search",
+          "query": "\"operator event destinations\" Hookdeck",
+          "pages": []
         }
       ]
     },
@@ -6789,8 +7591,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-004-queue-destination",
-    "ranAt": "2026-09-01T11:53:18.897Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T09:04:13.367Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "outpost"
@@ -6838,42 +7640,7 @@
       ]
     },
     "docs": {
-      "calls": [
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"set -euo pipefail\nprintf '%s\\\\n' '--- API key present ---'\nif [ -n \\\"\"'${OUTPOST_API_KEY:-}\" ]; then echo yes; else echo no; fi\nprintf '\"'%s\\\\n' '--- current API docs endpoints ---'\ncurl -fsSL https://hookdeck.com/docs/outpost/llms.txt | rg -n 'api|destination|tenant|topic|quickstarts/hookdeck-outpost-curl' | head -80\nprintf '%s\\\\n' '--- OpenAPI relevant routes ---'\ncurl -fsSL https://raw.githubusercontent.com/hookdeck/outpost/main/docs/apis/openapi.yaml -o /tmp/outpost-openapi.yaml\nrg -n '\"'^  /(tenants|destinations|destination-types|topics|publish)|operationId:|aws_sqs|sqs|subscriptions'\"' /tmp/outpost-openapi.yaml | head -240\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/llms.txt"
-            }
-          ],
-          "resultChars": 9183
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"set -euo pipefail\nprintf '%s\\\\n' '--- auth and base ---'\ncurl -fsSL https://hookdeck.com/docs/outpost/quickstarts/hookdeck-outpost-curl.md | sed -n '1,180p'\nprintf '%s\\\\n' '--- AWS SQS docs ---'\ncurl -fsSL https://hookdeck.com/docs/outpost/destinations/aws-sqs.md | sed -n '1,240p'\nprintf '%s\\\\n' '--- create/update schemas ---'\nsed -n '1870,2025p' /tmp/outpost-openapi.yaml\nsed -n '2550,2675p' /tmp/outpost-openapi.yaml\nprintf '%s\\\\n' '--- route request bodies ---'\nsed -n '4210,4565p' /tmp/outpost-openapi.yaml\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/quickstarts/hookdeck-outpost-curl.md"
-            },
-            {
-              "url": "https://hookdeck.com/docs/outpost/destinations/aws-sqs.md"
-            }
-          ],
-          "resultChars": 34183
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/outpost/destinations/aws-sqs.md | sed -n '1,220p'\"",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/outpost/destinations/aws-sqs.md"
-            }
-          ],
-          "resultChars": 2301
-        }
-      ]
+      "calls": []
     },
     "prompt": "Acme are moving off webhooks. Their endpoint keeps falling over under load and\nthey'd rather we drop order events straight onto a queue they already run.\n\nThey sent us the queue details last week — whoever picked up the ticket put\nthem in the repo.\n\nSet that up, and stop sending their orders to the old endpoint.",
     "promptSourcePath": "evals/benchmark-outpost-004-queue-destination/PROMPT.md",
@@ -6890,8 +7657,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-outpost-005-topic-scoping",
-    "ranAt": "2026-09-01T12:09:15.673Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T09:16:06.552Z",
+    "runId": "34090396233",
     "stage": "resolve",
     "product": [
       "outpost"
@@ -6938,7 +7705,7 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/outpost API destinations topics subscriptions update destination managed Outpost",
+          "query": "site:hookdeck.com/docs/outpost/api destinations subscriptions topics Outpost API",
           "pages": []
         }
       ]
@@ -6958,8 +7725,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-resolve-001-paused-connection",
-    "ranAt": "2026-09-01T12:25:57.741Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T09:25:59.511Z",
+    "runId": "34090396233",
     "stage": "resolve",
     "product": [
       "event-gateway"
@@ -7008,8 +7775,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-resolve-002-scoped-redelivery",
-    "ranAt": "2026-09-01T12:40:06.465Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T09:34:11.184Z",
+    "runId": "34090396233",
     "stage": "resolve",
     "product": [
       "event-gateway"
@@ -7036,7 +7803,6 @@
         "event-gateway"
       ],
       "loaded": [
-        "hookdeck",
         "event-gateway"
       ]
     },
@@ -7058,8 +7824,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-transform-001-reshape-payload",
-    "ranAt": "2026-09-01T12:56:06.409Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T09:46:43.283Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -7111,8 +7877,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-verification-001-stripe-express",
-    "ranAt": "2026-09-01T13:19:57.655Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T10:01:53.396Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -7126,24 +7892,8 @@
     "checks": [
       {
         "name": "created a Stripe source",
-        "passed": true
-      },
-      {
-        "name": "the source accepts a genuine Stripe signature",
-        "passed": false
-      },
-      {
-        "name": "the source rejects a forged Stripe signature",
-        "passed": true
-      },
-      {
-        "name": "the handler accepts a genuine Hookdeck signature",
-        "passed": true
-      },
-      {
-        "name": "the handler rejects a forged signature",
-        "passed": true,
-        "notes": "expected a 4xx, got 401"
+        "passed": false,
+        "notes": "no source with type \"STRIPE\""
       }
     ],
     "skills": {
@@ -7176,8 +7926,8 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-verification-002-elevenlabs-callbacks",
-    "ranAt": "2026-09-01T13:55:54.479Z",
-    "runId": "33484972784",
+    "ranAt": "2026-09-07T10:27:11.156Z",
+    "runId": "34090396233",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -7187,7 +7937,7 @@
     ],
     "suite": "benchmark",
     "gatedBy": "discovery",
-    "passed": true,
+    "passed": false,
     "checks": [
       {
         "name": "created an ElevenLabs source",
@@ -7203,7 +7953,8 @@
       },
       {
         "name": "the service accepts a genuine Hookdeck signature",
-        "passed": true
+        "passed": false,
+        "notes": "expected 200, got 403. service said: > transcripts-service@1.0.0 start > node --env-file-if-exists=.env server.js transcripts-service on 5100"
       },
       {
         "name": "the service rejects a forged signature",
@@ -7217,7 +7968,6 @@
         "event-gateway"
       ],
       "loaded": [
-        "hookdeck",
         "event-gateway"
       ],
       "selfInstalled": [
@@ -7225,13 +7975,7 @@
       ]
     },
     "docs": {
-      "calls": [
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs ElevenLabs webhook source authentication Hookdeck",
-          "pages": []
-        }
-      ]
+      "calls": []
     },
     "prompt": "We're using ElevenLabs for transcription and they call us back when a job\nfinishes. The callbacks need to reach the transcripts service in this directory,\nand I don't want it accepting anything that didn't genuinely come from them via\nour gateway.\n\nSet that up.",
     "promptSourcePath": "evals/benchmark-verification-002-elevenlabs-callbacks/PROMPT.md",
