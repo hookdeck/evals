@@ -264,12 +264,13 @@ Skills are the only axis. Everything below is in every experiment, so a scoreboa
 | Layer | In the baseline | What it is |
 |---|---|---|
 | Public documentation | Yes | What the agent has to find. No copy of it ships with the scenario. |
+| Web search | Yes, through the agent's own web tools | How an agent finds anything our documentation does not answer. Agents used it on 34 of the 114 rows in the 1 September 2026 snapshot. |
 | Hookdeck CLI, pinned | Yes, baked into the sandbox image | Not agent-specific, but an agent enabler. `hookdeck listen` is the user's goal in some scenarios. |
 | REST API via `HOOKDECK_API_KEY` | Yes, in the sandbox environment | The action surface. Anything an agent creates, it creates here or through the CLI. |
 | Skills | No, this is the axis | Agent-specific guidance. |
 | MCP (`hookdeck mcp`, ships in the CLI) | No | Read-only: eleven analysis tools that cannot create or mutate. Expect it to lift investigate and resolve while leaving build flat, which makes it a finding to publish rather than a launch row. |
 
-So `-no-skills` is the baseline's honest name: those runs still have the CLI and a live API key. It is not a documentation-only agent, and the page should not imply one.
+So `-no-skills` is the baseline's honest name: those runs still have the CLI, a live API key and web search. It is not a documentation-only agent, and the page should not imply one. Web search matters most of the three, because a baseline that can search is partly measuring how well other people's writing covers Hookdeck, and that moves between runs without us changing anything.
 
 Both runtimes load skills lazily ([progressive disclosure](https://ai-sdk.dev/cookbook/guides/agent-skills)): only each skill's name+description is in the system prompt, and the agent pulls a skill's full instructions on demand. They differ only in how the body is fetched, because the tools-mode agent has no filesystem:
 
