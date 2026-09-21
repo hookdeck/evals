@@ -182,21 +182,27 @@ gh issue list --state closed     # what was already decided, and why
 ```
 
 **Two labels say who fixes the thing, and they are the first filter on that
-list.** `product` is a fact about Hookdeck, its docs or its skills: the fix lands
-in another repository, and the issue here is the record that the benchmark found
-it. `harness` is ours — runner, scorers, provisioner, seeds and CI — and can be
-picked up in this repo. The other labels — `scenario`, `publishing`,
-`documentation` — say what an issue is about rather than who fixes it, and appear
-on either side: #43 is `product` and `scenario`, because the API fix is elsewhere
-and the scenario it suggests is ours.
+list.** `product` is a fact about Hookdeck, its docs or its skills, and the fix
+is almost always in another repository. `harness` is ours — runner, scorers,
+provisioner, seeds and CI — and can be picked up in this repo. The other labels
+— `scenario`, `publishing`, `documentation` — say what an issue is about rather
+than who fixes it, so either of the two can carry any of them: #43 is `product`
+and `scenario`, because the API fix is elsewhere and the scenario it suggests is
+ours.
+
+The label says where the fix goes, not where the finding came from. Most of
+these came out of a run, and #43 opens by saying that none did — it came out of
+building a demo — and carries `product` anyway, because what a reader filtering
+the board wants is the work that is not ours.
 
 The two are otherwise indistinguishable on a board and have opposite next
 actions: a `product` issue needs filing elsewhere and then measuring, a `harness`
 issue needs a pull request here. `product` was called `finding` until 21
-September and carried both: three of its eleven issues were defects in our own
-instrument and moved to `harness`. That is the same conflation the release notes
-rule against, where an open defect in our instrument is neither a product finding
-nor something shipped.
+September and carried both. Of the eleven issues it held, five were measurements
+of our own instrument rather than of Hookdeck; three of those moved to `harness`
+and the other two are the exception below. That is the same conflation the
+release notes rule against, where an open defect in our instrument is neither a
+product finding nor something shipped.
 
 **A `product` issue carries an `Owned by:` line at the top of its body**, naming
 the repository and the title the issue would take there:
@@ -211,6 +217,16 @@ them, as #34 does — documentation in `hookdeck/outpost`, behaviour in
 `hookdeck/core`. Where you cannot tell which repository owns it, write that in
 the line rather than guessing: an issue filed against the wrong repository is
 worse than one not filed. Replace the line with a link once the issue exists.
+
+**Two shapes carry `product` with no `Owned by:` line, and both have their next
+step here.** An open question about our own skills or docs does not know its
+repository until it has an answer: #2 asks why our skills make the weak model
+worse, and where that lands depends on what the runs say. A mapping issue is the
+other — its change has already merged elsewhere and it is waiting on a run to
+measure it, so it opens with a link to that change, which is what an `Owned by:`
+line becomes once the issue exists; #27 links the merged `hookdeck/agent-skills`
+pull request in its first line. Anything else carrying `product` with no line is
+drift.
 
 A `product` issue is closed by the release that measures the change, not the one
 that ships it — the mapping-issue rule under Releases — so one sitting open after
