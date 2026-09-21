@@ -149,11 +149,20 @@ async function checkOrderEventDelivered(
   const name = 'an order event reaches the customer';
   const topic = await orderTopic(ctx, destinations);
   if (!topic) {
+    // Two ways to get here and they are not the same failure. A destination
+    // subscribed to nothing order-shaped is the agent's; a project with no
+    // order topic to publish is ours, and scoring it as the agent's would be
+    // the exact mistake this scorer has already made twice.
+    const projectTopics = await ctx.outpost?.<string[]>('GET', '/topics');
+    const projectHasOrders =
+      Array.isArray(projectTopics) &&
+      projectTopics.some((t) => /order/i.test(t));
     return {
       name,
       passed: false,
-      notes:
-        'no destination subscribes to anything resembling an order topic, so an order event has nowhere to go',
+      notes: projectHasOrders
+        ? 'no destination subscribes to anything resembling an order topic, so an order event has nowhere to go'
+        : `the project has no order topic to publish (topics: ${Array.isArray(projectTopics) ? projectTopics.join(', ') || 'none' : 'unreadable'}), so this is a harness problem rather than the agent's`,
     };
   }
 
