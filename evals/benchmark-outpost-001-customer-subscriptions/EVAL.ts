@@ -147,7 +147,7 @@ async function checkOrderEventDelivered(
   destinations: Record<string, unknown>[]
 ): Promise<CheckResult> {
   const name = 'an order event reaches the customer';
-  const topic = orderTopic(destinations);
+  const topic = await orderTopic(ctx, destinations);
   if (!topic) {
     return {
       name,
@@ -244,18 +244,51 @@ function isCustomerEndpoint(destination: Record<string, unknown>): boolean {
  * array containing the string), not the bare string. Both forms mean
  * "subscribes to everything", so both must count as covering orders.
  */
-function orderTopic(
+async function orderTopic(
+  ctx: ToolEvalContext,
   destinations: Record<string, unknown>[]
-): string | undefined {
+): Promise<string | undefined> {
+  // A wildcard subscription says nothing about which topic to publish, so the
+  // topic has to come from the project rather than from this file. It used to
+  // be the literal `orders.created`, which is not a topic this project has —
+  // `GET /topics` returns `orders`, `retries`, `order.created`,
+  // `order.shipped`, `order.updated`, `order.cancelled` — so Outpost answered
+  // `422 topic is invalid`, the scorer threw, and the cell errored rather than
+  // scoring. That failed the job, and a failed matrix job skips
+  // `publish-results`: on 21 September one agent subscribing to `*` stopped
+  // seventy-five good cells from being published.
+  const wildcard = (topics: unknown) =>
+    topics === '*' || (Array.isArray(topics) && topics.includes('*'));
+
   for (const destination of destinations) {
     const topics = destination.topics;
-    if (topics === '*') return 'orders.created';
+    if (wildcard(topics)) return await anyOrderTopic(ctx);
     if (!Array.isArray(topics)) continue;
-    if (topics.includes('*')) return 'orders.created';
     const match = topics.find((t) => /order/i.test(String(t)));
     if (match) return String(match);
   }
   return undefined;
+}
+
+/**
+ * An order topic this project actually has, read from the project.
+ *
+ * Asking rather than assuming, which is the convention every other scorer here
+ * arrived at the hard way. The list is configuration and can change; a string
+ * compiled into a scorer cannot.
+ */
+async function anyOrderTopic(
+  ctx: ToolEvalContext
+): Promise<string | undefined> {
+  const topics = await ctx.outpost?.<string[]>('GET', '/topics');
+  if (!Array.isArray(topics)) return undefined;
+  // `order.created` over the bare `orders`: this scenario is about a customer
+  // receiving an order event, and a specific topic is what a destination
+  // subscribed to a wildcard would receive anyway.
+  return (
+    topics.find((t) => /^order\./i.test(t)) ??
+    topics.find((t) => /order/i.test(t))
+  );
 }
 
 /**
