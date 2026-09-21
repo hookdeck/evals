@@ -221,6 +221,32 @@ cannot separate a fix from variance.
 A release is how an improvement is published. It is not a calendar event: cut one
 when there is a measured change to report, not on a schedule.
 
+**What justifies one.** The page is release-pinned, so cutting a release is the act of
+changing what the public sees — and not cutting one is how a run gets read before it is
+believed. Any of these three is enough:
+
+1. **The product moved.** Something shipped that this benchmark found, or a finding
+   worth publishing came out of a run. This is the loop working and it is what the
+   changelog is for.
+2. **The instrument changed what it measures**, and a full run has been measured under
+   it. A scenario, a scorer, the base prompt, the sandbox CLI pin. Release so the
+   published numbers and the notes describing them agree; until then the page is
+   showing numbers measured under something the notes do not describe.
+3. **The published snapshot has gone stale** — roughly six weeks, or sooner if the
+   instrument has moved under it. Transcripts expire at ninety days (#21), so a
+   snapshot nobody released is evidence nobody can check later.
+
+**What does not justify one: a run whose numbers moved.** Movement is the default. The
+weak model's skills delta read -1 on 1 September and +4 on 14 September with no change
+to the instrument between them, and eleven cells flipped, two of them in both
+directions across the arms of the same pair. Releasing on movement publishes variance
+and spends the changelog on non-events.
+
+**Prefer packaging the monthly matrix.** A weekly covers four experiments, so its
+snapshot carries the frontier `-no-skills` arms forward from whenever they last ran —
+publishable, but it means a release whose notes say "one run" would be wrong. The
+monthly measures all six in one pass.
+
 **A release represents one run and what changed since the last one.** Tag the results
 commit, so the release points at exactly the data it describes, and
 `results/runs/<timestamp>.json` is the immutable snapshot behind it.
