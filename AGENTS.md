@@ -181,6 +181,41 @@ gh issue view <n>                # the detail and any discussion
 gh issue list --state closed     # what was already decided, and why
 ```
 
+**Two labels say who fixes the thing, and they are the first filter on that
+list.** `product` is a fact about Hookdeck, its docs or its skills: the fix lands
+in another repository, and the issue here is the record that the benchmark found
+it. `harness` is ours — runner, scorers, provisioner, seeds and CI — and can be
+picked up in this repo. The other labels — `scenario`, `publishing`,
+`documentation` — say what an issue is about rather than who fixes it, and appear
+on either side: #43 is `product` and `scenario`, because the API fix is elsewhere
+and the scenario it suggests is ours.
+
+The two are otherwise indistinguishable on a board and have opposite next
+actions: a `product` issue needs filing elsewhere and then measuring, a `harness`
+issue needs a pull request here. `product` was called `finding` until 21
+September and carried both: three of its eleven issues were defects in our own
+instrument and moved to `harness`. That is the same conflation the release notes
+rule against, where an open defect in our instrument is neither a product finding
+nor something shipped.
+
+**A `product` issue carries an `Owned by:` line at the top of its body**, naming
+the repository and the title the issue would take there:
+
+```
+**Owned by:** `hookdeck/core` — "Say the project is not an Outpost project instead of returning Not Found"
+```
+
+The label says the fix is elsewhere; only that line says where, and working out
+where is the expensive half. Name both repositories when a finding splits across
+them, as #34 does — documentation in `hookdeck/outpost`, behaviour in
+`hookdeck/core`. Where you cannot tell which repository owns it, write that in
+the line rather than guessing: an issue filed against the wrong repository is
+worse than one not filed. Replace the line with a link once the issue exists.
+
+A `product` issue is closed by the release that measures the change, not the one
+that ships it — the mapping-issue rule under Releases — so one sitting open after
+its fix merged elsewhere is in the correct state.
+
 The division of labour between the three places, so nothing is duplicated:
 
 | | |
