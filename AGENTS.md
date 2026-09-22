@@ -199,10 +199,10 @@ The two are otherwise indistinguishable on a board and have opposite next
 actions: a `product` issue needs filing elsewhere and then measuring, a `harness`
 issue needs a pull request here. `product` was called `finding` until 21
 September and carried both. Of the eleven issues it held, five were measurements
-of our own instrument rather than of Hookdeck; three of those moved to `harness`
-and the other two are the exception below. That is the same conflation the
-release notes rule against, where an open defect in our instrument is neither a
-product finding nor something shipped.
+of our own instrument rather than of Hookdeck, and three of those moved to
+`harness`. That is the same conflation the release notes rule against, where an
+open defect in our instrument is neither a product finding nor something
+shipped.
 
 **A `product` issue carries an `Owned by:` line at the top of its body**, naming
 the repository and the title the issue would take there:
@@ -218,15 +218,15 @@ them, as #34 does — documentation in `hookdeck/outpost`, behaviour in
 the line rather than guessing: an issue filed against the wrong repository is
 worse than one not filed. Replace the line with a link once the issue exists.
 
-**Two shapes carry `product` with no `Owned by:` line, and both have their next
-step here.** An open question about our own skills or docs does not know its
-repository until it has an answer: #2 asks why our skills make the weak model
-worse, and where that lands depends on what the runs say. A mapping issue is the
-other — its change has already merged elsewhere and it is waiting on a run to
-measure it, so it opens with a link to that change, which is what an `Owned by:`
-line becomes once the issue exists; #27 links the merged `hookdeck/agent-skills`
-pull request in its first line. Anything else carrying `product` with no line is
-drift.
+**Two shapes carry `product` with no `Owned by:` line**, and both have their next
+step here rather than elsewhere. A mapping issue is one: its change has already
+merged elsewhere and it is waiting on a run to measure it, so it opens with a link
+to that change, which is what an `Owned by:` line becomes once the issue exists —
+#27 links the merged `hookdeck/agent-skills` pull request in its first line. An
+open question about our own skills or docs is the other: it cannot name a
+repository until it has an answer, because the answer is what decides whether the
+fix is a skill, a docs page or a scenario. Anything else carrying `product` with
+no line is drift.
 
 A `product` issue is closed by the release that measures the change, not the one
 that ships it — the mapping-issue rule under Releases — so one sitting open after
