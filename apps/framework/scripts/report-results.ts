@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { discoverEvals, EVALS_ROOT } from '../lib/discovery.js';
+import { docsReach } from '../lib/docs-reach.js';
 
 /**
  * Read a snapshot and say what kind of failures it contains.
@@ -40,6 +41,9 @@ interface Check {
 interface DocsCall {
   source?: string;
   pages?: unknown[];
+  // Omitted when the trace exposed no result at all, which is what separates a
+  // hosted search we cannot see from one that genuinely returned nothing.
+  resultChars?: number;
 }
 
 interface Row {
@@ -169,33 +173,36 @@ function main() {
  * not a confound, and not something to design out. That distinction is the whole
  * reason this prints two numbers instead of one.
  *
- * What is worth watching is the other half, and printing it per experiment moved
- * the answer. Aggregated by arm it reads as a skills effect — 296 calls in
- * `-no-skills` against 83 in `+skills`, 58% empty against 37%. Split by
- * experiment on the 25 August snapshot, most of that is the agent:
+ * What is worth watching is the other half, and it has to be split three ways
+ * rather than two. Claude Code reaches docs with `web_fetch`, which returns a
+ * page we can see. Codex leans on `web_search`, which is hosted: the hits reach
+ * the model on the provider's side and never reach us. Those calls are not
+ * failures and not successes — they are unobserved, and `docsReach` keeps them
+ * in their own bucket.
  *
- *     claude-code-sonnet-5              21 calls    0 empty (0%)
- *     claude-code-sonnet-5-no-skills    64 calls    0 empty (0%)
- *     codex-gpt-5.4-mini                43 calls   26 empty (60%)
- *     codex-gpt-5.4-mini-no-skills     196 calls  144 empty (73%)
- *     codex-gpt-5.6                     19 calls    5 empty (26%)
- *     codex-gpt-5.6-no-skills           36 calls   30 empty (83%)
- *
- * **Both Claude arms are at zero.** Claude Code reaches docs with `web_fetch`,
- * which returns a page; Codex leans on `web_search`, which frequently returns
- * none. There is still a real skills effect inside each Codex pair — 60 against
- * 73, 26 against 83 — but it is the smaller term, and the aggregate hid that by
- * pooling two agents with different habits.
+ * This is worth stating because the two-bucket version was wrong in both
+ * directions and the error was large. On the 14 September snapshot all 254 Codex
+ * searches were unobserved: 216 were counted as empty and 38 as page reads, the
+ * latter because a url-shaped query is recorded as the page it probably opened.
+ * The transcripts settle what the "empty" ones actually did — between them the
+ * agent narrates finding the versioned API base and the retry endpoint, then
+ * calls both correctly. See #83, and #61 for the number that rested on this.
  *
  * So read this per row, never pooled: `reached` is signal about the docs and the
- * skills, `empty` is mostly a fact about the agent's search path, and a delta
- * that moves when `empty` moves is neither. See #61, and #2 for the scenario
- * where this presented as a clean skills win.
+ * skills, `empty` is signal only where the result was observable at all, and
+ * `unobserved` is a property of the agent's search path rather than of anything
+ * we ship. A delta that moves when either of the last two moves is not a skills
+ * effect.
  */
 function reportDocsReach(rows: Row[]) {
   const arms = new Map<
     string,
-    { reached: number; empty: number; bySource: Map<string, number> }
+    {
+      reached: number;
+      empty: number;
+      unobserved: number;
+      bySource: Map<string, number>;
+    }
   >();
 
   for (const row of rows) {
@@ -204,11 +211,11 @@ function reportDocsReach(rows: Row[]) {
     const arm = arms.get(row.experiment) ?? {
       reached: 0,
       empty: 0,
+      unobserved: 0,
       bySource: new Map<string, number>(),
     };
     for (const call of calls) {
-      if ((call.pages ?? []).length > 0) arm.reached += 1;
-      else arm.empty += 1;
+      arm[docsReach(call)] += 1;
       const source = call.source ?? 'unknown';
       arm.bySource.set(source, (arm.bySource.get(source) ?? 0) + 1);
     }
@@ -219,8 +226,8 @@ function reportDocsReach(rows: Row[]) {
 
   console.log('\n  How each arm reached the docs:');
   for (const [experiment, arm] of [...arms].sort()) {
-    const total = arm.reached + arm.empty;
-    const pct = Math.round((100 * arm.empty) / total);
+    const total = arm.reached + arm.empty + arm.unobserved;
+    const pct = Math.round((100 * arm.unobserved) / total);
     const mix = [...arm.bySource]
       .sort((a, b) => b[1] - a[1])
       .map(([source, n]) => `${source} ${n}`)
@@ -228,12 +235,14 @@ function reportDocsReach(rows: Row[]) {
     console.log(
       `    ${experiment.padEnd(32)} ${String(total).padStart(4)} calls  ` +
         `${String(arm.reached).padStart(4)} reached a page  ` +
-        `${String(arm.empty).padStart(4)} empty (${pct}%)  [${mix}]`
+        `${String(arm.empty).padStart(4)} returned nothing  ` +
+        `${String(arm.unobserved).padStart(4)} unobserved (${pct}%)  [${mix}]`
     );
   }
   console.log(
-    '    A high empty rate is an external search index returning nothing, not a\n' +
-      '    documentation or skills gap. Do not read a delta that moves with it as one.'
+    '    `unobserved` is a hosted search whose hits never reach us, not a search\n' +
+      '    that failed and not a documentation or skills gap. Do not read a delta\n' +
+      '    that moves with it as one.'
   );
 }
 
