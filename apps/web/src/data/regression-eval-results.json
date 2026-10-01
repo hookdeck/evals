@@ -1,6 +1,6 @@
 [
   {
-    "experiment": "claude-code-sonnet-5-docs-only",
+    "experiment": "claude-code-sonnet-5",
     "experimentSuite": "regression",
     "experimentDisplay": {
       "agent": "claude-code",
@@ -9,6 +9,8 @@
       "reasoningEffort": "high"
     },
     "eval": "regression-filtering-001-regex-capability",
+    "ranAt": "2026-10-01T13:43:17.924Z",
+    "runId": "36869979661",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -17,12 +19,276 @@
       "filtering"
     ],
     "suite": "regression",
+    "gatedBy": "discovery",
     "passed": false,
     "checks": [
       {
         "name": "did not claim regex filtering or channels exist",
         "passed": false,
-        "judgeNotes": "The assistant incorrectly says regex can be used for Hookdeck filtering and offers to wire it into a Hookdeck filter."
+        "judgeNotes": "The assistant answers yes, provides a regex pattern, and suggests using it as a Hookdeck filter, which invents regex filtering capability."
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "Our order references look like `ORD-2026-AC-4821`. We migrated formats at the\nstart of the year and the old ones are still coming through, which my service\nchokes on.\n\nCan I use a regex on the reference to only let this year's format through? What\nis the closest I can get?",
+    "promptSourcePath": "evals/regression-filtering-001-regex-capability/PROMPT.md",
+    "attempts": 2,
+    "sourcePath": "claude-code-sonnet-5/regression-filtering-001-regex-capability.json"
+  },
+  {
+    "experiment": "claude-code-sonnet-5",
+    "experimentSuite": "regression",
+    "experimentDisplay": {
+      "agent": "claude-code",
+      "modelProvider": "anthropic",
+      "modelId": "claude-sonnet-5",
+      "reasoningEffort": "high"
+    },
+    "eval": "regression-limits-001-oversized-payload",
+    "ranAt": "2026-10-01T13:59:11.987Z",
+    "runId": "36869979661",
+    "stage": "investigate",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "capabilities"
+    ],
+    "suite": "regression",
+    "gatedBy": "discovery",
+    "passed": true,
+    "checks": [
+      {
+        "name": "diagnosed ingestion rejection, not a delivery failure",
+        "passed": true,
+        "judgeNotes": "The answer correctly identifies ingestion rejection due to PAYLOAD_TOO_LARGE as the cause, cites a specific rejected request and content length, and distinguishes this from delivery/rules failures."
+      },
+      {
+        "name": "did not state a wrong payload limit",
+        "passed": true,
+        "judgeNotes": "The assistant did not state a maximum inbound payload size figure for Hookdeck; it only reported the rejected request's content length."
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": [
+        "event-gateway"
+      ]
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "shell_fetch",
+          "query": "curl -s https://hookdeck.com/docs/requests.md | grep -i -A5 -B5 \"payload\\|too large\\|size limit\\|10 MB\\|10MB\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/requests.md"
+            }
+          ],
+          "resultChars": 4299
+        },
+        {
+          "source": "shell_fetch",
+          "query": "curl -s https://hookdeck.com/docs/sources.md | grep -i -B5 -A10 \"payload\\|size limit\\|quota\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/sources.md"
+            }
+          ],
+          "resultChars": 45995
+        },
+        {
+          "source": "shell_fetch",
+          "query": "curl -s https://hookdeck.com/docs/sources.md | grep -i -n \"MB\\|payload size\\|maximum.*size\\|too large\" | head -30",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/sources.md"
+            }
+          ],
+          "resultChars": 294
+        },
+        {
+          "source": "shell_fetch",
+          "query": "curl -s https://hookdeck.com/docs/api.md | grep -i -n \"MB\\|payload size\\|maximum.*size\\|too large\\|10,?000,?000\\|quota\" | head -30\necho \"---pricing---\"\ncurl -s https://hookdeck.com/pricing.md 2>&1 | grep -i -n \"MB\\|payload\" | head -30",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/api.md"
+            },
+            {
+              "url": "https://hookdeck.com/pricing.md"
+            }
+          ],
+          "resultChars": 1024
+        }
+      ]
+    },
+    "prompt": "Some of our order events just aren't showing up. Most come through fine but a\nfew never arrive at all, and I can't see them anywhere. Can you work out what's\ngoing on?",
+    "promptSourcePath": "evals/regression-limits-001-oversized-payload/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "claude-code-sonnet-5/regression-limits-001-oversized-payload.json"
+  },
+  {
+    "experiment": "claude-code-sonnet-5",
+    "experimentSuite": "regression",
+    "experimentDisplay": {
+      "agent": "claude-code",
+      "modelProvider": "anthropic",
+      "modelId": "claude-sonnet-5",
+      "reasoningEffort": "high"
+    },
+    "eval": "regression-verification-001-generic-hmac",
+    "ranAt": "2026-10-01T14:15:50.330Z",
+    "runId": "36869979661",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "signature-verification"
+    ],
+    "suite": "regression",
+    "gatedBy": "discovery",
+    "passed": true,
+    "checks": [
+      {
+        "name": "created a source using HMAC verification",
+        "passed": true
+      },
+      {
+        "name": "accepts a correctly signed request",
+        "passed": true,
+        "notes": "expected 200, got 200"
+      },
+      {
+        "name": "rejects an incorrectly signed request",
+        "passed": true,
+        "notes": "expected 401, got 401"
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": [
+        "event-gateway"
+      ]
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "I'm receiving webhooks from an internal service that isn't one of the providers\nyou support out of the box. It signs each request like this:\n\n```\nPOST /\nX-Acme-Signature: aq7EI5rB6vnQzLDeb4hqUsjHtWLDBsdTpq+nivwrNtc=\nContent-Type: application/json\n\n{\"order_id\":\"ord_4821\",\"total\":1250}\n```\n\nThe signature is the request body signed with SHA-256 using our shared secret\n`acme_whsec_5f2b91`. Set up a Hookdeck source that verifies these.",
+    "promptSourcePath": "evals/regression-verification-001-generic-hmac/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "claude-code-sonnet-5/regression-verification-001-generic-hmac.json"
+  },
+  {
+    "experiment": "claude-code-sonnet-5-no-skills",
+    "experimentSuite": "regression",
+    "experimentDisplay": {
+      "agent": "claude-code",
+      "modelProvider": "anthropic",
+      "modelId": "claude-sonnet-5",
+      "reasoningEffort": "high"
+    },
+    "eval": "regression-filtering-001-regex-capability",
+    "ranAt": "2026-10-01T13:40:34.955Z",
+    "runId": "36869979661",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "filtering"
+    ],
+    "suite": "regression",
+    "gatedBy": "discovery",
+    "passed": true,
+    "checks": [
+      {
+        "name": "did not claim regex filtering or channels exist",
+        "passed": true,
+        "judgeNotes": "The assistant correctly says Hookdeck filters do not support regex and only uses regex inside a JavaScript transformation, which is allowed. No channel/partitioning feature is described."
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_fetch",
+          "query": "Explain the filter syntax Hookdeck supports, especially whether a regex operator exists (e.g. $regex), its exact key name, supported flags, and example usage for matching a string field.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/filters"
+            }
+          ],
+          "resultChars": 1048
+        },
+        {
+          "source": "web_fetch",
+          "query": "Explain how Hookdeck transformations work: can JavaScript code in a transformation use regular expressions? Can a transformation be used to drop/reject a request (acting like a filter), or does it only modify body/headers? Show the function signature and how to reject an event.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/transformations"
+            }
+          ],
+          "resultChars": 1301
+        }
+      ]
+    },
+    "prompt": "Our order references look like `ORD-2026-AC-4821`. We migrated formats at the\nstart of the year and the old ones are still coming through, which my service\nchokes on.\n\nCan I use a regex on the reference to only let this year's format through? What\nis the closest I can get?",
+    "promptSourcePath": "evals/regression-filtering-001-regex-capability/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "claude-code-sonnet-5-no-skills/regression-filtering-001-regex-capability.json"
+  },
+  {
+    "experiment": "claude-code-sonnet-5-no-skills",
+    "experimentSuite": "regression",
+    "experimentDisplay": {
+      "agent": "claude-code",
+      "modelProvider": "anthropic",
+      "modelId": "claude-sonnet-5",
+      "reasoningEffort": "high"
+    },
+    "eval": "regression-limits-001-oversized-payload",
+    "ranAt": "2026-10-01T13:56:42.987Z",
+    "runId": "36869979661",
+    "stage": "investigate",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "capabilities"
+    ],
+    "suite": "regression",
+    "gatedBy": "discovery",
+    "passed": true,
+    "checks": [
+      {
+        "name": "diagnosed ingestion rejection, not a delivery failure",
+        "passed": true,
+        "judgeNotes": "Identifies the cause as ingestion-layer rejection due to oversized payload, cites the rejected request with `rejection_cause: PAYLOAD_TOO_LARGE`, size, zero events, and rules out delivery failures."
+      },
+      {
+        "name": "did not state a wrong payload limit",
+        "passed": true,
+        "judgeNotes": "The assistant states Hookdeck's standard ingestion body-size limit is 10 MB, which matches the expected 10 MiB-equivalent limit."
       }
     ],
     "skills": {
@@ -32,9 +298,861 @@
     "docs": {
       "calls": []
     },
+    "prompt": "Some of our order events just aren't showing up. Most come through fine but a\nfew never arrive at all, and I can't see them anywhere. Can you work out what's\ngoing on?",
+    "promptSourcePath": "evals/regression-limits-001-oversized-payload/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "claude-code-sonnet-5-no-skills/regression-limits-001-oversized-payload.json"
+  },
+  {
+    "experiment": "claude-code-sonnet-5-no-skills",
+    "experimentSuite": "regression",
+    "experimentDisplay": {
+      "agent": "claude-code",
+      "modelProvider": "anthropic",
+      "modelId": "claude-sonnet-5",
+      "reasoningEffort": "high"
+    },
+    "eval": "regression-verification-001-generic-hmac",
+    "ranAt": "2026-10-01T14:13:02.525Z",
+    "runId": "36869979661",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "signature-verification"
+    ],
+    "suite": "regression",
+    "gatedBy": "discovery",
+    "passed": true,
+    "checks": [
+      {
+        "name": "created a source using HMAC verification",
+        "passed": true
+      },
+      {
+        "name": "accepts a correctly signed request",
+        "passed": true,
+        "notes": "expected 200, got 200"
+      },
+      {
+        "name": "rejects an incorrectly signed request",
+        "passed": true,
+        "notes": "expected 401, got 401"
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "I'm receiving webhooks from an internal service that isn't one of the providers\nyou support out of the box. It signs each request like this:\n\n```\nPOST /\nX-Acme-Signature: aq7EI5rB6vnQzLDeb4hqUsjHtWLDBsdTpq+nivwrNtc=\nContent-Type: application/json\n\n{\"order_id\":\"ord_4821\",\"total\":1250}\n```\n\nThe signature is the request body signed with SHA-256 using our shared secret\n`acme_whsec_5f2b91`. Set up a Hookdeck source that verifies these.",
+    "promptSourcePath": "evals/regression-verification-001-generic-hmac/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "claude-code-sonnet-5-no-skills/regression-verification-001-generic-hmac.json"
+  },
+  {
+    "experiment": "codex-gpt-5.4-mini",
+    "experimentSuite": "regression",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.4-mini",
+      "reasoningEffort": "high"
+    },
+    "eval": "regression-filtering-001-regex-capability",
+    "ranAt": "2026-10-01T13:47:49.732Z",
+    "runId": "36869979661",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "filtering"
+    ],
+    "suite": "regression",
+    "gatedBy": "discovery",
+    "passed": true,
+    "checks": [
+      {
+        "name": "did not claim regex filtering or channels exist",
+        "passed": true,
+        "judgeNotes": "The assistant correctly says regex is not supported in Hookdeck filters and suggests a supported operator instead, without mentioning channel partitioning."
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": [
+        "hookdeck",
+        "event-gateway"
+      ]
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs filters regex Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/filters.md hookdeck filters operators regex",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/filters.md",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/filters.md"
+            }
+          ]
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/filters.md | sed -n '1,240p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/filters.md"
+            }
+          ],
+          "resultChars": 4795
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/cli/connection.md | sed -n '1,260p'\"",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/cli/connection.md"
+            }
+          ],
+          "resultChars": 11175
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/filters.md \"$startsWith\" Hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/filters",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/filters"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "'regex' in https://hookdeck.com/docs/filters",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "'endsWith' in https://hookdeck.com/docs/filters",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/transformations",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/transformations"
+            }
+          ]
+        }
+      ]
+    },
     "prompt": "Our order references look like `ORD-2026-AC-4821`. We migrated formats at the\nstart of the year and the old ones are still coming through, which my service\nchokes on.\n\nCan I use a regex on the reference to only let this year's format through? What\nis the closest I can get?",
     "promptSourcePath": "evals/regression-filtering-001-regex-capability/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5-docs-only/regression-filtering-001-regex-capability.json"
+    "sourcePath": "codex-gpt-5.4-mini/regression-filtering-001-regex-capability.json"
+  },
+  {
+    "experiment": "codex-gpt-5.4-mini",
+    "experimentSuite": "regression",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.4-mini",
+      "reasoningEffort": "high"
+    },
+    "eval": "regression-limits-001-oversized-payload",
+    "ranAt": "2026-10-01T14:04:59.501Z",
+    "runId": "36869979661",
+    "stage": "investigate",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "capabilities"
+    ],
+    "suite": "regression",
+    "gatedBy": "discovery",
+    "passed": true,
+    "checks": [
+      {
+        "name": "diagnosed ingestion rejection, not a delivery failure",
+        "passed": true,
+        "judgeNotes": "Identifies ingestion rejection with PAYLOAD_TOO_LARGE, cites specific rejected request and evidence, and rules out delivery/routing issues."
+      },
+      {
+        "name": "did not state a wrong payload limit",
+        "passed": true,
+        "judgeNotes": "The assistant does not state a maximum inbound payload size figure for Hookdeck. It only reports an observed oversized payload content-length and rejection cause, which passes under the rubric."
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": [
+        "hookdeck",
+        "event-gateway"
+      ]
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "Some of our order events just aren't showing up. Most come through fine but a\nfew never arrive at all, and I can't see them anywhere. Can you work out what's\ngoing on?",
+    "promptSourcePath": "evals/regression-limits-001-oversized-payload/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.4-mini/regression-limits-001-oversized-payload.json"
+  },
+  {
+    "experiment": "codex-gpt-5.4-mini",
+    "experimentSuite": "regression",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.4-mini",
+      "reasoningEffort": "high"
+    },
+    "eval": "regression-verification-001-generic-hmac",
+    "ranAt": "2026-10-01T14:20:22.395Z",
+    "runId": "36869979661",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "signature-verification"
+    ],
+    "suite": "regression",
+    "gatedBy": "discovery",
+    "passed": true,
+    "checks": [
+      {
+        "name": "created a source using HMAC verification",
+        "passed": true
+      },
+      {
+        "name": "accepts a correctly signed request",
+        "passed": true,
+        "notes": "expected 200, got 200"
+      },
+      {
+        "name": "rejects an incorrectly signed request",
+        "passed": true,
+        "notes": "expected 401, got 401"
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": [
+        "hookdeck",
+        "event-gateway"
+      ]
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs source authentication webhook custom hmac source-config auth_type hookdeck",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/sources HMAC auth_type header_key webhook_secret_key source config Hookdeck",
+          "pages": []
+        }
+      ]
+    },
+    "prompt": "I'm receiving webhooks from an internal service that isn't one of the providers\nyou support out of the box. It signs each request like this:\n\n```\nPOST /\nX-Acme-Signature: aq7EI5rB6vnQzLDeb4hqUsjHtWLDBsdTpq+nivwrNtc=\nContent-Type: application/json\n\n{\"order_id\":\"ord_4821\",\"total\":1250}\n```\n\nThe signature is the request body signed with SHA-256 using our shared secret\n`acme_whsec_5f2b91`. Set up a Hookdeck source that verifies these.",
+    "promptSourcePath": "evals/regression-verification-001-generic-hmac/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.4-mini/regression-verification-001-generic-hmac.json"
+  },
+  {
+    "experiment": "codex-gpt-5.4-mini-no-skills",
+    "experimentSuite": "regression",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.4-mini",
+      "reasoningEffort": "high"
+    },
+    "eval": "regression-filtering-001-regex-capability",
+    "ranAt": "2026-10-01T13:45:26.527Z",
+    "runId": "36869979661",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "filtering"
+    ],
+    "suite": "regression",
+    "gatedBy": "discovery",
+    "passed": true,
+    "checks": [
+      {
+        "name": "did not claim regex filtering or channels exist",
+        "passed": true,
+        "judgeNotes": "The assistant says regex is not documented/supported for Hookdeck filters and suggests alternatives; it does not offer a regex filter or mention channel partitioning."
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:docs.hookdeck.com Hookdeck regex reference filter event payload condition regex order reference",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:docs.hookdeck.com Hookdeck filter syntax regex operator body reference path",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:github.com/hookdeck/hookdeck-cli \"Hookdeck filter syntax\" regex operator",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:github.com/hookdeck/hookdeck-cli \"$regex\" \"Hookdeck\"",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:github.com/hookdeck/hookdeck-cli \"contains\" \"Hookdeck filter syntax\"",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:docs.hookdeck.com \"Hookdeck filter syntax\"",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:github.com/hookdeck/hookdeck-cli \"regex\" \"filter-body\"",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:github.com/hookdeck/hookdeck-cli \"$regex\" \"contains\" \"startsWith\" \"endsWith\"",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:github.com/hookdeck/hookdeck-cli startsWith Hookdeck filter body",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:github.com/hookdeck/hookdeck-cli startsWith hookdeck-cli \"filter syntax\"",
+          "pages": []
+        }
+      ]
+    },
+    "prompt": "Our order references look like `ORD-2026-AC-4821`. We migrated formats at the\nstart of the year and the old ones are still coming through, which my service\nchokes on.\n\nCan I use a regex on the reference to only let this year's format through? What\nis the closest I can get?",
+    "promptSourcePath": "evals/regression-filtering-001-regex-capability/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/regression-filtering-001-regex-capability.json"
+  },
+  {
+    "experiment": "codex-gpt-5.4-mini-no-skills",
+    "experimentSuite": "regression",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.4-mini",
+      "reasoningEffort": "high"
+    },
+    "eval": "regression-limits-001-oversized-payload",
+    "ranAt": "2026-10-01T14:01:12.497Z",
+    "runId": "36869979661",
+    "stage": "investigate",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "capabilities"
+    ],
+    "suite": "regression",
+    "gatedBy": "discovery",
+    "passed": true,
+    "checks": [
+      {
+        "name": "diagnosed ingestion rejection, not a delivery failure",
+        "passed": true,
+        "judgeNotes": "The answer clearly identifies ingress rejection due to PAYLOAD_TOO_LARGE, cites the specific rejected request and content length, and rules out downstream delivery/routing issues."
+      },
+      {
+        "name": "did not state a wrong payload limit",
+        "passed": true,
+        "judgeNotes": "The assistant does not state Hookdeck's maximum inbound payload size; it only reports a specific request content-length of 12000014 bytes and the PAYLOAD_TOO_LARGE rejection."
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "Some of our order events just aren't showing up. Most come through fine but a\nfew never arrive at all, and I can't see them anywhere. Can you work out what's\ngoing on?",
+    "promptSourcePath": "evals/regression-limits-001-oversized-payload/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/regression-limits-001-oversized-payload.json"
+  },
+  {
+    "experiment": "codex-gpt-5.4-mini-no-skills",
+    "experimentSuite": "regression",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.4-mini",
+      "reasoningEffort": "high"
+    },
+    "eval": "regression-verification-001-generic-hmac",
+    "ranAt": "2026-10-01T14:17:20.155Z",
+    "runId": "36869979661",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "signature-verification"
+    ],
+    "suite": "regression",
+    "gatedBy": "discovery",
+    "passed": true,
+    "checks": [
+      {
+        "name": "created a source using HMAC verification",
+        "passed": true
+      },
+      {
+        "name": "accepts a correctly signed request",
+        "passed": true,
+        "notes": "expected 200, got 200"
+      },
+      {
+        "name": "rejects an incorrectly signed request",
+        "passed": true,
+        "notes": "expected 401, got 401"
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "Hookdeck custom source signature verification x signature header shared secret SHA-256 body docs",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs source authentication custom signature header sha256 base64 Hookdeck",
+          "pages": []
+        }
+      ]
+    },
+    "prompt": "I'm receiving webhooks from an internal service that isn't one of the providers\nyou support out of the box. It signs each request like this:\n\n```\nPOST /\nX-Acme-Signature: aq7EI5rB6vnQzLDeb4hqUsjHtWLDBsdTpq+nivwrNtc=\nContent-Type: application/json\n\n{\"order_id\":\"ord_4821\",\"total\":1250}\n```\n\nThe signature is the request body signed with SHA-256 using our shared secret\n`acme_whsec_5f2b91`. Set up a Hookdeck source that verifies these.",
+    "promptSourcePath": "evals/regression-verification-001-generic-hmac/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.4-mini-no-skills/regression-verification-001-generic-hmac.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6",
+    "experimentSuite": "regression",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "regression-filtering-001-regex-capability",
+    "ranAt": "2026-10-01T13:53:50.504Z",
+    "runId": "36869979661",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "filtering"
+    ],
+    "suite": "regression",
+    "gatedBy": "discovery",
+    "passed": true,
+    "checks": [
+      {
+        "name": "did not claim regex filtering or channels exist",
+        "passed": true,
+        "judgeNotes": "The assistant correctly states that Hookdeck filters do not support regex, suggests $startsWith as a native filter, and uses regex only inside a JavaScript transformation, which is allowed by the rubric."
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": [
+        "event-gateway"
+      ]
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"set -o pipefail\nprintf '%s\\\\n' '--- filters docs ---'\ncurl -fsSL https://hookdeck.com/docs/filters.md | sed -n '1,260p'\nprintf '%s\\\\n' '--- API rules docs matches ---'\ncurl -fsSL https://hookdeck.com/docs/api/rules.md | rg -n -i -C 3 'startsWith|endsWith|regex|operator|filter' | head -160\nprintf '%s\\\\n' '--- OpenAPI operator matches ---'\ncurl -fsSL https://api.hookdeck.com/latest/openapi | rg -n -i -C 2 'startsWith|endsWith|regex|pattern' | head -200\nprintf '%s\\\\n' '--- Hookdeck environment ---'\nenv | rg '\"'^HOOKDECK_'\"' | sed 's/=.*\"'$/=<set>/'\"'\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/filters.md"
+            },
+            {
+              "url": "https://hookdeck.com/docs/api/rules.md"
+            }
+          ],
+          "resultChars": 540165
+        },
+        {
+          "source": "shell_fetch",
+          "query": "/bin/bash -lc \"printf '%s\\\\n' '--- transformations docs relevant sections ---'; curl -fsSL https://hookdeck.com/docs/transformations.md | rg -n -i -C 5 'javascript|return|body|modify|filter|order|console|handler' | head -240; printf '%s\\\\n' '--- ordering guide ---'; curl -fsSL https://hookdeck.com/docs/guides/how-to-order-transformations-and-filters.md | sed -n '1,260p'; printf '%s\\\\n' '--- rules API relevant sections ---'; curl -fsSL https://hookdeck.com/docs/api/rules.md | rg -n -i -C 6 'transformation|filter|order|body' | head -260\"",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/transformations.md"
+            },
+            {
+              "url": "https://hookdeck.com/docs/guides/how-to-order-transformations-and-filters.md"
+            },
+            {
+              "url": "https://hookdeck.com/docs/api/rules.md"
+            }
+          ],
+          "resultChars": 16596
+        }
+      ]
+    },
+    "prompt": "Our order references look like `ORD-2026-AC-4821`. We migrated formats at the\nstart of the year and the old ones are still coming through, which my service\nchokes on.\n\nCan I use a regex on the reference to only let this year's format through? What\nis the closest I can get?",
+    "promptSourcePath": "evals/regression-filtering-001-regex-capability/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6/regression-filtering-001-regex-capability.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6",
+    "experimentSuite": "regression",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "regression-limits-001-oversized-payload",
+    "ranAt": "2026-10-01T14:11:32.308Z",
+    "runId": "36869979661",
+    "stage": "investigate",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "capabilities"
+    ],
+    "suite": "regression",
+    "gatedBy": "discovery",
+    "passed": true,
+    "checks": [
+      {
+        "name": "diagnosed ingestion rejection, not a delivery failure",
+        "passed": true,
+        "judgeNotes": "The answer correctly identifies ingestion rejection due to PAYLOAD_TOO_LARGE, cites the specific rejected request and size/limit evidence, and distinguishes it from delivery failures."
+      },
+      {
+        "name": "did not state a wrong payload limit",
+        "passed": true,
+        "judgeNotes": "The assistant states Hookdeck accepts request bodies up to 10 MiB, which matches the required limit."
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": [
+        "hookdeck",
+        "event-gateway"
+      ]
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs PAYLOAD_TOO_LARGE Hookdeck 10 MB large payload limit",
+          "pages": []
+        }
+      ]
+    },
+    "prompt": "Some of our order events just aren't showing up. Most come through fine but a\nfew never arrive at all, and I can't see them anywhere. Can you work out what's\ngoing on?",
+    "promptSourcePath": "evals/regression-limits-001-oversized-payload/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6/regression-limits-001-oversized-payload.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6",
+    "experimentSuite": "regression",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "regression-verification-001-generic-hmac",
+    "ranAt": "2026-10-01T14:26:21.861Z",
+    "runId": "36869979661",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "signature-verification"
+    ],
+    "suite": "regression",
+    "gatedBy": "discovery",
+    "passed": true,
+    "checks": [
+      {
+        "name": "created a source using HMAC verification",
+        "passed": true
+      },
+      {
+        "name": "accepts a correctly signed request",
+        "passed": true,
+        "notes": "expected 200, got 200"
+      },
+      {
+        "name": "rejects an incorrectly signed request",
+        "passed": true,
+        "notes": "expected 401, got 401"
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": [
+        "event-gateway"
+      ]
+    },
+    "docs": {
+      "calls": []
+    },
+    "prompt": "I'm receiving webhooks from an internal service that isn't one of the providers\nyou support out of the box. It signs each request like this:\n\n```\nPOST /\nX-Acme-Signature: aq7EI5rB6vnQzLDeb4hqUsjHtWLDBsdTpq+nivwrNtc=\nContent-Type: application/json\n\n{\"order_id\":\"ord_4821\",\"total\":1250}\n```\n\nThe signature is the request body signed with SHA-256 using our shared secret\n`acme_whsec_5f2b91`. Set up a Hookdeck source that verifies these.",
+    "promptSourcePath": "evals/regression-verification-001-generic-hmac/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6/regression-verification-001-generic-hmac.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6-no-skills",
+    "experimentSuite": "regression",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "regression-filtering-001-regex-capability",
+    "ranAt": "2026-10-01T13:51:07.985Z",
+    "runId": "36869979661",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "filtering"
+    ],
+    "suite": "regression",
+    "gatedBy": "discovery",
+    "passed": true,
+    "checks": [
+      {
+        "name": "did not claim regex filtering or channels exist",
+        "passed": true,
+        "judgeNotes": "The assistant correctly states Hookdeck filters do not support regex and uses $startsWith instead, without inventing regex filtering or channel partitioning."
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs filter rule operators regex Hookdeck filter syntax",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/filters",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/filters"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/filters",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/filters"
+            }
+          ]
+        }
+      ]
+    },
+    "prompt": "Our order references look like `ORD-2026-AC-4821`. We migrated formats at the\nstart of the year and the old ones are still coming through, which my service\nchokes on.\n\nCan I use a regex on the reference to only let this year's format through? What\nis the closest I can get?",
+    "promptSourcePath": "evals/regression-filtering-001-regex-capability/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6-no-skills/regression-filtering-001-regex-capability.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6-no-skills",
+    "experimentSuite": "regression",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "regression-limits-001-oversized-payload",
+    "ranAt": "2026-10-01T14:07:57.949Z",
+    "runId": "36869979661",
+    "stage": "investigate",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "capabilities"
+    ],
+    "suite": "regression",
+    "gatedBy": "discovery",
+    "passed": true,
+    "checks": [
+      {
+        "name": "diagnosed ingestion rejection, not a delivery failure",
+        "passed": true,
+        "judgeNotes": "Identifies ingestion rejection as PAYLOAD_TOO_LARGE, cites the rejected request and issue, and correctly states no delivery event/attempt was created."
+      },
+      {
+        "name": "did not state a wrong payload limit",
+        "passed": true,
+        "judgeNotes": "The assistant states Hookdeck accepts requests up to 10 MiB, which matches the expected limit."
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs payload too large maximum webhook payload size Hookdeck",
+          "pages": []
+        }
+      ]
+    },
+    "prompt": "Some of our order events just aren't showing up. Most come through fine but a\nfew never arrive at all, and I can't see them anywhere. Can you work out what's\ngoing on?",
+    "promptSourcePath": "evals/regression-limits-001-oversized-payload/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6-no-skills/regression-limits-001-oversized-payload.json"
+  },
+  {
+    "experiment": "codex-gpt-5.6-no-skills",
+    "experimentSuite": "regression",
+    "experimentDisplay": {
+      "agent": "codex",
+      "modelProvider": "openai",
+      "modelId": "gpt-5.6",
+      "reasoningEffort": "high"
+    },
+    "eval": "regression-verification-001-generic-hmac",
+    "ranAt": "2026-10-01T14:22:35.442Z",
+    "runId": "36869979661",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "signature-verification"
+    ],
+    "suite": "regression",
+    "gatedBy": "discovery",
+    "passed": true,
+    "checks": [
+      {
+        "name": "created a source using HMAC verification",
+        "passed": true
+      },
+      {
+        "name": "accepts a correctly signed request",
+        "passed": true,
+        "notes": "expected 200, got 200"
+      },
+      {
+        "name": "rejects an incorrectly signed request",
+        "passed": true,
+        "notes": "expected 401, got 401"
+      }
+    ],
+    "skills": {
+      "available": [],
+      "loaded": []
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs custom HMAC signature verification source X header base64 Hookdeck",
+          "pages": []
+        }
+      ]
+    },
+    "prompt": "I'm receiving webhooks from an internal service that isn't one of the providers\nyou support out of the box. It signs each request like this:\n\n```\nPOST /\nX-Acme-Signature: aq7EI5rB6vnQzLDeb4hqUsjHtWLDBsdTpq+nivwrNtc=\nContent-Type: application/json\n\n{\"order_id\":\"ord_4821\",\"total\":1250}\n```\n\nThe signature is the request body signed with SHA-256 using our shared secret\n`acme_whsec_5f2b91`. Set up a Hookdeck source that verifies these.",
+    "promptSourcePath": "evals/regression-verification-001-generic-hmac/PROMPT.md",
+    "attempts": 1,
+    "sourcePath": "codex-gpt-5.6-no-skills/regression-verification-001-generic-hmac.json"
   }
 ]
