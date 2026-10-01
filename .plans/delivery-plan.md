@@ -1327,9 +1327,11 @@ supabase/evals' `eval-refresh.yml` sets `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, a
   an eval change or a product change — because the question "what decision does this
   run inform?" had stopped having an answer. The weekly and monthly figures below are
   the historical record of what that cost.
-- **Regression suite on every docs or skills change.** 3 scenarios x 6 experiments =
-  18 runs with no environment, under $5 and under 10 minutes. This is the cheap loop
-  and it should fire often. It is not yet wired to a docs-repo trigger.
+- **Regression suite weekly**, and on every docs or skills change once that is wired
+  up. 3 scenarios x 6 experiments = 18 runs. Cost and wall clock are **not measured**:
+  the "$5 and under 10 minutes" written here was a planning estimate from before any
+  regression run existed, and the benchmark's measured 3.4 minutes per cell serialised
+  would put 18 cells nearer an hour. Replace this with a figure after the first run.
 - **A repository variable holds publication.** `EVALS_PUBLISH=false` lets the schedule
   keep running and keep collecting transcripts while nothing reaches the website.
   Built after a cron nearly published twelve failures that were ours, and cancelling it

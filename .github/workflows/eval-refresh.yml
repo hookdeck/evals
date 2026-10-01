@@ -447,9 +447,13 @@ jobs:
         # red check means either a guarded mistake has returned or the harness
         # is broken, and both want somebody's attention.
         #
-        # Scheduled runs only. A dispatched regression run is somebody already
-        # looking at the output.
-        if: ${{ github.event_name == 'schedule' }}
+        # Keyed on the suite, not on the trigger. The distinction is
+        # benchmark-versus-regression, and `github.event_name == 'schedule'`
+        # only encodes that while the single cron happens to be regression-only
+        # — add a benchmark cron back and every benchmark cell that merely
+        # scored a failure would fail its job. The schedule clause stays
+        # because a dispatched run is somebody already reading the output.
+        if: ${{ matrix.eval_suite == 'regression' && github.event_name == 'schedule' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -695,8 +699,13 @@ jobs:
   # Scheduled only. A dispatched run has a person attached to it by definition.
   regression-alert:
     name: regression-alert
-    needs: [prepare, run-evals]
-    if: failure() && github.event_name == 'schedule'
+    needs: [prepare, run-evals, publish-results]
+    # `cancelled()` as well as `failure()`: the provider-dead path above calls
+    # `gh run cancel`, so a zero credit balance produces a cancelled run and
+    # would otherwise alert nobody. `publish-results` is in `needs` because it
+    # is a third of the pipeline and has failed twice on its own — a shallow
+    # clone that could not rebase, and a re-run against a moved branch (#74).
+    if: ${{ (failure() || cancelled()) && github.event_name == 'schedule' }}
     runs-on: ubuntu-latest
     steps:
       - name: Open or update the alert issue
@@ -722,7 +731,7 @@ jobs:
           # four or more leading spaces after a blank line is a markdown code
           # block, so the first version of this rendered the whole alert as
           # monospace with literal `**` and `1.` in it.
-          body="$(sed 's/^ \{12\}//' <<EOF
+          body="$(sed 's/^  //' <<EOF
             The weekly regression run failed: ${RUN_URL}
 
             Regression scenarios guard mistakes we have already seen and fixed,
