@@ -11,11 +11,17 @@ name: Refresh eval results
 # know we cannot measure precisely enough (#2).
 #
 # What stays automated is the regression suite: three scenarios guarding
-# mistakes we have already seen and fixed, across all six experiments, with no
-# environment to stand up. Under $5 and under ten minutes. All agents passing
-# is the expected state, so a failure is a signal rather than a score, and this
-# workflow now says so out loud instead of going red where nobody looks — the
-# 21 September failure sat unnoticed until somebody asked about it.
+# mistakes we have already seen and fixed, across all six experiments. Every
+# agent passing is the expected state, so a failing check fails the job here —
+# unlike the benchmark, where a failure is a score — and the run opens an issue
+# instead of going red where nobody looks. The 21 September failure sat
+# unnoticed until somebody asked about it four days later.
+#
+# Cost and duration are not yet measured. The $5-and-ten-minutes figure that
+# used to sit here came from `.plans/delivery-plan.md` at planning time, before
+# any regression run existed; measured wall clock on the benchmark is about
+# 3.4 minutes per cell serialised, which would put eighteen cells nearer an
+# hour. Replace this sentence with a measurement after the first run.
 #
 # **Benchmark runs are dispatched against a bucket of work, not a calendar.**
 # Something changed what we measure, or something shipped to the product, and
@@ -92,17 +98,23 @@ jobs:
         run: |
           set -euo pipefail
 
-          # A scheduled run has no inputs, so the two crons carry their own
-          # experiment sets. Weekly is the frontier agents and the weak pair;
-          # the monthly one adds the no-skills twins for a full matrix.
+          # A scheduled run has no inputs, so the cron carries its own. One
+          # cron now, and it runs the regression suite across every experiment;
+          # the benchmark is dispatched against a bucket of work instead.
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            # Regression only, every experiment. Three scenarios with no
-            # environment to stand up: under $5 and under ten minutes, against
-            # $185 a month for the benchmark weekly it replaces.
-            experiments="claude-code-sonnet-5,claude-code-sonnet-5-no-skills,codex-gpt-5.6,codex-gpt-5.6-no-skills,codex-gpt-5.4-mini,codex-gpt-5.4-mini-no-skills"
+            # Regression only. No experiment override: the suite decides who
+            # runs, and naming them here was both redundant and wrong — it
+            # listed six while only four carried `regression`, so the weak pair
+            # looked included and was not.
+            experiments=""
             eval_id=""
             suite="regression"
-            experiment_suite="benchmark,no-skills"
+            # `regression`, not `benchmark,no-skills`. A regression eval maps to
+            # the `regression` experiment suite and nothing else (see the
+            # discovery step below), so asking for the benchmark suites matched
+            # no pairs at all: `prepare` exited 1 every week and the alert fired
+            # on a run that had measured nothing.
+            experiment_suite="regression"
             # Two attempts. A regression scenario guards a mistake we have
             # already fixed, so every agent passing is the expected state and a
             # single failure is either the mistake returning or noise. Paying
@@ -428,6 +440,29 @@ jobs:
             exit 1
           fi
 
+      - name: Fail on a regression that came back
+        # A scenario failing its checks does not fail the eval step: in the
+        # benchmark that is a score, not an error. On the regression suite it
+        # is the whole point — every agent passing is the expected state, so a
+        # red check means either a guarded mistake has returned or the harness
+        # is broken, and both want somebody's attention.
+        #
+        # Scheduled runs only. A dispatched regression run is somebody already
+        # looking at the output.
+        if: ${{ github.event_name == 'schedule' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          result=".eval-runs/${{ matrix.experiment }}/${{ matrix.eval_id }}.json"
+          [ -f "$result" ] || exit 0
+
+          if [ "$(jq -r '.passed' "$result")" = "false" ]; then
+            failed="$(jq -r '[.checks[]? | select(.passed == false) | .name] | join("; ")' "$result")"
+            echo "::error::${{ matrix.eval_id }} failed for ${{ matrix.experiment }}: ${failed:-no check names recorded}"
+            exit 1
+          fi
+
       - name: Upload raw results
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -446,9 +481,12 @@ jobs:
           # questions worth asking. Nearly every real question is comparative
           # ("this flipped between runs, why?") and answering one needs the
           # evidence from both. Weekly runs at 3 days meant the previous run's
-          # evidence expired before its successor even started. The monthly
-          # -no-skills twins need 35 days to compare two consecutive runs at
-          # all, which is why this is not 30 either.
+          # evidence expired before its successor even started, and when the
+          # `-no-skills` twins refreshed monthly, comparing two consecutive runs
+          # of them needed 35 days — which is why this is not 30 either. The
+          # benchmark is dispatched rather than scheduled now, so the gap
+          # between two comparable runs is nobody's to predict, which argues for
+          # the ceiling rather than against it.
           #
           # Storage is free on a public repository, so the only trade-off here
           # is against nothing.
@@ -457,7 +495,7 @@ jobs:
   publish-results:
     needs: [prepare, run-evals]
     runs-on: ubuntu-latest
-    # A way to say "run, but do not publish this week".
+    # A way to say "run, but do not publish".
     #
     # Publishing was gated on the matrix succeeding and nothing else, so a run
     # against a `main` we already knew was wrong would publish anyway. On 24
@@ -555,6 +593,15 @@ jobs:
           fi
 
       - name: Publish snapshot
+        # Only when this run actually measured benchmark cells. `Export results`
+        # already skips the benchmark file when there are no benchmark pairs,
+        # but `publish-snapshot` reads that untouched file and writes a fresh
+        # `latest.json`, a new `results/runs/<stamp>.json` and an `index.json`
+        # entry regardless — so a regression-only run would commit a snapshot
+        # whose `runId` names a workflow run that produced none of its rows.
+        # README states the opposite as a contract: a figure can be traced to
+        # the job that produced it.
+        if: ${{ contains(needs.prepare.outputs.pairs, '"eval_suite":"benchmark"') }}
         # `apps/web/src/data/eval-results.json` is the preview app's own input.
         # Anything outside this repo reading it is coupled to where our app
         # keeps its fixtures. `results/` is the contract: latest.json for the
@@ -655,6 +702,11 @@ jobs:
       - name: Open or update the alert issue
         env:
           GH_TOKEN: ${{ github.token }}
+          # This job has no checkout, so `gh` has no git remote to infer the
+          # repository from — and it does not fall back to `GITHUB_REPOSITORY`.
+          # Without this the alert step fails and notifies nobody, which is the
+          # failure it exists to prevent.
+          GH_REPO: ${{ github.repository }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         shell: bash
         run: |
@@ -666,21 +718,28 @@ jobs:
           existing="$(gh issue list --label regression-alert --state open \
             --json number --jq '.[0].number // empty')"
 
-          body="The weekly regression run failed: ${RUN_URL}
+          # Indented for the YAML block scalar, then de-indented for GitHub:
+          # four or more leading spaces after a blank line is a markdown code
+          # block, so the first version of this rendered the whole alert as
+          # monospace with literal `**` and `1.` in it.
+          body="$(sed 's/^ \{12\}//' <<EOF
+            The weekly regression run failed: ${RUN_URL}
 
-          Regression scenarios guard mistakes we have already seen and fixed, so
-          every agent passing is the expected state. A failure here is one of
-          three things, in rough order of likelihood:
+            Regression scenarios guard mistakes we have already seen and fixed,
+            so every agent passing is the expected state. A failure is one of
+            three things, in rough order of likelihood:
 
-          1. **The harness broke.** A scorer, a seed or a credential — the most
-             common cause by some distance, and the one to rule out first.
-          2. **A guarded mistake came back.** The documentation or skill change
-             that fixed it has been undone or outgrown.
-          3. **Noise.** The run already took two attempts per cell, so this is
-             the least likely of the three.
+            1. **The harness broke.** A scorer, a seed or a credential — the
+               most common cause by some distance, and the one to rule out
+               first.
+            2. **A guarded mistake came back.** The documentation or skill
+               change that fixed it has been undone or outgrown.
+            3. **Noise.** The run takes two attempts per cell, so this is the
+               least likely of the three.
 
-          Read the failing cell's transcript before anything else."
-
+            Read the failing cell's transcript before anything else.
+          EOF
+          )"
           if [ -n "$existing" ]; then
             gh issue comment "$existing" --body "$body"
           else

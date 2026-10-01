@@ -1322,9 +1322,11 @@ supabase/evals' `eval-refresh.yml` sets `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, a
 
 ### Cadence
 
-- **Weekly benchmark**, monthly for the full matrix. See the costing above: the weekly
-  figure is no longer $50 and has not been re-measured since the suite reached
-  nineteen benchmark scenarios.
+- **Nothing runs the benchmark on a schedule**, as of 1 October 2026. One weekly cron
+  runs the regression suite; benchmark runs are dispatched against a bucket of work —
+  an eval change or a product change — because the question "what decision does this
+  run inform?" had stopped having an answer. The weekly and monthly figures below are
+  the historical record of what that cost.
 - **Regression suite on every docs or skills change.** 3 scenarios x 6 experiments =
   18 runs with no environment, under $5 and under 10 minutes. This is the cheap loop
   and it should fire often. It is not yet wired to a docs-repo trigger.

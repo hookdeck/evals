@@ -16,7 +16,10 @@ import { FixedProjectSource, hookdeckRuntime } from '@hookdeck-evals/hookdeck';
  * worth keeping and the published scoreboard has a bottom to it.
  */
 export default defineExperiment({
-  suite: ['no-skills'],
+  // `regression` too — see the note on its `+skills` twin. A regression
+  // scenario guards a documentation or skill mistake, and the baseline arm is
+  // where one would show up first.
+  suite: ['no-skills', 'regression'],
   agent: codexAgent({ model: 'gpt-5.4-mini', reasoningEffort: 'high' }),
   runtime: hookdeckRuntime({
     projects: new FixedProjectSource({
