@@ -96,9 +96,10 @@ CI runs formatting, typecheck, unit tests and build on pull requests. It ran
 only formatting until 12 August, and two defects reached main that any of the
 others would have caught.
 
-`eval-refresh` runs weekly (Monday 06:00 UTC, frontier agents plus the weak
-pair) and monthly (1st, 08:00 UTC, adding the `-no-skills` twins for a full
-matrix), plus manual dispatch. Check `gh secret list` against the workflow env
+`eval-refresh` runs the **regression suite** weekly (Monday 06:00 UTC, every
+experiment) and nothing else on a schedule. Benchmark runs are dispatched
+against a bucket of work — see Runs below. The workflow is disabled, so a
+dispatch needs `gh workflow enable eval-refresh.yml` first. Check `gh secret list` against the workflow env
 rather than trusting any list written here: `OUTPOST_API_KEY` was documented as
 a secret before it existed, and the first full matrix run scored `outpost-001`
 as six agent failures because of it.
@@ -125,9 +126,10 @@ arithmetic, and conflating the two is how the judge came to be reported at
 twenty-eight times its real cost. Re-measure rather than re-scale if a decision
 turns on it.
 
-Weekly frontier plus weak pair is roughly $185 a month. Everything weekly would
-be $279 against a $200 budget, and the `-no-skills` twins are what gets cut to
-monthly, because their delta moves slowly.
+Weekly frontier plus weak pair was roughly $185 a month, and everything weekly
+would have been $279 against a $200 budget. Both are historical: the benchmark
+came off the schedule on 1 October 2026, so the recurring cost is now one
+regression run a week and whatever is dispatched deliberately.
 
 **Multiple attempts are far cheaper than they look, because `--runs` stops at the
 first pass.** `STOP_ON_PASS` is the default, so a retry is only paid for on a cell
@@ -161,6 +163,43 @@ That is what the guards are for, and why they are worth keeping:
 Two of those exist because the cheap version was tried first and did not work.
 `/v1/models` answers 200 with a zero credit balance, so a liveness check built
 on it passes while every real call fails; only an actual completion sees it.
+
+## Runs
+
+**Nothing runs the benchmark on a schedule.** One cron remains, weekly, and it runs
+the regression suite only: three scenarios guarding mistakes already seen and fixed,
+across all six experiments, two attempts each. Every agent passing is the expected
+state, so a failing check **fails the job** here — the opposite of the benchmark suite,
+where a failure is a score — and the run opens or updates an issue labelled
+`regression-alert`, because a red run in a tab nobody has open is not a notification.
+
+Its cost and duration are **not yet measured**. The "$5 and ten minutes" figure that
+circulated came from the delivery plan at planning time, before any regression run
+existed, and the benchmark's measured 3.4 minutes per cell serialised would put
+eighteen cells nearer an hour. Measure it after the first run rather than quoting the
+estimate again.
+
+**A benchmark run is dispatched against a bucket of work, never a date.** Two buckets,
+and a run belongs to one of them:
+
+- **Eval changes** — a scenario, a scorer, the base prompt, the CLI pin, a new model or
+  experiment. The run measures what the change did to what we measure.
+- **Product changes** — a fix, a documentation change or a skill change that this
+  benchmark found. The run measures whether it worked, which is the loop closing.
+
+If a proposed run belongs to neither, it is buying data nobody has a decision waiting
+on. Paused on 1 October 2026 for exactly that reason: eight product findings were open
+and none had shipped, so weekly and monthly matrices were widening a queue nobody was
+consuming, at about $185 a month plus $90-110 a matrix. Five weeklies had produced one
+harness defect and a lot of variance data about a delta we already know we cannot
+measure precisely enough (#2).
+
+Re-enable the workflow before dispatching: it is disabled, which blocks
+`workflow_dispatch` as well as the cron.
+
+```bash
+gh workflow enable eval-refresh.yml
+```
 
 ## What to work on next
 
@@ -213,7 +252,7 @@ Two rules that are the whole point of the file:
 - **Record the loops that failed.** A change that did not work is more informative
   than one that did, and omitting them makes the rest less believable.
 
-Re-runs for a loop need at least three attempts. The weekly cadence runs one and
+Re-runs for a loop need at least three attempts. A dispatched run defaults to one and
 cannot separate a fix from variance.
 
 ## Releases
@@ -242,10 +281,10 @@ to the instrument between them, and eleven cells flipped, two of them in both
 directions across the arms of the same pair. Releasing on movement publishes variance
 and spends the changelog on non-events.
 
-**Prefer packaging the monthly matrix.** A weekly covers four experiments, so its
-snapshot carries the frontier `-no-skills` arms forward from whenever they last ran —
-publishable, but it means a release whose notes say "one run" would be wrong. The
-monthly measures all six in one pass.
+**Package a full matrix, not a partial run.** A run covering four experiments carries
+the other two arms forward from whenever they last ran — publishable, but a release
+whose notes say "one run" would be wrong. Dispatch all six experiments for anything
+that will be released.
 
 **A release represents one run and what changed since the last one.** Tag the results
 commit, so the release points at exactly the data it describes, and
@@ -473,7 +512,7 @@ that reads as improvement. The same applies to a sandbox CLI bump, which changes
 product under test.
 
 **A run can be told not to publish.** Set the repository variable
-`EVALS_PUBLISH` to `false` and the weekly matrix still runs and still uploads
+`EVALS_PUBLISH` to `false` and a dispatched matrix still runs and still uploads
 its artifacts, while `results/` is left alone:
 
 ```bash

@@ -18,8 +18,8 @@ loop, and belongs in [GitHub Issues](https://github.com/hookdeck/evals/issues).
 3. **Change one thing in one place.** A docs page, a skill, the CLI, an MCP tool
    description. One change, or the delta is not attributable to anything.
 4. **Re-run the same scenarios and experiments** with at least three attempts, so a
-   fix is distinguishable from variance. The weekly cadence runs one attempt and
-   cannot do this.
+   fix is distinguishable from variance. A run dispatched at the default single
+   attempt cannot do this, so ask for three.
 5. **Record it below**, including when the change did not work. A loop that failed is
    more informative than one that succeeded, and hiding it makes the rest less
    believable.
@@ -143,8 +143,9 @@ Three consequences, all more useful than the improvement would have been:
 1. **Single-attempt results are not evidence.** Every conclusion drawn from a
    single-attempt run before 14 August is suspect, including the skills delta in #2
    and the Codex concentration in #4.
-2. **The published page presents single attempts as settled results.** It runs
-   `runs=1` weekly, on a page comparing named vendors. #14.
+2. **The published page presents single attempts as settled results.** Every
+   published snapshot so far came from `runs=1`, on a page comparing named
+   vendors. #14.
 3. **A loop needs its control run.** The isolation run cost about $5 and half an hour,
    and it is the only reason this entry says "variance" rather than "the CLI fix
    worked".

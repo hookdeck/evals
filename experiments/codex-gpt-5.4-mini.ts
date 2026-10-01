@@ -19,7 +19,12 @@ import { FixedProjectSource, hookdeckRuntime } from '@hookdeck-evals/hookdeck';
  * axis, and that is equally worth knowing.
  */
 export default defineExperiment({
-  suite: ['benchmark'],
+  // `regression` too: this pair carries nearly every failure in the suite, so
+  // the cheap weekly run that guards against a fixed mistake returning is
+  // exactly where it earns its place. It was left out when the regression
+  // suite was created and the omission was invisible until the schedule
+  // changed to run regression alone.
+  suite: ['benchmark', 'regression'],
   agent: codexAgent({ model: 'gpt-5.4-mini', reasoningEffort: 'high' }),
   runtime: hookdeckRuntime({
     projects: new FixedProjectSource({
