@@ -440,7 +440,7 @@ jobs:
             exit 1
           fi
 
-      - name: Fail on a regression that came back
+      - name: Check the regression suite passed
         # A scenario failing its checks does not fail the eval step: in the
         # benchmark that is a score, not an error. On the regression suite it
         # is the whole point — every agent passing is the expected state, so a
