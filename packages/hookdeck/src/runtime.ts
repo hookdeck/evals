@@ -141,10 +141,19 @@ export function hookdeckRuntime(options: HookdeckRuntimeOptions): EvalRuntime {
             // variable, so the skills delta could not be separated from
             // credential disclosure — the run measured our own omission.
             //
-            // One credential type, two projects. Both keys authenticate
+            // Two project API keys, one per project. Both authenticate
             // `api.hookdeck.com` and the CLI; only the Outpost project's key
             // reaches the Outpost subdomain, and a key from another project
             // gets a `404` there rather than anything that says why (#39).
+            //
+            // This said "one credential type" until 1 October, which is wrong
+            // and had propagated: Hookdeck has organization API keys as well as
+            // project API keys, and the Outpost API additionally accepts a
+            // short-lived tenant JWT from `GET /tenants/{tenant_id}/token`
+            // (`docs/apis/openapi.yaml` carries both `AdminApiKey` and
+            // `TenantJwt`). What is true of *this harness* is narrower: it
+            // injects one project API key per project, and which project a key
+            // belongs to is what decides whether an Outpost call works.
             //
             // The wording points at the API rather than the CLI deliberately,
             // and that is a statement about the pinned version rather than a
