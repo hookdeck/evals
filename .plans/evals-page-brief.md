@@ -32,11 +32,12 @@ several experiments, and one is capability-gated behind Outpost credentials so i
 deliberately reports a skip. "Not run" is a normal state here, not an edge case, and
 it has to read as distinct from a failure.
 
-**Cells in the same grid are not the same age.** Frontier agents and the weak pair run
-weekly; the `-no-skills` twins run monthly, because their measured delta is what got
-cut to fit the budget. Half the columns can therefore be up to four weeks staler than
-the other half. One "last updated" stamp for the table would be a false claim.
-Freshness is per experiment.
+**Cells in the same grid are not the same age, and nothing bounds the gap.** The
+benchmark stopped running on a schedule on 1 October 2026: a run is dispatched against
+a piece of work, so a column is as old as the last run that covered it. Until then the
+frontier agents and the weak pair ran weekly and the `-no-skills` twins monthly, which
+capped the gap at four weeks. There is no cap now. One "last updated" stamp for the
+table would be a false claim; freshness is per experiment.
 
 ## The experiments, and what the pairing actually showed
 

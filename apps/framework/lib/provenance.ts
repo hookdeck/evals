@@ -12,8 +12,8 @@ import {
  * from a current one.
  *
  * `export-results --merge` carries forward any cell a run did not re-execute.
- * That earns its place — the `-no-skills` twins refresh monthly and everything
- * else weekly, so without it a weekly snapshot would have holes. What it lacks
+ * That earns its place — a dispatched run covers the experiments that run asked
+ * for, so without it a partial run's snapshot would have holes. What it lacks
  * is any notion of a row going *out of date*. On 25 August the published file
  * held 114 rows across six execution dates spanning thirteen days, 22 of them
  * from 13 August: measured before the sandbox CLI moved to 2.5.0, before fixed

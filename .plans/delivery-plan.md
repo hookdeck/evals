@@ -1291,12 +1291,15 @@ docs-only, +MCP and +skills. Both halves changed: the arms became `+skills` and
 `-no-skills` — the MCP server is read-only and ships in the CLI, so an MCP arm could
 only ever have moved investigate and resolve — and the suite grew.
 
-What the schedule actually runs, as of 28 August:
+What the schedule ran, 31 August to 28 September, before the benchmark came off it:
 
 | | Experiments | Pairs | Attempts |
 |---|---|---|---|
 | Weekly | 4 (frontier agents, plus the weak pair) | 4 x 19 = **76** | `runs=1` |
 | Monthly | 6 (adds the `-no-skills` twins) | 6 x 19 = **114** | `runs=1` |
+
+Since 1 October the schedule runs the regression suite only, 3 x 6 = 18 pairs at two
+attempts, and a benchmark matrix is dispatched against a bucket of work.
 
 **The per-pair cost has not been re-measured since the suite grew**, and the two
 figures in this file disagree: the ten-scenario re-baseline above puts the mean at
@@ -1361,8 +1364,8 @@ start earning from day one.
 
 | Trigger | Runs | Why |
 |---|---|---|
-| `schedule`, weekly | benchmark suite, frontier agents + weak pair | Published scores, and the weak pair is the only source of failures |
-| `schedule`, monthly | benchmark suite, full matrix | Adds the `-no-skills` twins, whose delta does not move week to week |
+| `schedule`, weekly | **regression suite, every experiment** | Catches a guarded mistake returning, and opens an issue when it does |
+| `workflow_dispatch`, against a bucket of work | benchmark suite, the experiments that bucket needs | An eval change or a product change, measured by the run that follows it |
 | `repository_dispatch` from the docs repo, and PRs touching `skills/` | regression suite only | Cheap, catches hallucination regressions |
 | PR label `run-evals-changed` | only the scenarios changed in the PR | Scenario authoring loop |
 | `workflow_dispatch` | anything, by suite/eval/experiment | New model releases, one-offs |
@@ -1373,8 +1376,9 @@ pair. Lift it, change the schedule block and the suite defaults, and add the sha
 loop from Phase 1 until the org key lands.
 
 **Where this stands today.** Pull requests run formatting, typecheck, unit tests and
-build. `eval-refresh` runs on two schedules, weekly for the frontier agents plus the
-weak pair and monthly for the full matrix, and on manual dispatch. Lifting the file
+build. `eval-refresh` runs the regression suite weekly and nothing else on a schedule;
+the benchmark is dispatched against a bucket of work. That changed on 1 October 2026 —
+see Runs in AGENTS.md. Lifting the file
 wholesale turned out to carry more than the schedule: it arrived live on
 supabase/evals' nightly cron and fired against a half-built suite, and its matrix ran
 pairs concurrently, which one shared project cannot support. It is now
