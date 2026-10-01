@@ -127,7 +127,9 @@ because a flat delta honestly reported is worth more than an implied one, but do
 build the hierarchy around it. The spread that carries signal is model capability: the
 frontier agents pass nearly everything and a deliberately weaker model fails several.
 
-**Cells in one grid are not the same age.** Frontier agents and the weak pair run
-weekly; the `-no-skills` twins run monthly. A single "last updated" stamp for the table
-would be wrong by up to four weeks on half the columns. Freshness is per experiment.
-The design has no treatment for this because the cadence was set after it was drawn.
+**Cells in one grid are not the same age, and since 1 October 2026 there is no bound
+on how far apart they can be.** The benchmark came off the schedule, so cells are
+measured when a run is dispatched against a piece of work. A single "last updated"
+stamp for the table would be a false claim; freshness is per experiment. This used to
+be "up to four weeks" — a weekly against a monthly — and that ceiling is gone, which
+makes the gap worse rather than resolved. The design has no treatment for it.

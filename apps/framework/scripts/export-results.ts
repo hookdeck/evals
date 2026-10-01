@@ -75,8 +75,8 @@ const MERGE = rawArgs.includes('--merge');
  *
  * Opt-in, because a snapshot with holes and a snapshot with silent thirteen-day-
  * old rows are both wrong and which is less wrong depends on what the snapshot
- * is for. A release cut to report a measured change wants this on; a weekly
- * refresh keeping the page populated probably does not. Without it the report
+ * is for. A release cut to report a measured change wants this on; a partial
+ * run keeping the page populated probably does not. Without it the report
  * below still prints, so the staleness is visible either way — which is the
  * actual defect in #60. Nothing was ever *said*.
  */
