@@ -1,28 +1,29 @@
 name: Refresh eval results
 
-# Two schedules, because everything weekly costs $279 a month against a $200
-# budget, and cadence is a better lever than dropping scenarios: the cheap
-# experiments carry the signal and the expensive ones carry the headline.
+# One schedule, and it does not run the benchmark.
 #
-# Weekly, about $185 a month: the frontier agents plus the weak pair. The weak
-# pair is the only source of failures in the suite and the only place a skills
-# difference has been observable, and it is the most sensitive regression
-# detector because it sits on the pass/fail boundary rather than passing
-# everything.
+# The benchmark ran weekly and monthly from August to October 2026, about $185
+# a month plus $90-110 for each monthly matrix. Paused on 1 October, because
+# the question "what decision does this run inform?" had stopped having an
+# answer: eight product findings were open and none had shipped, so the runs
+# were widening a queue nobody was consuming. Five weeklies produced one
+# harness defect and a great deal of variance data about a delta we already
+# know we cannot measure precisely enough (#2).
 #
-# Monthly adds the `-no-skills` twins of the two expensive agents. Their delta
-# has measured zero on every scenario, four times, and will not move week to
-# week; a month is soon enough to notice if it ever does.
+# What stays automated is the regression suite: three scenarios guarding
+# mistakes we have already seen and fixed, across all six experiments, with no
+# environment to stand up. Under $5 and under ten minutes. All agents passing
+# is the expected state, so a failure is a signal rather than a score, and this
+# workflow now says so out loud instead of going red where nobody looks — the
+# 21 September failure sat unnoticed until somebody asked about it.
 #
-# Costs are measured rather than estimated: $20.53 for a fourteen-scenario
-# Claude pass, $7.40 for gpt-5.6 (which resolves to gpt-5.6-sol), about $4 for
-# the weak model, pennies for judging.
+# **Benchmark runs are dispatched against a bucket of work, not a calendar.**
+# Something changed what we measure, or something shipped to the product, and
+# the run tells us what that did. See "Releases" and the roadmap (#24).
 on:
   schedule:
-    # Weekly: frontier agents and the weak pair.
+    # Weekly, regression only. Catches a guarded mistake coming back.
     - cron: '0 6 * * 1'
-    # Monthly: the full matrix, adding the no-skills twins.
-    - cron: '0 8 1 * *'
   workflow_dispatch:
     inputs:
       experiments:
@@ -64,6 +65,10 @@ permissions:
   # run when the provider stops answering, instead of letting every remaining
   # job fail the same way.
   actions: write
+  # The regression alert below opens or updates an issue when the suite fails.
+  # Work lives in GitHub Issues (AGENTS.md), and a red run in a tab nobody has
+  # open is not a notification.
+  issues: write
 
 # Scoring runs against one shared Hookdeck project, so two workflow runs must
 # never overlap. Queue rather than cancel: a cancelled run leaves the project
@@ -91,21 +96,23 @@ jobs:
           # experiment sets. Weekly is the frontier agents and the weak pair;
           # the monthly one adds the no-skills twins for a full matrix.
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            if [ "${{ github.event.schedule }}" = "0 8 1 * *" ]; then
-              experiments="claude-code-sonnet-5,claude-code-sonnet-5-no-skills,codex-gpt-5.6,codex-gpt-5.6-no-skills,codex-gpt-5.4-mini,codex-gpt-5.4-mini-no-skills"
-            else
-              experiments="claude-code-sonnet-5,codex-gpt-5.6,codex-gpt-5.4-mini,codex-gpt-5.4-mini-no-skills"
-            fi
+            # Regression only, every experiment. Three scenarios with no
+            # environment to stand up: under $5 and under ten minutes, against
+            # $185 a month for the benchmark weekly it replaces.
+            experiments="claude-code-sonnet-5,claude-code-sonnet-5-no-skills,codex-gpt-5.6,codex-gpt-5.6-no-skills,codex-gpt-5.4-mini,codex-gpt-5.4-mini-no-skills"
             eval_id=""
-            suite="benchmark"
+            suite="regression"
             experiment_suite="benchmark,no-skills"
-            runs="1"
+            # Two attempts. A regression scenario guards a mistake we have
+            # already fixed, so every agent passing is the expected state and a
+            # single failure is either the mistake returning or noise. Paying
+            # for a second attempt on the failing cell is cheaper than a person
+            # deciding which it was.
+            runs="2"
             timeout_sec="900"
-            # Merge, never overwrite. The weekly run covers four experiments and
-            # the monthly covers six, so an overwriting weekly deletes the
-            # -no-skills twins the monthly produced and the published page loses
-            # the skills comparison for three weeks in four. It did exactly that
-            # on 17 August, dropping the scoreboard from six columns to four.
+            # Regression results do not reach the published scoreboard — the
+            # page renders the benchmark suite only — so this writes
+            # `regression-eval-results.json` and nothing a reader sees moves.
             do_merge="true"
           else
             experiments="${{ inputs.experiments }}"
@@ -631,3 +638,55 @@ jobs:
 
           echo "::error::exhausted push attempts"
           exit 1
+
+  # A failing scheduled run used to be visible only to somebody who went
+  # looking. The 21 September failure sat unnoticed until it was asked about
+  # four days later, and the cause was a scorer publishing a topic the project
+  # does not have (#79) — a defect that cost a whole run's publishing and
+  # announced itself nowhere.
+  #
+  # Scheduled only. A dispatched run has a person attached to it by definition.
+  regression-alert:
+    name: regression-alert
+    needs: [prepare, run-evals]
+    if: failure() && github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open or update the alert issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # One issue, reopened and commented rather than a new one each week.
+          # A suite that breaks and stays broken should read as one problem
+          # getting worse, not as four identical issues nobody closes.
+          existing="$(gh issue list --label regression-alert --state open \
+            --json number --jq '.[0].number // empty')"
+
+          body="The weekly regression run failed: ${RUN_URL}
+
+          Regression scenarios guard mistakes we have already seen and fixed, so
+          every agent passing is the expected state. A failure here is one of
+          three things, in rough order of likelihood:
+
+          1. **The harness broke.** A scorer, a seed or a credential — the most
+             common cause by some distance, and the one to rule out first.
+          2. **A guarded mistake came back.** The documentation or skill change
+             that fixed it has been undone or outgrown.
+          3. **Noise.** The run already took two attempts per cell, so this is
+             the least likely of the three.
+
+          Read the failing cell's transcript before anything else."
+
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create \
+              --title "Weekly regression run is failing" \
+              --label regression-alert \
+              --label harness \
+              --body "$body"
+          fi

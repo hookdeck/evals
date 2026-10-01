@@ -162,6 +162,37 @@ Two of those exist because the cheap version was tried first and did not work.
 `/v1/models` answers 200 with a zero credit balance, so a liveness check built
 on it passes while every real call fails; only an actual completion sees it.
 
+## Runs
+
+**Nothing runs the benchmark on a schedule.** One cron remains, weekly, and it runs
+the regression suite only: three scenarios guarding mistakes already seen and fixed,
+across all six experiments, under $5 and under ten minutes. Every agent passing is the
+expected state, so its job is to notice a guarded mistake coming back — and when it
+fails it opens or updates an issue labelled `regression-alert`, because a red run in a
+tab nobody has open is not a notification.
+
+**A benchmark run is dispatched against a bucket of work, never a date.** Two buckets,
+and a run belongs to one of them:
+
+- **Eval changes** — a scenario, a scorer, the base prompt, the CLI pin, a new model or
+  experiment. The run measures what the change did to what we measure.
+- **Product changes** — a fix, a documentation change or a skill change that this
+  benchmark found. The run measures whether it worked, which is the loop closing.
+
+If a proposed run belongs to neither, it is buying data nobody has a decision waiting
+on. Paused on 1 October 2026 for exactly that reason: eight product findings were open
+and none had shipped, so weekly and monthly matrices were widening a queue nobody was
+consuming, at about $185 a month plus $90-110 a matrix. Five weeklies had produced one
+harness defect and a lot of variance data about a delta we already know we cannot
+measure precisely enough (#2).
+
+Re-enable the workflow before dispatching: it is disabled, which blocks
+`workflow_dispatch` as well as the cron.
+
+```bash
+gh workflow enable eval-refresh.yml
+```
+
 ## What to work on next
 
 **GitHub Issues is the source of truth for work, and #24 is the order to do it
