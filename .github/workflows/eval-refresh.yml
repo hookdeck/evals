@@ -17,11 +17,13 @@ name: Refresh eval results
 # instead of going red where nobody looks. The 21 September failure sat
 # unnoticed until somebody asked about it four days later.
 #
-# Cost and duration are not yet measured. The $5-and-ten-minutes figure that
-# used to sit here came from `.plans/delivery-plan.md` at planning time, before
-# any regression run existed; measured wall clock on the benchmark is about
-# 3.4 minutes per cell serialised, which would put eighteen cells nearer an
-# hour. Replace this sentence with a measurement after the first run.
+# Measured on the first run, 1 October 2026 (run 36869979661): eighteen cells
+# green at two attempts each, fifty minutes of wall clock. That is whole-run
+# time including runner queueing, not per-cell — the cells run in parallel, so
+# no per-cell figure can be read off it. The $5-and-ten-minutes estimate that
+# used to sit here was a planning figure from before any regression run
+# existed; cost is still unmeasured, because nothing in the harness records it
+# for an agent that reports tokens rather than dollars.
 #
 # **Benchmark runs are dispatched against a bucket of work, not a calendar.**
 # Something changed what we measure, or something shipped to the product, and
