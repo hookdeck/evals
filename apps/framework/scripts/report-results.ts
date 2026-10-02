@@ -1,6 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { discoverEvals, EVALS_ROOT } from '../lib/discovery.js';
+import {
+  DOCS_REACH_MEANING,
+  docsReach,
+  type DocsReach,
+} from '../lib/docs-reach.js';
 
 /**
  * Read a snapshot and say what kind of failures it contains.
@@ -27,6 +32,7 @@ import { discoverEvals, EVALS_ROOT } from '../lib/discovery.js';
  * ```bash
  * pnpm --filter @hookdeck-evals/framework report-results
  * pnpm --filter @hookdeck-evals/framework report-results results/runs/2026-08-21.json
+ * pnpm --filter @hookdeck-evals/framework report-results --queries
  * ```
  */
 
@@ -39,7 +45,16 @@ interface Check {
 
 interface DocsCall {
   source?: string;
+  // Whichever field was the call's "ask": a search term, a url, a shell command.
+  // For a hosted search this is the only part we ever see, which is why
+  // `--queries` exists.
+  query?: string;
   pages?: unknown[];
+  // False when the result was a list of links rather than page text.
+  hasContent?: boolean;
+  // Omitted when the trace exposed no result at all, which is what separates a
+  // hosted search we cannot see from one that genuinely returned nothing.
+  resultChars?: number;
 }
 
 interface Row {
@@ -67,7 +82,11 @@ function load(path: string): Snapshot {
 }
 
 function main() {
-  const [path = 'results/latest.json'] = process.argv.slice(2);
+  const args = process.argv.slice(2);
+  const showQueries = args.includes('--queries');
+  const [path = 'results/latest.json'] = args.filter(
+    (a) => !a.startsWith('--')
+  );
   const snapshot = load(path);
 
   // Benchmark only. Regression scenarios are meant to pass everywhere, so
@@ -159,6 +178,7 @@ function main() {
   }
 
   reportDocsReach(snapshot.results);
+  if (showQueries) reportDocsQueries(snapshot.results);
 }
 
 /**
@@ -169,46 +189,41 @@ function main() {
  * not a confound, and not something to design out. That distinction is the whole
  * reason this prints two numbers instead of one.
  *
- * What is worth watching is the other half, and printing it per experiment moved
- * the answer. Aggregated by arm it reads as a skills effect — 296 calls in
- * `-no-skills` against 83 in `+skills`, 58% empty against 37%. Split by
- * experiment on the 25 August snapshot, most of that is the agent:
+ * What is worth watching is the other half, and it has to be split four ways.
+ * Only `read` means page text reached the agent. `hits` is a list of links,
+ * `none` is a result we saw that carried nothing, and `unobserved` is a hosted
+ * search whose results never reach us at all — see `lib/docs-reach.ts` for which
+ * agent produces which, and why the two-bucket version was wrong in both
+ * directions.
  *
- *     claude-code-sonnet-5              21 calls    0 empty (0%)
- *     claude-code-sonnet-5-no-skills    64 calls    0 empty (0%)
- *     codex-gpt-5.4-mini                43 calls   26 empty (60%)
- *     codex-gpt-5.4-mini-no-skills     196 calls  144 empty (73%)
- *     codex-gpt-5.6                     19 calls    5 empty (26%)
- *     codex-gpt-5.6-no-skills           36 calls   30 empty (83%)
+ * So read this per row, never pooled. `read` is signal about the docs and the
+ * skills. The other three are mostly facts about how a given agent goes looking,
+ * and a delta that moves when they move is not a skills effect.
  *
- * **Both Claude arms are at zero.** Claude Code reaches docs with `web_fetch`,
- * which returns a page; Codex leans on `web_search`, which frequently returns
- * none. There is still a real skills effect inside each Codex pair — 60 against
- * 73, 26 against 83 — but it is the smaller term, and the aggregate hid that by
- * pooling two agents with different habits.
- *
- * So read this per row, never pooled: `reached` is signal about the docs and the
- * skills, `empty` is mostly a fact about the agent's search path, and a delta
- * that moves when `empty` moves is neither. See #61, and #2 for the scenario
- * where this presented as a clean skills win.
+ * `--queries` prints what was actually searched for. For a hosted search the
+ * query is the only observable there is, so it is the only way to ask what an
+ * agent was trying to find out — which is the question a skills delta usually
+ * turns out to be about. See #83, and #61 for the number that rested on the old
+ * bucket.
  */
+const DOCS_REACH_ORDER: DocsReach[] = ['read', 'hits', 'none', 'unobserved'];
+
 function reportDocsReach(rows: Row[]) {
   const arms = new Map<
     string,
-    { reached: number; empty: number; bySource: Map<string, number> }
+    { counts: Map<DocsReach, number>; bySource: Map<string, number> }
   >();
 
   for (const row of rows) {
     const calls = row.docs?.calls ?? [];
     if (calls.length === 0) continue;
     const arm = arms.get(row.experiment) ?? {
-      reached: 0,
-      empty: 0,
+      counts: new Map<DocsReach, number>(),
       bySource: new Map<string, number>(),
     };
     for (const call of calls) {
-      if ((call.pages ?? []).length > 0) arm.reached += 1;
-      else arm.empty += 1;
+      const reach = docsReach(call);
+      arm.counts.set(reach, (arm.counts.get(reach) ?? 0) + 1);
       const source = call.source ?? 'unknown';
       arm.bySource.set(source, (arm.bySource.get(source) ?? 0) + 1);
     }
@@ -219,22 +234,72 @@ function reportDocsReach(rows: Row[]) {
 
   console.log('\n  How each arm reached the docs:');
   for (const [experiment, arm] of [...arms].sort()) {
-    const total = arm.reached + arm.empty;
-    const pct = Math.round((100 * arm.empty) / total);
+    const total = [...arm.counts.values()].reduce((a, b) => a + b, 0);
+    const read = arm.counts.get('read') ?? 0;
+    const pct = Math.round((100 * read) / total);
+    const buckets = DOCS_REACH_ORDER.map(
+      (reach) => `${reach} ${String(arm.counts.get(reach) ?? 0).padStart(3)}`
+    ).join('  ');
     const mix = [...arm.bySource]
       .sort((a, b) => b[1] - a[1])
       .map(([source, n]) => `${source} ${n}`)
       .join(', ');
     console.log(
       `    ${experiment.padEnd(32)} ${String(total).padStart(4)} calls  ` +
-        `${String(arm.reached).padStart(4)} reached a page  ` +
-        `${String(arm.empty).padStart(4)} empty (${pct}%)  [${mix}]`
+        `${buckets}   ${String(pct).padStart(3)}% read  [${mix}]`
     );
   }
+  for (const reach of DOCS_REACH_ORDER) {
+    console.log(`    ${reach.padEnd(11)} ${DOCS_REACH_MEANING[reach]}`);
+  }
   console.log(
-    '    A high empty rate is an external search index returning nothing, not a\n' +
-      '    documentation or skills gap. Do not read a delta that moves with it as one.'
+    '    Only `read` is signal about the docs or the skills. Do not read a delta\n' +
+      '    that moves with the other three as one. `--queries` shows what was asked.'
   );
+}
+
+/**
+ * What each arm went looking for, and what came back.
+ *
+ * The query is the one part of a hosted search we always see, so for Codex it is
+ * the only evidence of what the agent was trying to find out. That turns out to
+ * be the interesting half: `verification-002`'s baseline searched twice for an
+ * ElevenLabs source type, got nothing it could use, and built a generic `WEBHOOK`
+ * source with hand-rolled HMAC — while the arm with the skill named the preset
+ * and passed. A pass rate cannot show that. Two queries and their outcome can.
+ *
+ * Off by default because it is long. Grouped by scenario rather than by arm, so
+ * the two arms of a pair sit next to each other and the diff is readable.
+ */
+function reportDocsQueries(rows: Row[]) {
+  const byEval = new Map<string, Row[]>();
+  for (const row of rows) {
+    if ((row.docs?.calls ?? []).length === 0) continue;
+    byEval.set(row.eval, [...(byEval.get(row.eval) ?? []), row]);
+  }
+  if (byEval.size === 0) {
+    console.log('\n  No docs calls recorded in this snapshot.');
+    return;
+  }
+
+  console.log('\n  What each arm asked the docs:');
+  for (const [evalId, evalRows] of [...byEval].sort()) {
+    console.log(`\n    ${evalId}`);
+    for (const row of [...evalRows].sort((a, b) =>
+      a.experiment.localeCompare(b.experiment)
+    )) {
+      const calls = row.docs?.calls ?? [];
+      console.log(
+        `      ${row.experiment}  ${row.passed ? 'passed' : 'FAILED'}  ${calls.length} calls`
+      );
+      for (const call of calls) {
+        const query = (call.query ?? '').replace(/\s+/g, ' ').trim();
+        console.log(
+          `        ${docsReach(call).padEnd(11)} ${call.source ?? 'unknown'}  ${query}`
+        );
+      }
+    }
+  }
 }
 
 /** What each scenario's frontmatter says right now, by eval id. */
