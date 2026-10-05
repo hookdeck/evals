@@ -177,15 +177,21 @@ state, so a failing check **fails the job** here — the opposite of the benchma
 where a failure is a score — and the run opens or updates an issue labelled
 `regression-alert`, because a red run in a tab nobody has open is not a notification.
 
-**Measured on the first run**, 1 October 2026 ([run 36869979661](https://github.com/hookdeck/evals/actions/runs/36869979661)): eighteen cells
-green at two attempts each, **fifty minutes** of wall clock. Whole-run time including
-runner queueing — the cells run in parallel, so there is no per-cell figure in it. The
-"$5 and ten minutes" that circulated was a planning estimate from before any regression
-run existed. Cost is still unmeasured.
+**Measured on the first run**, 1 October 2026 ([run 36869979661](https://github.com/hookdeck/evals/actions/runs/36869979661)): eighteen cells,
+**seventeen passed**, fifty minutes of wall clock. Whole-run time including runner
+queueing — the cells run in parallel, so there is no per-cell figure in it. The "$5 and
+ten minutes" that circulated was a planning estimate from before any regression run
+existed. Cost is still unmeasured.
 
-That run is also the first evidence that every agent passing is the expected state here.
-It was an assumption until then, and the only record that existed contradicted it: one
-failing row from 10 August against an experiment that no longer exists.
+**That run was reported as green and was not.** `regression-filtering-001-regex-capability`
+failed for `claude-code-sonnet-5` across both attempts, and the run still concluded
+success, because the step that fails a cell on a red check is gated on
+`github.event_name == 'schedule'`. A dispatched run therefore cannot verify what a
+scheduled run enforces — which is precisely what that dispatch was for. Read the result
+files, not the run's conclusion.
+
+So **"every agent passing is the expected state" remains an assumption**, and the
+evidence is against it for one scenario and one arm. See #92.
 
 **A benchmark run is dispatched against a bucket of work, never a date.** Two buckets,
 and a run belongs to one of them:
