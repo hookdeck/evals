@@ -37,14 +37,19 @@ healthy benchmark rather than a flat one. The frontier agents pass nearly
 everything; the weak model is where most failures live, which is the floor
 working as intended.
 
-The skills axis is the interesting result and it is not uniform. Claude gains
-one scenario from skills, GPT-5.6 nets zero, and the weak model is **two worse
-with skills than without** — on the most recent published run it loses four
-scenarios and gains two. That direction is a finding about our documentation
-rather than about the model, and there is a known mechanism: a skill that lists
-example values is read as an exhaustive list, which once led a weak model to
-conclude a supported provider was unsupported. Do not report the skills delta as
-a single number; it has a different sign at different capability levels.
+The skills axis has not settled, and this paragraph has been rewritten three times
+in the direction of less confidence. It once said the weak model was **two worse**
+with skills than without; on 28 September that model reads **four better** (18/19
+against 14/19), and across the four September runs the delta has read -1, +1, +4
+and +4. #2 was closed on 22 September with its premise withdrawn: the -3 that
+started it is from the credit-outage day and no run since reproduced it.
+
+What survives is the warning rather than the number. **Do not report the skills
+delta as a single figure**, do not report a sign as replicated until it has
+replicated, and read it per row — the disagreements move between runs, so a total
+hides which cells produced it. The one mechanism that is documented rather than
+inferred stands: a skill that lists example values is read as an exhaustive list,
+which once led a weak model to conclude a supported provider was unsupported.
 
 **The weak-model figure is −2 and was written here as −3 for eleven days.** Both
 −3 readings are from 13 August and no run since has reproduced them: eight of
@@ -98,8 +103,7 @@ others would have caught.
 
 `eval-refresh` runs the **regression suite** weekly (Monday 06:00 UTC, every
 experiment) and nothing else on a schedule. Benchmark runs are dispatched
-against a bucket of work — see Runs below. The workflow is disabled, so a
-dispatch needs `gh workflow enable eval-refresh.yml` first. Check `gh secret list` against the workflow env
+against a bucket of work — see Runs below. Check `gh secret list` against the workflow env
 rather than trusting any list written here: `OUTPOST_API_KEY` was documented as
 a secret before it existed, and the first full matrix run scored `outpost-001`
 as six agent failures because of it.
@@ -173,11 +177,21 @@ state, so a failing check **fails the job** here — the opposite of the benchma
 where a failure is a score — and the run opens or updates an issue labelled
 `regression-alert`, because a red run in a tab nobody has open is not a notification.
 
-Its cost and duration are **not yet measured**. The "$5 and ten minutes" figure that
-circulated came from the delivery plan at planning time, before any regression run
-existed, and the benchmark's measured 3.4 minutes per cell serialised would put
-eighteen cells nearer an hour. Measure it after the first run rather than quoting the
-estimate again.
+**Measured on the first run**, 1 October 2026 ([run 36869979661](https://github.com/hookdeck/evals/actions/runs/36869979661)): eighteen cells,
+**seventeen passed**, fifty minutes of wall clock. Whole-run time including runner
+queueing — the cells run in parallel, so there is no per-cell figure in it. The "$5 and
+ten minutes" that circulated was a planning estimate from before any regression run
+existed. Cost is still unmeasured.
+
+**That run was reported as green and was not.** `regression-filtering-001-regex-capability`
+failed for `claude-code-sonnet-5` across both attempts, and the run still concluded
+success, because the step that fails a cell on a red check is gated on
+`github.event_name == 'schedule'`. A dispatched run therefore cannot verify what a
+scheduled run enforces — which is precisely what that dispatch was for. Read the result
+files, not the run's conclusion.
+
+So **"every agent passing is the expected state" remains an assumption**, and the
+evidence is against it for one scenario and one arm. See #92.
 
 **A benchmark run is dispatched against a bucket of work, never a date.** Two buckets,
 and a run belongs to one of them:
@@ -194,11 +208,13 @@ consuming, at about $185 a month plus $90-110 a matrix. Five weeklies had produc
 harness defect and a lot of variance data about a delta we already know we cannot
 measure precisely enough (#2).
 
-Re-enable the workflow before dispatching: it is disabled, which blocks
-`workflow_dispatch` as well as the cron.
+The workflow was disabled between 1 October 07:30 and 13:30 UTC so the monthly matrix
+could not fire while the schedule was being changed. It is active again. Disabling is
+the way to stop a cron without a commit, and it blocks `workflow_dispatch` too:
 
 ```bash
-gh workflow enable eval-refresh.yml
+gh workflow disable eval-refresh.yml   # stops the cron and dispatch
+gh workflow enable eval-refresh.yml    # both again
 ```
 
 ## What to work on next
@@ -303,8 +319,9 @@ Two rules that are the whole point of the file:
 - **Record the loops that failed.** A change that did not work is more informative
   than one that did, and omitting them makes the rest less believable.
 
-Re-runs for a loop need at least three attempts. A dispatched run defaults to one and
-cannot separate a fix from variance.
+Re-runs for a loop need at least three attempts. A dispatched run defaults to two,
+which is enough to stop one unlucky cell deciding a verdict and not enough to separate
+a fix from variance — ask for three.
 
 ## Releases
 
