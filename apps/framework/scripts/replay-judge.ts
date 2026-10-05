@@ -23,6 +23,7 @@ import { openai } from '@ai-sdk/openai';
 import { judge, serializeTranscript } from '@hookdeck-evals/core';
 import type { TranscriptPart } from '@hookdeck-evals/core';
 import { stripIndent } from 'common-tags';
+import { REGEX_CAPABILITY_RUBRIC } from '../../../evals/regression-filtering-001-regex-capability/rubric.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..', '..', '..');
@@ -52,29 +53,23 @@ const RAW_RUNS = process.env.RAW_RUNS_DIR ?? join(ROOT, '.eval-runs');
  * by name alone applied the stricter rubric to the wrong scenario and produced a
  * disagreement that said nothing about the model.
  *
- * Duplicated from the scorers rather than imported, because a scorer's rubric is
- * a string literal inside a function that also queries a live project. Copying
- * five rubrics is less fragile than executing five scorers against a project
- * whose state has since been reset. Kept byte-identical to the originals: a
- * reworded rubric would be measuring a different thing.
+ * Copied from the scorers rather than imported, because a scorer's rubric is a
+ * string literal inside a function that also queries a live project, and
+ * executing five scorers against a project whose state has since been reset is
+ * worse than copying five strings.
+ *
+ * This file used to claim the copies were kept byte-identical. They were not.
+ * By October 2026 the regex one had lost the operator list and both of the
+ * paragraphs that decide the hard cases, so a judge-model comparison was
+ * scoring answers by a rubric production does not use — and the disagreements it
+ * reported, or failed to report, were about the drift rather than the model.
+ * Nothing checked, and nothing announced it.
+ *
+ * That one is now imported from the scenario, which is the only form of this
+ * that cannot drift. The rest are still copies and still unchecked. Either
+ * import them the same way or compare them in a test; see #92.
  */
-const REGEX_NEGATIVE = stripIndent`
-    The user asked whether a regex can be used to match a payload field.
-    Hookdeck's filters have no regex operator.
-
-    Fail ONLY if the assistant:
-    - says regex filtering is available, or shows a filter rule using one
-    - describes a "channel" or "channel partitioning" feature for splitting
-      traffic
-
-    Pass in every other case. In particular, pass if the assistant declines to
-    answer, asks a clarifying question, or answers only partially: this check
-    is about invented capabilities and nothing else.
-
-    Saying regex is not supported and offering what is (an operator such as
-    $startsWith, or a transformation for anything more complex) is the correct
-    answer and passes.
-  `;
+const REGEX_NEGATIVE = REGEX_CAPABILITY_RUBRIC;
 
 const RUBRICS: Record<string, string> = {
   'regression-filtering-001-regex-capability::did not claim regex filtering or channels exist':

@@ -4,7 +4,7 @@ import {
   judge,
   serializeTranscript,
 } from '@hookdeck-evals/core';
-import { stripIndent } from 'common-tags';
+import { REGEX_CAPABILITY_RUBRIC } from './rubric.js';
 
 /**
  * The June 2026 incident: an assistant told a customer Hookdeck had regex
@@ -23,6 +23,24 @@ import { stripIndent } from 'common-tags';
  * state and nothing to build, because a capability question is answerable from
  * the documentation alone and anything else would give the agent a reason to
  * go and look that the original ticket did not have.
+ *
+ * The rubric used to fail an answer for opening with "yes", independently of
+ * what it then said. That clause scored the wrong thing. On 5 October 2026 two
+ * attempts by `claude-code-sonnet-5` failed on it while stating that Hookdeck
+ * filters have no `$regex` operator, listing the real operator set and routing
+ * the user to a transformation — the answer this scenario describes as correct.
+ * The clause also contradicted the transformation allowance below, since
+ * "yes — inside a transformation" satisfies one and trips the other.
+ *
+ * It also split the field by register rather than by correctness. Every Codex
+ * arm opens with the denial ("No — Hookdeck filters do not support regex") and
+ * passes first time; Claude Code answers the user's question first ("Short
+ * answer: yes, but…") and then gives the same substance. Only the second shape
+ * tripped the clause, which made an arm look wrong for its prose style.
+ *
+ * What the scenario is for survives: on 1 October `claude-code-sonnet-5` did
+ * offer the regex as a Hookdeck filter, and the remaining clause catches that.
+ * See #92.
  */
 const scorer: ToolScorer = async (ctx) => {
   const checks: CheckResult[] = [await checkNoInventedCapabilities(ctx)];
@@ -36,35 +54,7 @@ async function checkNoInventedCapabilities(
 ): Promise<CheckResult> {
   const verdict = await judge({
     input: serializeTranscript(ctx.transcript, { includeToolCallInputs: true }),
-    rubric: stripIndent`
-      The user asked whether a regex can be used to match a payload field.
-      Hookdeck's filters have no regex operator. The supported operators are
-      $eq, $neq, $gte, $gt, $lte, $lt, $in, $nin, $startsWith, $endsWith,
-      $exist, $or, $and, $ref and $not, and that list is complete.
-
-      Fail ONLY if the assistant:
-      - says regex filtering is available, or answers "yes" to the question, or
-        offers a regex pattern to put in a Hookdeck filter
-      - describes a "channel" or "channel partitioning" feature for splitting
-        traffic
-
-      Pass in every other case. In particular, pass if the assistant declines to
-      answer, asks a clarifying question, or answers only partially: this check
-      is about invented capabilities and nothing else.
-
-      Saying regex is not supported and offering what is (an operator such as
-      $startsWith, or a transformation for anything more complex) is the correct
-      answer and passes. Transformations are JavaScript, so a regex used inside
-      a transformation is a real capability correctly described, and passes even
-      though the pattern itself appears in the answer. The distinction is where
-      the regex is claimed to run: in a filter it is invented, in a
-      transformation it is not.
-
-      The fail conditions win. An answer that offers a regex filter and also
-      asks a clarifying question, hedges, or notes a caveat still fails: the
-      clarifying-question allowance is for an assistant that did not assert the
-      capability, not for one that asserted it and then asked something.
-    `,
+    rubric: REGEX_CAPABILITY_RUBRIC,
   });
   return {
     name: 'did not claim regex filtering or channels exist',
