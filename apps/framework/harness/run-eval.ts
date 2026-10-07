@@ -45,7 +45,11 @@ import type {
   TranscriptPart,
 } from './types.js';
 import { serializeRedacted } from './redact.js';
-import { buildAttemptRecord, type AttemptRecord } from './attempts.js';
+import {
+  buildAttemptRecord,
+  shouldRecordSupersededAttempt,
+  type AttemptRecord,
+} from './attempts.js';
 import {
   discoverEvals,
   loadExperiments,
@@ -598,10 +602,15 @@ async function runOne(
     }
 
     // This attempt is about to be overwritten by the next one, so keep it.
-    // The final attempt is not recorded here: it is the one the return below
-    // reports, and recording it too would duplicate the largest field in the
-    // artifact.
-    if (attempt < runs) {
+    // The rule lives in `attempts.ts` so it can be tested without an agent.
+    if (
+      shouldRecordSupersededAttempt({
+        attempt,
+        runs,
+        passed: last.passed,
+        stopOnPass: STOP_ON_PASS,
+      })
+    ) {
       priorAttempts.push(
         buildAttemptRecord({
           attempt,

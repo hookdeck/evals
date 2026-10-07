@@ -51,17 +51,28 @@ export interface AttemptRecord {
 /**
  * Build the record for a superseded attempt.
  *
- * `toolCalls` is deliberately omitted. It is a parsed projection of the same
- * events the transcript already holds, and the two are the largest fields in
- * the artifact by an order of magnitude — around 76 KB each on a typical
- * investigate scenario, so carrying both would roughly double a three-attempt
- * cell for no new information. The scorer's reading of those calls survives in
- * `checks`, and the derived `skills`/`docs` summaries answer the question a
- * reader usually has (did it open the skill?) in a few hundred bytes.
+ * `toolCalls` is deliberately omitted, and a human reading a superseded attempt
+ * loses nothing by it: `TranscriptPart` already carries `tool_call` entries with
+ * their name, input, output and error. What `ToolCallRecord` adds on top is the
+ * normalized projection — canonical name, `path`, `command`, `url`,
+ * `loadedSkills` — which is what *scorers* consume. So the accurate statement is
+ * that a superseded attempt can be read but not re-scored, and the two derived
+ * answers anyone actually asks (did it open the skill, what docs did it read)
+ * are already preserved in `skills` and `docs`.
  *
- * The consequence to know about: a superseded attempt cannot be re-scored by
- * `score-only`, which consumes `toolCalls`. If that becomes something we want,
- * it is an argument for keeping them, not for keeping them speculatively.
+ * It is also the larger half of the artifact. Across the 114 benchmark runs on
+ * disk, transcript and toolCalls together are 99% of all bytes, and each is
+ * around 70 KB at the median, 790 KB at p90 and 5.7 MB at the worst — so the
+ * saving is proportional rather than the flat ~76 KB an earlier version of this
+ * comment quoted from a single file. Regression scenarios, which are what this
+ * mostly serves, sit well below those figures.
+ *
+ * Nothing today re-scores a stored attempt. `score-only.ts` does not read run
+ * artifacts at all — it leases a fresh session, applies `SOLUTION.ts` and calls
+ * the scorer with empty `toolCalls` and `transcript` to measure scorer
+ * self-agreement. `replay-judge.ts` does read them, and needs only `transcript`
+ * and `checks[].judgeNotes`, both of which a record carries; it simply does not
+ * descend into `priorAttempts` yet.
  */
 export function buildAttemptRecord(input: {
   attempt: number;
@@ -82,4 +93,26 @@ export function buildAttemptRecord(input: {
     skills: input.skills,
     docs: input.docs,
   };
+}
+
+/**
+ * Whether an attempt that has just been scored should be kept in
+ * `priorAttempts`.
+ *
+ * Extracted from the loop so the rule can be tested without an agent. Two
+ * attempts are never recorded here: the one stop-on-pass returns, and the last
+ * one, because both are reported by the result itself and recording them would
+ * duplicate the largest field in the artifact. The invariant that falls out is
+ * `priorAttempts.length === attempts - 1`.
+ */
+export function shouldRecordSupersededAttempt(input: {
+  attempt: number;
+  runs: number;
+  passed: boolean;
+  stopOnPass: boolean;
+}): boolean {
+  // Stop-on-pass reports this attempt, so it is not superseded by anything.
+  if (input.stopOnPass && input.passed) return false;
+  // The final attempt is the one the result reports.
+  return input.attempt < input.runs;
 }
