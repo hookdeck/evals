@@ -23,6 +23,7 @@ import { openai } from '@ai-sdk/openai';
 import { judge, serializeTranscript } from '@hookdeck-evals/core';
 import type { TranscriptPart } from '@hookdeck-evals/core';
 import { stripIndent } from 'common-tags';
+import { BENCHMARK_REGEX_RUBRIC } from '../../../evals/benchmark-filtering-001-enterprise-orders/rubric.js';
 import { REGEX_CAPABILITY_RUBRIC } from '../../../evals/regression-filtering-001-regex-capability/rubric.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -58,23 +59,30 @@ const RAW_RUNS = process.env.RAW_RUNS_DIR ?? join(ROOT, '.eval-runs');
  * executing five scorers against a project whose state has since been reset is
  * worse than copying five strings.
  *
- * This file used to claim the copies were kept byte-identical. They were not.
- * By October 2026 the regex one had lost the operator list and both of the
- * paragraphs that decide the hard cases, so a judge-model comparison was
- * scoring answers by a rubric production does not use — and the disagreements it
- * reported, or failed to report, were about the drift rather than the model.
- * Nothing checked, and nothing announced it.
+ * This file used to claim the copies were kept byte-identical, and nothing
+ * checked it. Two were not:
  *
- * That one is now imported from the scenario, which is the only form of this
- * that cannot drift. The rest are still copies and still unchecked. Either
- * import them the same way or compare them in a test; see #92.
+ * - The regex one was identical when written on 12 August 2026 and diverged
+ *   three and three quarter hours later, when the scenario gained the operator
+ *   list and the paragraphs that decide the hard cases. The one comparison on
+ *   record ran before that, so it used the right text — by luck, not by design.
+ * - The `benchmark-filtering-001` entry was never right at all. It was composed
+ *   by appending a paragraph to the regression rubric, which dropped that
+ *   scenario's opening instruction to ignore whether the filtering was set up
+ *   and duplicated its self-correction allowance. The comparison on record did
+ *   use a wrong rubric — for this key, not the one that drifted.
+ *
+ * Both now import the scenario's own text, which is the only form of this that
+ * cannot drift. The four investigate copies below were identical to their
+ * scorers when checked on 7 October 2026, but nothing enforces that: import
+ * them the same way or compare them in a test. See #92.
  */
-const REGEX_NEGATIVE = REGEX_CAPABILITY_RUBRIC;
 
 const RUBRICS: Record<string, string> = {
   'regression-filtering-001-regex-capability::did not claim regex filtering or channels exist':
-    REGEX_NEGATIVE,
-  'benchmark-filtering-001-enterprise-orders::did not claim regex filtering or channels exist': `${REGEX_NEGATIVE}\n\nAttempting a regex, finding it rejected, and correcting to a supported\noperator also passes: what reaches the user is what matters.`,
+    REGEX_CAPABILITY_RUBRIC,
+  'benchmark-filtering-001-enterprise-orders::did not claim regex filtering or channels exist':
+    BENCHMARK_REGEX_RUBRIC,
   'benchmark-investigate-001-failing-deliveries::identified the failing destination and that it is rejecting': stripIndent`
     The project has one source with two connections. Deliveries to the
     destination named "analytics-api" are being rejected by that endpoint with

@@ -13,8 +13,9 @@ Then add a folder under `evals/` containing:
 
 1. `PROMPT.md` with frontmatter metadata and the task the agent sees.
 2. `EVAL.ts` with the scorer.
-3. Optional `remote/` data when the scenario needs to seed hosted project state: sources, connections, destinations, published events, or an Outpost tenant.
-4. Optional `local/` files when the scenario needs to seed a workspace on disk, such as the service an agent is asked to receive webhooks into. `${VAR}` in these files expands from the run environment, so a scenario can carry a credential without hardcoding one.
+3. Optional `rubric.ts` exporting a judged check's rubric, when that text has to be shared. `scripts/replay-judge.ts` needs the same rubric to compare judge models, and a copy there drifted from the scorer without anything noticing; importing is the only form of that which cannot drift.
+4. Optional `remote/` data when the scenario needs to seed hosted project state: sources, connections, destinations, published events, or an Outpost tenant.
+5. Optional `local/` files when the scenario needs to seed a workspace on disk, such as the service an agent is asked to receive webhooks into. `${VAR}` in these files expands from the run environment, so a scenario can carry a credential without hardcoding one.
 
 If your scenario contains anything not self-explanatory, consider adding a `README.md` to the folder with a brief explanation of how it's set up and what it's testing.
 

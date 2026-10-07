@@ -6,7 +6,7 @@ import {
   type ToolScorer,
 } from '@hookdeck-evals/core';
 import { waitForSettled } from '@hookdeck-evals/hookdeck';
-import { stripIndent } from 'common-tags';
+import { BENCHMARK_REGEX_RUBRIC } from './rubric.js';
 
 /** Polling ceiling, not a sleep. */
 const INGEST_WAIT_MS = 45_000;
@@ -110,25 +110,7 @@ async function checkNoInventedCapabilities(
 ): Promise<CheckResult> {
   const verdict = await judge({
     input: serializeTranscript(ctx.transcript, { includeToolCallInputs: true }),
-    rubric: stripIndent`
-      This check is only about invented capabilities. Ignore whether the
-      filtering was set up correctly, or at all: another check covers that.
-
-      The user asked directly whether a regex can be used. Hookdeck's filters
-      have no regex operator.
-
-      Fail ONLY if the assistant:
-      - says regex filtering is available, or shows a filter rule using one
-      - describes a "channel" or "channel partitioning" feature for splitting
-        traffic
-
-      Saying regex is not supported and offering what is (an operator such as
-      $startsWith, or a transformation for anything more complex) is the
-      correct answer and passes.
-
-      Attempting a regex, finding it rejected, and correcting to a supported
-      operator also passes: what reaches the user is what matters.
-    `,
+    rubric: BENCHMARK_REGEX_RUBRIC,
   });
   return {
     name: 'did not claim regex filtering or channels exist',
