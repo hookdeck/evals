@@ -23,6 +23,8 @@ import { openai } from '@ai-sdk/openai';
 import { judge, serializeTranscript } from '@hookdeck-evals/core';
 import type { TranscriptPart } from '@hookdeck-evals/core';
 import { stripIndent } from 'common-tags';
+import { BENCHMARK_REGEX_RUBRIC } from '../../../evals/benchmark-filtering-001-enterprise-orders/rubric.js';
+import { REGEX_CAPABILITY_RUBRIC } from '../../../evals/regression-filtering-001-regex-capability/rubric.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..', '..', '..');
@@ -52,34 +54,35 @@ const RAW_RUNS = process.env.RAW_RUNS_DIR ?? join(ROOT, '.eval-runs');
  * by name alone applied the stricter rubric to the wrong scenario and produced a
  * disagreement that said nothing about the model.
  *
- * Duplicated from the scorers rather than imported, because a scorer's rubric is
- * a string literal inside a function that also queries a live project. Copying
- * five rubrics is less fragile than executing five scorers against a project
- * whose state has since been reset. Kept byte-identical to the originals: a
- * reworded rubric would be measuring a different thing.
+ * Copied from the scorers rather than imported, because a scorer's rubric is a
+ * string literal inside a function that also queries a live project, and
+ * executing five scorers against a project whose state has since been reset is
+ * worse than copying five strings.
+ *
+ * This file used to claim the copies were kept byte-identical, and nothing
+ * checked it. Two were not:
+ *
+ * - The regex one was identical when written on 12 August 2026 and diverged
+ *   three and three quarter hours later, when the scenario gained the operator
+ *   list and the paragraphs that decide the hard cases. The one comparison on
+ *   record ran before that, so it used the right text — by luck, not by design.
+ * - The `benchmark-filtering-001` entry was never right at all. It was composed
+ *   by appending a paragraph to the regression rubric, which dropped that
+ *   scenario's opening instruction to ignore whether the filtering was set up
+ *   and duplicated its self-correction allowance. The comparison on record did
+ *   use a wrong rubric — for this key, not the one that drifted.
+ *
+ * Both now import the scenario's own text, which is the only form of this that
+ * cannot drift. The four investigate copies below were identical to their
+ * scorers when checked on 7 October 2026, but nothing enforces that: import
+ * them the same way or compare them in a test. See #92.
  */
-const REGEX_NEGATIVE = stripIndent`
-    The user asked whether a regex can be used to match a payload field.
-    Hookdeck's filters have no regex operator.
-
-    Fail ONLY if the assistant:
-    - says regex filtering is available, or shows a filter rule using one
-    - describes a "channel" or "channel partitioning" feature for splitting
-      traffic
-
-    Pass in every other case. In particular, pass if the assistant declines to
-    answer, asks a clarifying question, or answers only partially: this check
-    is about invented capabilities and nothing else.
-
-    Saying regex is not supported and offering what is (an operator such as
-    $startsWith, or a transformation for anything more complex) is the correct
-    answer and passes.
-  `;
 
 const RUBRICS: Record<string, string> = {
   'regression-filtering-001-regex-capability::did not claim regex filtering or channels exist':
-    REGEX_NEGATIVE,
-  'benchmark-filtering-001-enterprise-orders::did not claim regex filtering or channels exist': `${REGEX_NEGATIVE}\n\nAttempting a regex, finding it rejected, and correcting to a supported\noperator also passes: what reaches the user is what matters.`,
+    REGEX_CAPABILITY_RUBRIC,
+  'benchmark-filtering-001-enterprise-orders::did not claim regex filtering or channels exist':
+    BENCHMARK_REGEX_RUBRIC,
   'benchmark-investigate-001-failing-deliveries::identified the failing destination and that it is rejecting': stripIndent`
     The project has one source with two connections. Deliveries to the
     destination named "analytics-api" are being rejected by that endpoint with
