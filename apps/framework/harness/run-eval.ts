@@ -46,6 +46,11 @@ import type {
 } from './types.js';
 import { serializeRedacted } from './redact.js';
 import {
+  buildAttemptRecord,
+  shouldRecordSupersededAttempt,
+  type AttemptRecord,
+} from './attempts.js';
+import {
   discoverEvals,
   loadExperiments,
   readSessionSeedArgs,
@@ -424,6 +429,11 @@ async function runOne(
     agentReport: string;
     stoppedReason: string;
     usage?: AgentRunResult['usage'];
+    /**
+     * Every attempt this cell ran except the one reported above, oldest first.
+     * Empty for a cell that passed first time. See `attempts.ts`.
+     */
+    priorAttempts: AttemptRecord[];
   }
 > {
   const prompt = parseEvalMarkdown(
@@ -460,6 +470,7 @@ async function runOne(
   let lastAgentReport = '';
   let lastStoppedReason = 'not_started';
   let lastUsage: AgentRunResult['usage'];
+  const priorAttempts: AttemptRecord[] = [];
 
   const runs = runsFor(ev);
 
@@ -586,8 +597,33 @@ async function runOne(
         agentReport: run.agentReport,
         stoppedReason: run.stoppedReason,
         usage: run.usage,
+        priorAttempts,
       };
     }
+
+    // This attempt is about to be overwritten by the next one, so keep it.
+    // The rule lives in `attempts.ts` so it can be tested without an agent.
+    if (
+      shouldRecordSupersededAttempt({
+        attempt,
+        runs,
+        passed: last.passed,
+        stopOnPass: STOP_ON_PASS,
+      })
+    ) {
+      priorAttempts.push(
+        buildAttemptRecord({
+          attempt,
+          result: last,
+          stoppedReason: run.stoppedReason,
+          agentReport: run.agentReport,
+          transcript: run.transcript,
+          skills: buildSkillResult(availableSkills, run.toolCalls),
+          docs: buildDocsResult(run.toolCalls),
+        })
+      );
+    }
+
     logRetryAttempt(expName, ev, attempt, last);
   }
 
@@ -601,6 +637,7 @@ async function runOne(
     agentReport: lastAgentReport,
     stoppedReason: lastStoppedReason,
     usage: lastUsage,
+    priorAttempts,
   };
 }
 

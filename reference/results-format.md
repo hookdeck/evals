@@ -20,10 +20,11 @@ Both are currently `[]`. Nothing has been published yet, so `results-sample.json
 is the thing to mock against.
 
 **The exported row is narrower than the raw run file.** Each run also writes
-`results/<experiment>/<eval>.json`, which carries the transcript, tool calls,
-token usage and cost. `export-results.ts` deliberately does not copy those
-through. Anything not listed below is unavailable to the UI, whatever a raw
-result file happens to contain.
+`.eval-runs/<experiment>/<eval>.json`, which carries the transcript, tool calls,
+token usage, cost and `priorAttempts` — the transcript and checks of every
+attempt a retry superseded. `export-results.ts` deliberately does not copy any
+of those through. Anything not listed below is unavailable to the UI, whatever a
+raw result file happens to contain.
 
 ## The row
 
