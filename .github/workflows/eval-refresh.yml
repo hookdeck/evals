@@ -440,34 +440,15 @@ jobs:
             exit 1
           fi
 
-      - name: Check the regression suite passed
-        # A scenario failing its checks does not fail the eval step: in the
-        # benchmark that is a score, not an error. On the regression suite it
-        # is the whole point — every agent passing is the expected state, so a
-        # red check means either a guarded mistake has returned or the harness
-        # is broken, and both want somebody's attention.
-        #
-        # Keyed on the suite, not on the trigger. The distinction is
-        # benchmark-versus-regression, and `github.event_name == 'schedule'`
-        # only encodes that while the single cron happens to be regression-only
-        # — add a benchmark cron back and every benchmark cell that merely
-        # scored a failure would fail its job. The schedule clause stays
-        # because a dispatched run is somebody already reading the output.
-        if: ${{ matrix.eval_suite == 'regression' && github.event_name == 'schedule' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          result=".eval-runs/${{ matrix.experiment }}/${{ matrix.eval_id }}.json"
-          [ -f "$result" ] || exit 0
-
-          if [ "$(jq -r '.passed' "$result")" = "false" ]; then
-            failed="$(jq -r '[.checks[]? | select(.passed == false) | .name] | join("; ")' "$result")"
-            echo "::error::${{ matrix.eval_id }} failed for ${{ matrix.experiment }}: ${failed:-no check names recorded}"
-            exit 1
-          fi
-
       - name: Upload raw results
+        # Even when the cell failed or errored. The transcript of a failing cell
+        # is the one somebody actually needs — `regression-alert` tells the
+        # reader to open it first — and until 5 October it was the only one not
+        # kept, because this step is skipped by default when an earlier step
+        # exits non-zero. That cost the transcript of the first real regression
+        # failure, and had silently cost every errored cell's transcript before
+        # that: the 21 September run wrote 75 artifacts for 76 jobs.
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: raw-results-${{ matrix.experiment }}__${{ matrix.eval_id }}
@@ -496,6 +477,33 @@ jobs:
           # is against nothing.
           retention-days: 90
 
+
+      - name: Check the regression suite passed
+        # A scenario failing its checks does not fail the eval step: in the
+        # benchmark that is a score, not an error. On the regression suite it
+        # is the whole point — every agent passing is the expected state, so a
+        # red check means either a guarded mistake has returned or the harness
+        # is broken, and both want somebody's attention.
+        #
+        # Keyed on the suite, not on the trigger. The distinction is
+        # benchmark-versus-regression, and `github.event_name == 'schedule'`
+        # only encodes that while the single cron happens to be regression-only
+        # — add a benchmark cron back and every benchmark cell that merely
+        # scored a failure would fail its job. The schedule clause stays
+        # because a dispatched run is somebody already reading the output.
+        if: ${{ matrix.eval_suite == 'regression' && github.event_name == 'schedule' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          result=".eval-runs/${{ matrix.experiment }}/${{ matrix.eval_id }}.json"
+          [ -f "$result" ] || exit 0
+
+          if [ "$(jq -r '.passed' "$result")" = "false" ]; then
+            failed="$(jq -r '[.checks[]? | select(.passed == false) | .name] | join("; ")' "$result")"
+            echo "::error::${{ matrix.eval_id }} failed for ${{ matrix.experiment }}: ${failed:-no check names recorded}"
+            exit 1
+          fi
   publish-results:
     needs: [prepare, run-evals]
     runs-on: ubuntu-latest
