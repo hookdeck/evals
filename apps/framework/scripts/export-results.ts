@@ -17,13 +17,13 @@ import type {
   ExperimentSuite,
 } from '@hookdeck-evals/core/eval-metadata';
 import { collectEnvSecretValues } from '@hookdeck-evals/hookdeck';
+import { whyNotAResultRow } from '../lib/raw-result.js';
 import {
   normalizeExperimentName,
   readExperimentSuiteFilters,
   readRepeatedFlag,
   readSuiteFilters,
 } from '../lib/cli-args.js';
-import { whyNotAResultRow } from '../lib/raw-result.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..', '..', '..');
