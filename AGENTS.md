@@ -32,39 +32,45 @@ for e in sorted(m): print(e, sum(1 for v in m[e].values() if v), '/', len(m[e]))
 `['hookdeck', 'event-gateway']`, `-no-skills` twins of each, and
 `codex-gpt-5.4-mini` in both arms as a deliberately weaker model.
 
-**What the numbers say.** Seven of the nineteen scenarios are failed by at least
-one experiment on the published snapshot, which is a healthy benchmark rather
-than a flat one. The frontier agents pass nearly everything; the weak model is
-where most failures live, which is the floor working as intended.
+**What the numbers say.** Nine of nineteen scenarios discriminate, which is a
+healthy benchmark rather than a flat one. The frontier agents pass nearly
+everything; the weak model is where most failures live, which is the floor
+working as intended.
 
-**Read a skills delta only off two arms that ran the same day.**
-`results/latest.json` is a merged snapshot (#60): the frontier `-no-skills` arms
-in it were executed on 1 September and their `+skills` twins on 14 September, so
-subtracting them compares two instruments a fortnight apart and does not produce
-a delta at all. Only the weak pair runs weekly, so it is the only clean
-comparison in that file, and there it reads **+4** — 18/19 with skills against
-14/19 without.
+The skills axis is the interesting result and it is not uniform. Claude gains
+one scenario from skills, GPT-5.6 nets zero, and the weak model is **two worse
+with skills than without** — on the most recent published run it loses four
+scenarios and gains two. That direction is a finding about our documentation
+rather than about the model, and there is a known mechanism: a skill that lists
+example values is read as an exhaustive list, which once led a weak model to
+conclude a supported provider was unsupported. Do not report the skills delta as
+a single number; it has a different sign at different capability levels.
 
-**The weak model is not worse with skills on any evidence since August, and this
-paragraph said it was for six weeks.** Across the five full-suite pairwise
-executions of that pair the delta reads −3, −2, −1, +1, +4, with nothing in the
-instrument changing between the last three. #2 was closed on 22 September on that
-basis. Pooling the three September executions gives `+skills` 48/57 against
-44/57, and all of the gain is Outpost — 14/15 against 10/15, with Event Gateway
-level at 34/42 in both arms. A quantity that has taken five values on an
-unchanged instrument is not a measurement yet, so do not quote a weak-model
-skills delta without saying which executions produced it.
+**Count executions, not snapshot files.** A snapshot republishes the cells a run
+did not re-measure (#60), so iterating `results/runs/*.json` counts one execution
+many times. The 17 August weak-pair cells sit in seven snapshot files and read −2
+in every one, which is where this section's long-standing "−2, run after run"
+came from. Keyed per execution, the six full-suite runs of the weak pair read:
+
+| executed | `+skills` | `-no-skills` | delta |
+|---|---|---|---|
+| 13 August | 10/15 | 13/15 | −3 |
+| 17 August | 9/15 | 11/15 | −2 |
+| 1 September | 14/19 | 15/19 | −1 |
+| 7 September | 16/19 | 15/19 | +1 |
+| 14 September | 18/19 | 14/19 | +4 |
+| 28 September | 18/19 | 14/19 | +4 |
+
+The two +4 rows are not one result counted twice. Six cells changed between
+them, two in the `+skills` arm and four in the baseline, and the totals happen to
+land on the same numbers. Read a delta per row: a total hides which cells
+produced it.
 
 The −3 is from 13 August, the credit-outage day described under costs below, so
-treat anything measured that day as suspect until its rows are checked against
-the outage window: a bad population is identified by its cause, not by what its
-rows look like.
+treat it as suspect until its rows are checked against the outage window: a bad
+population is identified by its cause, not by what its rows look like.
 
-**Recompute per execution, not per snapshot file.** A snapshot republishes the
-cells a run did not re-measure, so iterating `results/runs/*.json` counts one
-execution many times — the 17 August pair appears in six files and reads −2 in
-all six, which is how "eight of the nine later runs read −2" came to be written
-here. Key each cell by its run before counting anything:
+Recompute rather than quoting the table:
 
 ```bash
 python3 -c "
@@ -87,18 +93,27 @@ for run in sorted(arms, key=str):
 "
 ```
 
-Two things that output will not tell you. The denominators are the filter: a row
-reading `2/2` is a partial re-run of a couple of cells, not a suite delta. And
-`runId` only exists from 1 September, so earlier executions fall back to their
-date and two on the same day merge — which is another reason 13 August needs
-reading by cause rather than by row.
+Two things that output will not tell you. **The denominators are the filter:** a
+row reading `2/2` is a partial re-run of a couple of cells, not a suite delta.
+And **most August rows carry no `runId`**, so they fall back to their date and two
+executions on the same day merge. 13 August is a full run and a two-cell re-run
+read as one, which is another reason to read that day by cause rather than by row.
+
+**Only the weak pair is a clean comparison in `results/latest.json`.** That file
+is a merged snapshot. Its frontier `+skills` arms were executed on 28 September
+and their `-no-skills` twins on 1 September, so subtracting one from the other
+compares two instruments four weeks apart. That gives a number, but it is not a
+skills delta. Both weak arms ran in the same execution. Check `runId` per
+experiment before subtracting any pair.
 
 **State the scenario set and the model with any skills delta**, or it will be
 compared against a number measuring something else. Loop 2's corrected
 measurement was `+skills` 12/12 against `-no-skills` 10/12, but that is five
 Outpost scenarios across all three models rather than nineteen scenarios on the
-weak model, and the two populations answer different questions. That they now
-point the same way is not a reason to merge them.
+weak model, and the two populations answer different questions. They were once
+conflated into a claim that the weak model's sign had flipped. Three September
+executions now do read positive on their own, and that is still no reason to
+merge the two populations.
 
 **Product findings come from runs, not speculation.** Several concern
 `hookdeck listen`: it crashes without a TTY unless given `--output compact`; a
