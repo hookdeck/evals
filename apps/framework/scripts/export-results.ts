@@ -24,6 +24,7 @@ import type {
   ExperimentSuite,
 } from '@hookdeck-evals/core/eval-metadata';
 import { collectEnvSecretValues } from '@hookdeck-evals/hookdeck';
+import { whyNotAResultRow } from '../lib/raw-result.js';
 import {
   normalizeExperimentName,
   readExperimentSuiteFilters,
@@ -205,6 +206,12 @@ async function readResultFile(
   experimentMetadata: Map<string, ExperimentExportMetadata>
 ): Promise<EvalResult | null> {
   const parsed: unknown = JSON.parse(await readFile(filePath, 'utf8'));
+  // Loud, because a dropped file is a missing row and somebody should know.
+  const notARow = whyNotAResultRow(parsed);
+  if (notARow) {
+    console.warn(`skipping ${sourcePath}: ${notARow}`);
+    return null;
+  }
   const result = rawEvalResultSchema.safeParse(parsed);
   if (!result.success) {
     return null;
