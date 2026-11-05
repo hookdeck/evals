@@ -28,10 +28,11 @@
  *    `~/.config/hookdeck/config.toml`, which an agent then `cat`s. It has no
  *    vendor prefix — the CLI validates only that a key is at least twelve
  *    characters — so there is no shape to match, and it is in no env var this
- *    process can see. What it does have is context: `api_key = '…'`. Any value
- *    assigned to a name that marks it as a credential is collected and then
- *    redacted *everywhere* in the artifact, so the same key pasted bare into a
- *    later `curl` goes too.
+ *    process can see. What it does have is context: `api_key = '…'`. A value
+ *    of 16 or more characters, containing a letter and a digit, assigned to a
+ *    name that marks it as a credential is found by that name and then
+ *    redacted by value *everywhere* in the artifact, so the same key pasted
+ *    bare into a later `curl` goes too.
  *
  * The harness also reads the CLI's config files out of each sandbox before it
  * is torn down and adds what it finds to the by-value layer
@@ -89,8 +90,11 @@ const QUOTE = `(?:\\\\*["'])?`;
  *
  * - `=` (TOML, INI, env, shell): any name ending in key/token/secret/password.
  *   `api_key`, `HOOKDECK_API_KEY`, `client_secret`, `access_token`.
- * - `:` (JSON, YAML): narrower, because `"key": "x-hookdeck-signature"` is a
- *   header name and not a credential. Plain `key` is left out.
+ * - `:` (JSON, YAML): narrower, because `"key": "x-hookdeck-signature"` and
+ *   `"header_key": "…"` name a header and are not credentials. Plain `key` is
+ *   left out; a key is matched only as `api_key` or after `secret`, which
+ *   covers Hookdeck's own `"webhook_secret_key"` source config as well as
+ *   `"secret_key"` and `"secret_access_key"`.
  * - `--flag value`: `hookdeck ci --api-key …`.
  * - `Bearer …`: a curl the agent wrote with the literal key in it.
  */
@@ -100,7 +104,7 @@ const ASSIGNMENT_PATTERNS: RegExp[] = [
     'gi'
   ),
   new RegExp(
-    `((?:api[_-]?key|secret|token|password)${QUOTE}[ \\t]*:[ \\t]*${QUOTE})(${VALUE})`,
+    `((?:api[_-]?key|secret(?:[_-]?(?:access[_-]?)?key)?|token|password)${QUOTE}[ \\t]*:[ \\t]*${QUOTE})(${VALUE})`,
     'gi'
   ),
   new RegExp(
@@ -219,9 +223,12 @@ function redactCounting(
   //    the wrong secret is a failure this benchmark exists to catch, and one
   //    marker for every value would hide it.
   const assigned = assignedCredentialValues(out);
+  const firstSeen = new Map(
+    assigned.map((value) => [value, out.indexOf(value)])
+  );
   const number = new Map(
     [...assigned]
-      .sort((a, b) => out.indexOf(a) - out.indexOf(b))
+      .sort((a, b) => (firstSeen.get(a) ?? 0) - (firstSeen.get(b) ?? 0))
       .map((value, i) => [value, i + 1])
   );
   for (const value of assigned) {

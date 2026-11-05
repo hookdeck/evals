@@ -123,12 +123,25 @@ export function newAttemptLoopState(): AttemptLoopState {
  * Add credentials found in an attempt's sandbox. Called before the attempt's
  * guards and scorer, so a cell that throws afterwards is still redacted with
  * them.
+ *
+ * Each distinct value gets its own numbered name, in the order the cell found
+ * them, so two keys minted by two attempts (or two `hookdeck ci` runs) stay
+ * distinguishable in the transcript: `<redacted:hookdeck-cli-config:api_key-1>`
+ * and `…-2`. A value already found keeps the name it was given.
  */
 export function credentialsDiscovered(
   loop: AttemptLoopState,
   secrets: SecretValue[]
 ): void {
-  loop.discoveredSecrets = [...(loop.discoveredSecrets ?? []), ...secrets];
+  const known = loop.discoveredSecrets ?? [];
+  const seen = new Set(known.map((s) => s.value));
+  const added: SecretValue[] = [];
+  for (const { name, value } of secrets) {
+    if (seen.has(value)) continue;
+    seen.add(value);
+    added.push({ name: `${name}-${known.length + added.length + 1}`, value });
+  }
+  loop.discoveredSecrets = [...known, ...added];
 }
 
 /** The secrets an artifact from this cell is redacted with. */

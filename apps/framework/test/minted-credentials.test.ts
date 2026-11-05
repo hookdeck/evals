@@ -9,7 +9,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { AgentSandbox } from '@hookdeck-evals/core';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildAttemptRecord } from '../harness/attempts.js';
 import {
   cellSecrets,
@@ -122,6 +122,30 @@ describe('redaction by assignment', () => {
     }
   });
 
+  /**
+   * Hookdeck's own source auth config names its secret `webhook_secret_key`,
+   * and the `:` pattern once required `secret` to be followed directly by the
+   * quote, so a real value in that field reached a raw artifact.
+   */
+  it('covers JSON names with a key suffix after secret', () => {
+    const hex = `0fake${'a1'.repeat(29)}0`; // 64 hex characters, fake
+    for (const name of [
+      'webhook_secret_key',
+      'secret_key',
+      'secret-key',
+      'secretKey',
+      'secret_access_key',
+      'aws_secret_access_key',
+    ]) {
+      // Both as an agent printed it and as the API returned it inside JSON.
+      const asText = `{"auth": {"${name}": "${hex}"}}`;
+      expect(serializeRedacted({ output: asText }, [])).not.toContain(hex);
+      expect(
+        serializeRedacted({ config: { auth: { [name]: hex } } }, [])
+      ).not.toContain(hex);
+    }
+  });
+
   it('removes the key where it later appears bare, once it was seen assigned', () => {
     const artifact = {
       transcript: [
@@ -145,6 +169,9 @@ describe('redaction by assignment', () => {
       "api_key = 'your_api_key_goes_here'",
       '--destination-auth-method api_key',
       '{"key": "x-hookdeck-signature-header-name"}',
+      // Header names, with a digit so only the name keeps them out.
+      '{"key": "x-hookdeck-signature-v2-header"}',
+      '{"header_key": "x-signature-v2-header-name"}',
       "project_id = 'tm_fakeproject0'",
     ].join('\n');
     expect(assignedCredentialValues(benign)).toEqual([]);
@@ -271,6 +298,36 @@ describe('discoverSandboxCredentials', () => {
     expect(await discoverSandboxCredentials(broken)).toEqual([]);
   });
 
+  it('says so on stderr when the read does not complete, without the values', async () => {
+    const timedOut: AgentSandbox = {
+      workspace,
+      // A timeout: no exit code, and part of a config already printed.
+      exec: async () => ({
+        ok: false,
+        exitCode: null,
+        stdout: cliConfig(),
+        stderr: `partial ${MINTED}`,
+      }),
+      readFile: async () => '',
+    };
+    const writes: string[] = [];
+    const spy = vi
+      .spyOn(process.stderr, 'write')
+      .mockImplementation((chunk: string | Uint8Array) => {
+        writes.push(String(chunk));
+        return true;
+      });
+    try {
+      const found = await discoverSandboxCredentials(timedOut);
+      // What was read before the failure is still used.
+      expect(found.map((s) => s.value)).toEqual([MINTED]);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(writes.join('')).toContain('did not complete');
+    expect(writes.join('')).not.toContain(MINTED);
+  });
+
   it('is a single shell command, so it runs through `exec` unchanged', () => {
     expect(DISCOVER_COMMAND).toContain('.config/hookdeck/config.toml');
     expect(DISCOVER_COMMAND).toContain('HOOKDECK_CONFIG_FILE');
@@ -311,12 +368,17 @@ describe('discovered credentials reach every artifact', () => {
       cellSecrets(loop, [])
     );
     expect(out).not.toContain(MINTED);
-    expect(out).toContain('<redacted:hookdeck-cli-config:api_key>');
+    expect(out).toContain('<redacted:hookdeck-cli-config:api_key-1>');
   });
 
   it('accumulates across attempts, each of which mints its own key', () => {
     const loop = newAttemptLoopState();
     credentialsDiscovered(loop, credentialsFromConfigText(cliConfig()));
+    credentialsDiscovered(
+      loop,
+      credentialsFromConfigText(cliConfig(MINTED_TWO))
+    );
+    // Attempt three reads the second attempt's config again: same name.
     credentialsDiscovered(
       loop,
       credentialsFromConfigText(cliConfig(MINTED_TWO))
@@ -327,6 +389,12 @@ describe('discovered credentials reach every artifact', () => {
     );
     expect(out).not.toContain(MINTED);
     expect(out).not.toContain(MINTED_TWO);
+    // Two minted keys stay distinguishable.
+    expect(JSON.parse(out)).toEqual({
+      a: 'k <redacted:hookdeck-cli-config:api_key-1>',
+      b: 'k <redacted:hookdeck-cli-config:api_key-2>',
+    });
+    expect(loop.discoveredSecrets).toHaveLength(2);
   });
 
   it('errored-cell evidence: earlier attempts and the attempt that errored', () => {

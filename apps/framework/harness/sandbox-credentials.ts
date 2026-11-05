@@ -84,6 +84,16 @@ export async function discoverSandboxCredentials(
 ): Promise<SecretValue[]> {
   try {
     const result = await sandbox.exec(DISCOVER_COMMAND, { timeoutMs: 30_000 });
+    if (!result.ok) {
+      // Exit code only: stdout and stderr may hold the very values being
+      // looked for, and this goes to a public job log. Whatever was printed
+      // before the failure is still used.
+      process.stderr.write(
+        `reading the sandbox's Hookdeck CLI config for redaction did not complete ` +
+          `(exit ${result.exitCode ?? 'none, likely a timeout'}); ` +
+          'redacting with what was read, plus the assignment layer\n'
+      );
+    }
     return credentialsFromConfigText(result.stdout);
   } catch (error) {
     process.stderr.write(

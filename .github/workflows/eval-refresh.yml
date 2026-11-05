@@ -516,9 +516,10 @@ jobs:
         # It re-applies the harness's redaction passes to every file about to be
         # uploaded and fails if any would still remove something, printing the
         # file and kind and never the value. A failure here fails the job and
-        # skips both uploads; it does not change the cell's score, which is
-        # already in the result file. `publish-results` treats the missing
-        # artifact like any other cell that uploaded nothing.
+        # skips both uploads. The score in the result file is not changed, but
+        # it is not published either: `publish-results` reads rows from these
+        # artifacts, so the cell counts as missing, and an earlier row stands
+        # in for it only where the missing-cell floor allows (#103).
         id: artifact-check
         if: ${{ !cancelled() }}
         shell: bash
@@ -607,7 +608,12 @@ jobs:
         # dispatch is how somebody checks what the schedule enforces, so it
         # has to enforce the same thing, and a run's conclusion is only worth
         # reading if it means the same on every trigger.
-        if: ${{ matrix.eval_suite == 'regression' }}
+        #
+        # `!cancelled()` so it still runs when the credential check above has
+        # failed. Without it the implicit `success()` skips this step, and a
+        # regression cell that is genuinely red would be reported only as a
+        # credential-check failure. A missing result file still exits 0 below.
+        if: ${{ !cancelled() && matrix.eval_suite == 'regression' }}
         shell: bash
         run: |
           set -euo pipefail

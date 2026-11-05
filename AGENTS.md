@@ -1334,12 +1334,18 @@ sandbox can create credentials of its own: `hookdeck ci` mints a CLI key and
 writes it to `~/.config/hookdeck/config.toml`, and an agent checking its setup
 reasonably `cat`s that file. No env var holds that key, and it has no prefix to
 match. So the harness reads the CLI's config files out of each sandbox before
-teardown and redacts their values by name (`harness/sandbox-credentials.ts`),
-and `redact.ts` also redacts any value assigned to a credential-marking name
-(`api_key = '…'`, `--webhook-secret …`). `check-artifacts` re-applies those
-passes before the raw artifacts are uploaded and fails the upload, not the
-cell, if anything is left. A new place the sandbox writes a credential needs
-adding to the discovery command; a new artifact writer needs to go through
+teardown and redacts the values of their credential keys
+(`harness/sandbox-credentials.ts`). `redact.ts` also finds any value of 16 or
+more characters, containing a letter and a digit, that is assigned to a
+credential-marking name (`api_key = '…'`, `"webhook_secret_key": "…"`,
+`--webhook-secret …`), and then redacts that value everywhere it appears in
+the artifact. `check-artifacts` re-applies those passes before the raw
+artifacts are uploaded. If anything is left, the job fails and both uploads
+are skipped. The cell's score is unchanged but is not published either:
+`publish-results` reads rows from those artifacts, so the cell counts as
+missing, and an earlier row stands in only where the missing-cell floor allows
+(#103). A new place the sandbox writes a credential needs adding to the
+discovery command; a new artifact writer needs to go through
 `serializeRedacted`.
 
 ## Attribution
