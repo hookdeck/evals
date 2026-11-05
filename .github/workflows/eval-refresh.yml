@@ -57,7 +57,7 @@ on:
         required: true
         default: "720"
       merge:
-        description: "Merge into existing results instead of overwriting (graft new experiment/eval pairs)"
+        description: "Benchmark only: merge into existing results instead of overwriting (graft new experiment/eval pairs). The regression export always merges."
         type: boolean
         required: false
         default: false
@@ -125,6 +125,8 @@ jobs:
             # Regression results do not reach the published scoreboard — the
             # page renders the benchmark suite only — so this writes
             # `regression-eval-results.json` and nothing a reader sees moves.
+            # The regression export merges whatever this says (#98); this only
+            # reaches the benchmark export, which a scheduled run never does.
             do_merge="true"
           else
             experiments="${{ inputs.experiments }}"
@@ -485,13 +487,22 @@ jobs:
         # red check means either a guarded mistake has returned or the harness
         # is broken, and both want somebody's attention.
         #
-        # Keyed on the suite, not on the trigger. The distinction is
-        # benchmark-versus-regression, and `github.event_name == 'schedule'`
-        # only encodes that while the single cron happens to be regression-only
-        # — add a benchmark cron back and every benchmark cell that merely
-        # scored a failure would fail its job. The schedule clause stays
-        # because a dispatched run is somebody already reading the output.
-        if: ${{ matrix.eval_suite == 'regression' && github.event_name == 'schedule' }}
+        # Keyed on the suite and nothing else. The distinction is
+        # benchmark-versus-regression: a benchmark cell that scores a failure
+        # has produced a score and must not fail its job, and the suite alone
+        # already guarantees that, whatever triggered the run.
+        #
+        # It used to be gated on `github.event_name == 'schedule'` as well, on
+        # the theory that a dispatched run has somebody reading the output.
+        # Somebody was reading it on 1 October, and what they read was the
+        # run's conclusion: `success`, while
+        # `regression-filtering-001-regex-capability` had failed for
+        # `claude-code-sonnet-5` on both attempts. "Eighteen cells green" went
+        # into a PR body, a commit message and a workflow comment (#91, #99). A
+        # dispatch is how somebody checks what the schedule enforces, so it
+        # has to enforce the same thing, and a run's conclusion is only worth
+        # reading if it means the same on every trigger.
+        if: ${{ matrix.eval_suite == 'regression' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -525,7 +536,41 @@ jobs:
     # Deliberately a variable rather than a secret: it is configuration, it
     # should be visible in the run log, and anyone reading a skipped publish
     # should be able to see why without repository admin.
-    if: vars.EVALS_PUBLISH != 'false'
+    #
+    # **It runs when the matrix partly failed, and never when the run was
+    # cancelled.** Without a status function in `if:`, GitHub prepends an
+    # implicit `success()`, so this job used to be skipped whenever any one
+    # matrix job failed. On 21 September 75 of 76 cells completed and one
+    # errored on a scorer defect (#79), and nothing was published (#80). On the
+    # regression suite it was worse: a red check fails its cell on purpose, so
+    # the committed regression file structurally could not contain a failing
+    # cell (#98).
+    #
+    # Each clause, because they interact:
+    #
+    # - `!cancelled()` is a status function, so it replaces the implicit
+    #   `success()` — that is what lets a failed matrix through — and it is
+    #   false once the run has been cancelled. A credit, quota or auth failure
+    #   calls `gh run cancel` on purpose (see `Run evals`), and a run cancelled
+    #   for that reason must publish nothing. `always()` would publish it.
+    # - `needs.run-evals.result` is the aggregate of every matrix job: `success`
+    #   if all succeeded, `failure` if any failed. Anything else — `cancelled`,
+    #   or `skipped` because `prepare` failed — means there is nothing to
+    #   publish, so only those two values are let through.
+    # - `needs.prepare.result` is spelled out because `!cancelled()` no longer
+    #   implies it.
+    #
+    # A partial run is not published blindly. `Export results` compares what
+    # came back against every pair `prepare` emitted, names each missing cell
+    # and what stands in for it, and refuses past a floor — see
+    # `MAX_MISSING_FRACTION` on that step.
+    if: >-
+      ${{
+        !cancelled()
+        && vars.EVALS_PUBLISH != 'false'
+        && needs.prepare.result == 'success'
+        && (needs.run-evals.result == 'success' || needs.run-evals.result == 'failure')
+      }}
     steps:
       - name: Checkout
         uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
@@ -570,17 +615,48 @@ jobs:
 
           mkdir -p downloaded-results
           pairs='${{ needs.prepare.outputs.pairs }}'
+
+          # Ask which artifacts exist before downloading any. A cell that
+          # errored, or a scenario skipped for an unmet `requires:`, can leave
+          # nothing to upload, and `gh run download --name` on an artifact that
+          # does not exist fails this whole step — which would turn the one
+          # errored cell this job now tolerates back into a run that publishes
+          # nothing. A missing artifact is reported here and counted by the
+          # export's floor; a download that fails for any other reason still
+          # fails the step.
+          available="$(gh api --paginate \
+            "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts?per_page=100" \
+            --jq '.artifacts[] | select(.expired | not) | .name')"
           while IFS= read -r name; do
-            gh run download ${{ github.run_id }} --name "$name" --dir "downloaded-results/$name"
+            if grep -qxF "$name" <<< "$available"; then
+              gh run download ${{ github.run_id }} --name "$name" --dir "downloaded-results/$name"
+            else
+              echo "::warning::no artifact ${name}: that cell uploaded nothing. Export results says whether an earlier row stands in for it."
+            fi
           done < <(jq -r '.[] | "raw-results-\(.experiment)__\(.eval_id)"' <<< "$pairs" | sort -u)
 
       - name: Export results
         shell: bash
+        env:
+          # How much of the run may come back without a result before the
+          # export refuses to publish, as a fraction of the cells `prepare`
+          # emitted, rounded down: 0.1 is 11 of 114 benchmark cells, 1 of 18
+          # regression cells. One errored cell should not cost a run its
+          # publish (#80); a whole experiment missing is something systematic,
+          # and should stop and be read. A repository variable rather than an
+          # input, so it can be changed and this job re-run without re-running
+          # a matrix that has already been paid for.
+          MAX_MISSING_FRACTION: ${{ vars.EVALS_MAX_MISSING_FRACTION || '0.1' }}
         run: |
           set -euo pipefail
 
           mkdir -p .eval-runs
           pairs='${{ needs.prepare.outputs.pairs }}'
+          # The exporter checks what came back against this, so a missing cell
+          # is named in the log and the job summary rather than being silently
+          # carried forward or silently absent.
+          expected_pairs="${RUNNER_TEMP}/expected-pairs.json"
+          printf '%s' "$pairs" > "$expected_pairs"
           while IFS= read -r experiment; do
             mkdir -p ".eval-runs/$experiment"
             for artifact_dir in "downloaded-results/raw-results-${experiment}__"*/; do
@@ -588,19 +664,24 @@ jobs:
             done
           done < <(jq -r '.[].experiment' <<< "$pairs" | sort -u)
 
+          coverage_args=(--expected-pairs "$expected_pairs" --max-missing-fraction "$MAX_MISSING_FRACTION")
+
           if jq -e 'any(.[]; .eval_suite == "benchmark")' <<< "$pairs" > /dev/null; then
-            export_args=(--suite benchmark --output apps/web/src/data/eval-results.json)
+            export_args=(--suite benchmark --output apps/web/src/data/eval-results.json "${coverage_args[@]}")
             if [ "${{ needs.prepare.outputs.do_merge }}" = "true" ]; then
               export_args+=(--merge)
             fi
             pnpm --filter @hookdeck-evals/framework export-results -- "${export_args[@]}"
           fi
 
+          # Always merged, whatever the `merge` input says. The regression file
+          # is a record of the guarded mistakes rather than a page, and on 5
+          # October a single-cell dispatch with `merge` left at its default
+          # replaced all eighteen of its rows with one (#98). Carrying the other
+          # cells forward is the only reading of a partial regression run that
+          # is still a record.
           if jq -e 'any(.[]; .eval_suite == "regression")' <<< "$pairs" > /dev/null; then
-            export_args=(--suite regression --output apps/web/src/data/regression-eval-results.json)
-            if [ "${{ needs.prepare.outputs.do_merge }}" = "true" ]; then
-              export_args+=(--merge)
-            fi
+            export_args=(--suite regression --output apps/web/src/data/regression-eval-results.json --merge "${coverage_args[@]}")
             pnpm --filter @hookdeck-evals/framework export-results -- "${export_args[@]}"
           fi
 

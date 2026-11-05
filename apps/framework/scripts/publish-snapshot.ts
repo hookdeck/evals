@@ -31,6 +31,10 @@ import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { computeRunTotals } from '../lib/run-totals.js';
+import {
+  describeComposition,
+  summarizeComposition,
+} from '../lib/snapshot-composition.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..', '..', '..');
@@ -108,6 +112,14 @@ async function main() {
        */
       runs: new Set(rows.map((r) => r.runId).filter(Boolean)).size,
     },
+    /**
+     * Whether this snapshot is one run or several, stated rather than left to
+     * be derived. `publishedAt` and `runId` above describe the act of
+     * publishing; this describes what was published. A reader showing one
+     * date for the table should check `mixed` first and, when it is true, say
+     * which runs and dates the rows came from instead (#60).
+     */
+    composition: describeComposition(rows, runId),
     results: rows,
   };
 
@@ -152,6 +164,7 @@ async function main() {
     `Published ${rows.length} rows to results/latest.json and results/${file}\n` +
       `  ${snapshot.counts.passed}/${rows.length} passed across ` +
       `${snapshot.counts.experiments} experiments and ${snapshot.counts.evals} evals\n` +
+      `  ${summarizeComposition(snapshot.composition)}\n` +
       `  index now lists ${index.length} snapshot(s)\n` +
       `  ${totals.runsRecorded} runs recorded across ${totals.snapshots} snapshot(s)`
   );
