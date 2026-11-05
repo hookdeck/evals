@@ -185,13 +185,31 @@ existed. Cost is still unmeasured.
 
 **That run was reported as green and was not.** `regression-filtering-001-regex-capability`
 failed for `claude-code-sonnet-5` across both attempts, and the run still concluded
-success, because the step that fails a cell on a red check is gated on
-`github.event_name == 'schedule'`. A dispatched run therefore cannot verify what a
-scheduled run enforces — which is precisely what that dispatch was for. Read the result
-files, not the run's conclusion.
+success, because the step that fails a cell on a red check was gated on
+`github.event_name == 'schedule'`. "Eighteen cells green" went into a PR body, a commit
+message and a workflow comment before anyone read the result files. #103 removed the
+gate (#99): the check now keys on the suite alone, so a dispatched regression run fails
+the same cells a scheduled one does, and its conclusion means the same on either
+trigger. Only the `regression-alert` issue is still opened by the scheduled run alone.
 
-So **"every agent passing is the expected state" remains an assumption**, and the
-evidence is against it for one scenario and one arm. See #92.
+**The committed regression file can now hold a failing cell, and keeps every cell.**
+Until #103, publishing was skipped whenever any matrix job failed, which on the
+regression suite is every run with a red check, so `regression-eval-results.json` could
+not record one. A dispatch with `merge` left at its default also replaced every row with
+that run's own (#98). The regression export now always merges. On 5 November it holds two
+rows, both from a one-scenario dispatch on 2 November (run 41455801121), and fills back
+up as later runs merge into it.
+
+**"Every agent passing is the expected state" is still an assumption for one
+scenario.** `regression-filtering-001-regex-capability` failed every weekly run from
+5 October to 2 November. The transcripts read on 2 November show two causes (#92):
+
+- the rubric failed correct answers for the word they opened with, fixed by #95;
+- Claude Code without our skills invented a `$regex` filter operator in one of two
+  answers, which is the guarded mistake itself, tracked as the product finding #100.
+
+#92 stays open for a third: the rubric does not say how to score an answer that gives a
+regex without saying where it runs, so the judge decides, and it has decided both ways.
 
 **A benchmark run is dispatched against a bucket of work, never a date.** Two buckets,
 and a run belongs to one of them:
