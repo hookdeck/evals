@@ -73,8 +73,12 @@ with a warning rather than published as a failure.
 `low` | `medium` | `high` | `max`.
 
 `provenance`: what the row was measured under. `harness` covers what every
-scenario shares — the base prompt, the sandbox CLI pin, the skills CLI and the
-skills submodule pin — and `scenario` covers the scenario's own files. Two rows
+scenario shares — the base prompt, the sandbox CLI pin, the skills CLI, the
+skills submodule pin and the sandbox image definition (the Dockerfile) — and
+`scenario` covers the scenario's own files. The image definition joined in
+November 2026, so every row recorded before then has a different `harness`
+from every row after it; that is correct, because the image change gave Codex
+the pinned CLI on PATH for the first time. Two rows
 with the same `scenario` and different `harness` measured the same task under a
 different instrument. Opaque: compare for equality, do not parse. `skillsPin`
 is the skills submodule commit the row ran against, in the clear, possibly with a

@@ -6,6 +6,8 @@ export type {
 export {
   ensureSandboxImage,
   sandboxImageTag,
+  // Also for provenance: the image definition is part of the instrument.
+  sandboxImageDefinition,
   SANDBOX_DOCKERFILE_PATH,
   // Exported for provenance: the CLI pin is part of what a published row was
   // measured under, and a bump changes the product under test. See #60.

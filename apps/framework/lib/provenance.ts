@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import {
   HOOKDECK_CLI_VERSION,
   SKILLS_CLI_VERSION,
+  sandboxImageDefinition,
 } from '@hookdeck-evals/sandbox';
 
 /**
@@ -36,7 +37,10 @@ import {
  * instead of making it by default.
  */
 export interface Provenance {
-  /** The harness every scenario shares: base prompt, CLI pin, skills pin. */
+  /**
+   * The harness every scenario shares: base prompt, CLI pin, skills pin,
+   * sandbox image definition.
+   */
   harness: string;
   /** The scenario's own files. Changes when its prompt, seed or scorer does. */
   scenario: string;
@@ -110,14 +114,25 @@ export function skillsPin(root: string): string {
  * exactly what happened on 27 August and is why this module exists now rather
  * than later. The skill *context* is deliberately excluded: that varies by arm
  * and is the treatment being measured, not a change to the instrument.
+ *
+ * The sandbox image definition is in here because the image decides what an
+ * agent's shell can run. Until it was, a Dockerfile change that gave Codex the
+ * pinned CLI it had been missing on PATH left every row's harness hash exactly
+ * where it was, so rows measured with and without the CLI read as measured
+ * under one instrument.
  */
-export function harnessFingerprint(basePrompt: string, root: string): string {
+export function harnessFingerprint(
+  basePrompt: string,
+  root: string,
+  imageDefinition: string = sandboxImageDefinition()
+): string {
   return short(
     [
       `base-prompt:${basePrompt}`,
       `hookdeck-cli:${HOOKDECK_CLI_VERSION}`,
       `skills-cli:${SKILLS_CLI_VERSION}`,
       `skills-pin:${skillsPin(root)}`,
+      `sandbox-image:${imageDefinition}`,
     ].join('\n')
   );
 }

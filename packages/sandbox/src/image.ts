@@ -84,14 +84,26 @@ export const SANDBOX_DOCKERFILE_PATH = fileURLToPath(
  * every cell there.
  */
 export function sandboxImageTag(dockerfile: string): string {
-  const definition = createHash('sha256')
-    .update(dockerfile)
-    .digest('hex')
-    .slice(0, 12);
   return (
     `${SANDBOX_IMAGE_REPOSITORY}:` +
-    `skills-${SKILLS_CLI_VERSION}-hookdeck-${HOOKDECK_CLI_VERSION}-${definition}`
+    `skills-${SKILLS_CLI_VERSION}-hookdeck-${HOOKDECK_CLI_VERSION}-` +
+    sandboxImageDefinition(dockerfile)
   );
+}
+
+/**
+ * A short hash of the image definition: the Dockerfile's bytes.
+ *
+ * Exported for provenance as well as the tag. The image is part of the
+ * instrument, and the case that made it so is the login-shell PATH: the same
+ * pins, the same prompt and the same skills gave Codex no `hookdeck` on PATH
+ * before the Dockerfile changed and the pinned one after. A row's provenance
+ * has to tell those apart, and the pins alone cannot.
+ */
+export function sandboxImageDefinition(
+  dockerfile: string = readFileSync(SANDBOX_DOCKERFILE_PATH, 'utf8')
+): string {
+  return createHash('sha256').update(dockerfile).digest('hex').slice(0, 12);
 }
 
 /** Build (or reuse) the sandbox image and return its tag. */

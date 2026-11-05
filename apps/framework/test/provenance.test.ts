@@ -3,7 +3,9 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
+import { sandboxImageDefinition } from '@hookdeck-evals/sandbox';
 import {
+  harnessFingerprint,
   SKILLS_PIN_DIRTY_SUFFIX,
   SKILLS_PIN_UNAVAILABLE,
   scenarioFingerprint,
@@ -135,5 +137,33 @@ describe('skillsPin', () => {
     const root = superproject();
     expect(skillsPin(root)).toBe(SKILLS_PIN_UNAVAILABLE);
     expect(skillsPin(root)).not.toBe(git(root, 'rev-parse', 'HEAD'));
+  });
+});
+
+describe('harnessFingerprint', () => {
+  // A root with no skills submodule, so the pin is constant across calls.
+  const root = () => {
+    const dir = mkdtempSync(join(tmpdir(), 'prov-root-'));
+    dirs.push(dir);
+    return dir;
+  };
+
+  it('changes when the sandbox image definition does', () => {
+    // The login-shell PATH fix changed only the Dockerfile, and gave Codex a
+    // CLI it had not had. Rows either side of it must not share a harness.
+    const r = root();
+    expect(harnessFingerprint('prompt', r, 'aaaaaaaaaaaa')).not.toBe(
+      harnessFingerprint('prompt', r, 'bbbbbbbbbbbb')
+    );
+  });
+
+  it('reads the real Dockerfile by default, and is stable', () => {
+    const r = root();
+    expect(harnessFingerprint('prompt', r)).toBe(
+      harnessFingerprint('prompt', r, sandboxImageDefinition())
+    );
+    expect(harnessFingerprint('prompt', r)).toBe(
+      harnessFingerprint('prompt', r)
+    );
   });
 });
