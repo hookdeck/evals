@@ -51,8 +51,10 @@ import {
   type AttemptRecord,
 } from './attempts.js';
 import {
+  attemptRan,
   clearErroredEvidence,
   newAttemptLoopState,
+  settleAttempt,
   writeErroredEvidence,
   type AttemptLoopState,
 } from './errored-cell.js';
@@ -482,12 +484,10 @@ async function runOne(
   let lastAgentReport = '';
   let lastStoppedReason = 'not_started';
   let lastUsage: AgentRunResult['usage'];
-  const priorAttempts = loop.priorAttempts;
 
   const runs = runsFor(ev);
 
   for (let attempt = 1; attempt <= runs; attempt += 1) {
-    loop.current = undefined;
     // Tools mode: the eval's tool surface is MCP (platform-lite). A CLI agent
     // gets the same sandbox as local-stack minus the running stack — with its
     // skills installed — and reaches the in-container MCP servers' host-side
@@ -536,14 +536,14 @@ async function runOne(
     lastUsage = run.usage;
     // The attempt in flight. If anything below throws — either guard, the
     // scorer, the rehydrate — this is what the caller keeps of it.
-    loop.current = {
+    attemptRan(loop, {
       attempt,
       stoppedReason: run.stoppedReason,
       agentReport: run.agentReport,
       transcript: run.transcript,
       skills: buildSkillResult(availableSkills, run.toolCalls),
       docs: buildDocsResult(run.toolCalls),
-    };
+    });
 
     // An agent that errored before emitting a single event did not attempt the
     // task, so there is nothing to score. Scoring it anyway produces a result
@@ -620,36 +620,34 @@ async function runOne(
         agentReport: run.agentReport,
         stoppedReason: run.stoppedReason,
         usage: run.usage,
-        priorAttempts,
+        priorAttempts: loop.priorAttempts,
       };
     }
 
     // This attempt is about to be overwritten by the next one, so keep it.
     // The rule lives in `attempts.ts` so it can be tested without an agent.
-    if (
+    // The final attempt is not superseded, so it stays in flight: the session
+    // teardown that runs when this block exits can still throw, and the caller
+    // would then still have it. See `errored-cell.ts`.
+    settleAttempt(
+      loop,
       shouldRecordSupersededAttempt({
         attempt,
         runs,
         passed: last.passed,
         stopOnPass: STOP_ON_PASS,
       })
-    ) {
-      priorAttempts.push(
-        buildAttemptRecord({
-          attempt,
-          result: last,
-          stoppedReason: run.stoppedReason,
-          agentReport: run.agentReport,
-          transcript: run.transcript,
-          skills: buildSkillResult(availableSkills, run.toolCalls),
-          docs: buildDocsResult(run.toolCalls),
-        })
-      );
-    }
-
-    // Recorded above, or the final attempt the result below reports: either
-    // way it is no longer the attempt in flight.
-    loop.current = undefined;
+        ? buildAttemptRecord({
+            attempt,
+            result: last,
+            stoppedReason: run.stoppedReason,
+            agentReport: run.agentReport,
+            transcript: run.transcript,
+            skills: buildSkillResult(availableSkills, run.toolCalls),
+            docs: buildDocsResult(run.toolCalls),
+          })
+        : undefined
+    );
 
     logRetryAttempt(expName, ev, attempt, last);
   }
@@ -664,7 +662,7 @@ async function runOne(
     agentReport: lastAgentReport,
     stoppedReason: lastStoppedReason,
     usage: lastUsage,
-    priorAttempts,
+    priorAttempts: loop.priorAttempts,
   };
 }
 

@@ -32,7 +32,9 @@ not an answer. What its earlier attempts left goes to
 reads, with `errored: true`, the error, `priorAttempts` and the attempt that was
 running when it errored. In CI it is uploaded as a separate
 `errored-attempts-<experiment>__<eval>` artifact, which the publish job never
-downloads.
+downloads. The exporter also refuses any file with `errored: true` or without a
+boolean `passed`, so evidence copied into `.eval-runs/` by mistake is skipped
+with a warning rather than published as a failure.
 
 ## The row
 

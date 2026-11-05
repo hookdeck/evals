@@ -4,7 +4,7 @@ import { discoverEvals, EVALS_ROOT } from '../lib/discovery.js';
 import {
   describeErroredEvidence,
   ERRORED_RUNS_DIRNAME,
-  type ErroredEvidence,
+  readErroredEvidenceTree,
 } from '../harness/errored-cell.js';
 
 /**
@@ -42,34 +42,6 @@ const RUNS_DIR = join(EVALS_ROOT, '.eval-runs');
  * here.
  */
 const ERRORED_DIR = join(EVALS_ROOT, ERRORED_RUNS_DIRNAME);
-
-/** Every errored cell's evidence on disk, by experiment directory. */
-function readErroredEvidence(): Array<{
-  path: string;
-  evidence: ErroredEvidence;
-}> {
-  if (!existsSync(ERRORED_DIR)) return [];
-  const out: Array<{ path: string; evidence: ErroredEvidence }> = [];
-  for (const dir of readdirSync(ERRORED_DIR)) {
-    let files: string[] = [];
-    try {
-      files = readdirSync(join(ERRORED_DIR, dir)).filter((f) =>
-        f.endsWith('.json')
-      );
-    } catch {
-      continue;
-    }
-    for (const file of files) {
-      out.push({
-        path: `${ERRORED_RUNS_DIRNAME}/${dir}/${file}`,
-        evidence: JSON.parse(
-          readFileSync(join(ERRORED_DIR, dir, file), 'utf8')
-        ) as ErroredEvidence,
-      });
-    }
-  }
-  return out;
-}
 
 interface Check {
   name?: string;
@@ -271,7 +243,13 @@ function main() {
   }
 
   // First, because these are the cells the scoreboard cannot show at all.
-  const erroredCells = readErroredEvidence();
+  const { found: erroredCells, unreadable } =
+    readErroredEvidenceTree(ERRORED_DIR);
+  for (const { path, reason } of unreadable) {
+    console.warn(
+      `  could not read ${ERRORED_RUNS_DIRNAME}/${path}: ${reason}\n`
+    );
+  }
   if (erroredCells.length > 0) {
     console.log(
       `${erroredCells.length} cell(s) errored and have no result. ` +
@@ -282,7 +260,7 @@ function main() {
       console.log(`  ${evidence.eval} x ${evidence.experiment}`);
       console.log(`      ERRORED: ${describeErroredEvidence(evidence)}`);
       console.log(
-        `      → ${path} (priorAttempts, erroredAttempt: agentReport, transcript)\n`
+        `      → ${ERRORED_RUNS_DIRNAME}/${path} (priorAttempts, erroredAttempt: agentReport, transcript)\n`
       );
     }
   }
@@ -306,7 +284,16 @@ function main() {
     for (const file of files) {
       const row = JSON.parse(
         readFileSync(join(experimentDir, file), 'utf8')
-      ) as Row;
+      ) as Row & { errored?: boolean };
+      // Evidence copied in from an `errored-attempts-*` download. The exporter
+      // refuses it; say so here too rather than triaging it as a cell.
+      if (row.errored === true) {
+        console.warn(
+          `  .eval-runs/${dir}/${file} is errored-cell evidence, not a result; ` +
+            `move it to ${ERRORED_RUNS_DIRNAME}/\n`
+        );
+        continue;
+      }
       const flags = flagsFor(row, needs.get(row.eval) ?? []);
       if (flags.length > 0) rows.push({ row, flags });
     }

@@ -29,9 +29,24 @@
  *   `.eval-runs/<experiment>/` — would publish nothing. So the workflow uploads
  *   this directory as `errored-attempts-<experiment>__<eval>`, which the publish
  *   job never downloads.
+ *
+ * Location is the first defence, not the only one. A downloaded artifact has
+ * the same `<eval>.json` layout as a result, so an evidence file copied into
+ * `.eval-runs/<experiment>/` by hand would otherwise parse: the raw row schema
+ * needs only `experiment` and `eval`, and the exporter reads a missing `passed`
+ * as a failure — the 13 August row again. `lib/raw-result.ts` makes the
+ * exporter refuse it by content.
  */
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
+import { dirname, join, relative, sep } from 'node:path';
 import type { AttemptRecord } from './attempts.js';
 import { serializeRedacted, type SecretValue } from './redact.js';
 import type { DocsResult, SkillResult, TranscriptPart } from './types.js';
@@ -78,10 +93,14 @@ export interface ErroredAttemptRecord {
  * on attempt 2, or a scorer that throws, would otherwise lose attempt 1 in
  * exactly the same way.
  *
- * `current` is set once an agent run has returned and cleared once that
- * attempt has been recorded or reported, so it is present exactly when the
- * error belongs to an attempt whose agent ran — a guard, the scorer, a
- * rehydrate — and absent when the error came from setting up the next one.
+ * `current` is the attempt whose agent has run and which is not yet in
+ * `priorAttempts`. It is cleared only by moving it there, so the attempt the
+ * result reports — the final one, or a stop-on-pass — stays `current` until
+ * the cell is done, including through the session and sandbox teardown that
+ * runs after the loop body. A teardown that throws then still has it.
+ *
+ * Mutate it only through the two functions below, which `runOne` calls and
+ * the tests exercise directly.
  */
 export interface AttemptLoopState {
   priorAttempts: AttemptRecord[];
@@ -90,6 +109,35 @@ export interface AttemptLoopState {
 
 export function newAttemptLoopState(): AttemptLoopState {
   return { priorAttempts: [] };
+}
+
+/**
+ * The agent for this attempt has run. Anything that throws from here on
+ * belongs to it.
+ *
+ * Replaces `current` without checking it, which is safe because every
+ * attempt before the last either returns (stop-on-pass) or is superseded and
+ * moved by `settleAttempt`, so nothing unrecorded is ever overwritten.
+ */
+export function attemptRan(
+  loop: AttemptLoopState,
+  attempt: ErroredAttemptRecord
+): void {
+  loop.current = attempt;
+}
+
+/**
+ * The attempt has been scored. Pass the record when it is superseded and
+ * should be kept; pass `undefined` when it is the attempt the result reports,
+ * which leaves it `current` for as long as the cell can still throw.
+ */
+export function settleAttempt(
+  loop: AttemptLoopState,
+  superseded: AttemptRecord | undefined
+): void {
+  if (!superseded) return;
+  loop.priorAttempts.push(superseded);
+  loop.current = undefined;
 }
 
 export interface ErroredEvidence {
@@ -119,10 +167,12 @@ interface ErroredCellInput {
 }
 
 /**
- * Deliberately no top-level `passed`, `checks` or `transcript`. A file with
- * none of them cannot be mistaken for a result by anything that reads result
- * files, including `replay-judge.ts`, which skips any JSON without a top-level
- * `transcript`.
+ * Deliberately no top-level `passed`, `checks` or `transcript`, and an
+ * explicit `errored: true`. Absence alone is not enough: the raw row schema is
+ * loose and accepts a file with only `experiment` and `eval`, so it is the
+ * exporter's check in `lib/raw-result.ts` that refuses this, by `errored` and
+ * by the missing `passed`. `replay-judge.ts` skips it because it has no
+ * top-level `transcript`.
  */
 export function buildErroredEvidence(input: ErroredCellInput): ErroredEvidence {
   const err = input.error;
@@ -158,6 +208,57 @@ export function writeErroredEvidence(
   mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, serializeRedacted(buildErroredEvidence(input), secrets));
   return out;
+}
+
+/**
+ * Every errored cell's evidence under `dir`, at any depth.
+ *
+ * Any depth because evidence arrives in three layouts: the harness writes
+ * `<experiment>/<eval>.json`; `gh run download --name errored-attempts-X__Y
+ * --dir <dir>` writes `<eval>.json` flat, since the artifact is rooted at the
+ * experiment directory; and downloading several writes
+ * `errored-attempts-X__Y/<eval>.json`. Each cell names its own experiment and
+ * eval, so the path is only for telling the reader where to look.
+ *
+ * Files that do not parse, or are not evidence, are reported rather than
+ * thrown, so one corrupt download does not hide every other errored cell.
+ */
+export function readErroredEvidenceTree(dir: string): {
+  found: Array<{ path: string; evidence: ErroredEvidence }>;
+  unreadable: Array<{ path: string; reason: string }>;
+} {
+  const found: Array<{ path: string; evidence: ErroredEvidence }> = [];
+  const unreadable: Array<{ path: string; reason: string }> = [];
+  if (!existsSync(dir)) return { found, unreadable };
+
+  const walk = (current: string) => {
+    for (const entry of readdirSync(current)) {
+      const full = join(current, entry);
+      if (statSync(full).isDirectory()) {
+        walk(full);
+        continue;
+      }
+      if (!entry.endsWith('.json')) continue;
+      const path = relative(dir, full).split(sep).join('/');
+      try {
+        const parsed = JSON.parse(
+          readFileSync(full, 'utf8')
+        ) as Partial<ErroredEvidence> | null;
+        if (parsed?.errored !== true) {
+          unreadable.push({ path, reason: 'not errored-cell evidence' });
+          continue;
+        }
+        found.push({ path, evidence: parsed as ErroredEvidence });
+      } catch (error) {
+        unreadable.push({
+          path,
+          reason: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+  };
+  walk(dir);
+  return { found, unreadable };
 }
 
 /**

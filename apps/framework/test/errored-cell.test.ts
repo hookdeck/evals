@@ -1,4 +1,11 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative, sep } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -8,11 +15,14 @@ import {
   type AttemptRecord,
 } from '../harness/attempts.js';
 import {
+  attemptRan,
   clearErroredEvidence,
   describeErroredEvidence,
   ERRORED_RUNS_DIRNAME,
   erroredEvidencePath,
   newAttemptLoopState,
+  readErroredEvidenceTree,
+  settleAttempt,
   writeErroredEvidence,
   type AttemptLoopState,
   type ErroredEvidence,
@@ -47,9 +57,49 @@ function attemptOne(): AttemptRecord {
   });
 }
 
+function inFlight(attempt: number, stoppedReason = 'end_turn') {
+  return { attempt, stoppedReason, agentReport: '', transcript, skills, docs };
+}
+
 /**
- * The loop in `runOne`, reduced to its decisions, writing into caller-owned
- * state the same way. `run-eval.ts` calls `main()` at module scope and so
+ * The transitions `runOne` makes, tested directly. Reverting either the shared
+ * array or the rule for clearing `current` breaks one of these.
+ */
+describe('attempt state transitions', () => {
+  it('records into the array the caller holds', () => {
+    const loop = newAttemptLoopState();
+    const held = loop.priorAttempts;
+    attemptRan(loop, inFlight(1));
+    settleAttempt(loop, attemptOne());
+    expect(held.map((a) => a.attempt)).toEqual([1]);
+    expect(loop.current).toBeUndefined();
+  });
+
+  it('marks the attempt whose agent has run as in flight', () => {
+    const loop = newAttemptLoopState();
+    attemptRan(loop, inFlight(1, 'error_exit_255'));
+    expect(loop.current?.stoppedReason).toBe('error_exit_255');
+  });
+
+  /**
+   * The final attempt is reported by the result, not superseded. It must stay
+   * in flight, because the session and sandbox teardown runs after the loop
+   * body, and a teardown that throws would otherwise lose it from both
+   * `priorAttempts` and `erroredAttempt`.
+   */
+  it('keeps the reported attempt in flight through teardown', () => {
+    const loop = newAttemptLoopState();
+    attemptRan(loop, inFlight(1));
+    settleAttempt(loop, attemptOne());
+    attemptRan(loop, inFlight(2));
+    settleAttempt(loop, undefined);
+    expect(loop.current?.attempt).toBe(2);
+    expect(loop.priorAttempts.map((a) => a.attempt)).toEqual([1]);
+  });
+});
+
+/**
+ * The loop in `runOne`, reduced to its decisions, making the same calls. `run-eval.ts` calls `main()` at module scope and so
  * cannot be imported here, the same reason `attempts.test.ts` replays the rule
  * rather than the file.
  *
@@ -61,37 +111,31 @@ async function replayLoop(
   runs: number,
   loop: AttemptLoopState
 ): Promise<{ passed: boolean; priorAttempts: AttemptRecord[] }> {
-  const priorAttempts = loop.priorAttempts;
   for (let attempt = 1; attempt <= runs; attempt += 1) {
-    loop.current = undefined;
     const outcome = outcomes[attempt - 1] ?? false;
-    loop.current = {
-      attempt,
-      stoppedReason: outcome === 'dead' ? 'error_exit_255' : 'end_turn',
-      agentReport: '',
-      transcript,
-      skills,
-      docs,
-    };
+    attemptRan(
+      loop,
+      inFlight(attempt, outcome === 'dead' ? 'error_exit_255' : 'end_turn')
+    );
     if (outcome === 'dead') {
       throw new Error(
         'the agent process did not exit cleanly (stoppedReason: error_exit_255)'
       );
     }
-    if (outcome) return { passed: true, priorAttempts };
-    if (
+    if (outcome) return { passed: true, priorAttempts: loop.priorAttempts };
+    settleAttempt(
+      loop,
       shouldRecordSupersededAttempt({
         attempt,
         runs,
         passed: outcome,
         stopOnPass: true,
       })
-    ) {
-      priorAttempts.push({ ...attemptOne(), attempt });
-    }
-    loop.current = undefined;
+        ? { ...attemptOne(), attempt }
+        : undefined
+    );
   }
-  return { passed: false, priorAttempts };
+  return { passed: false, priorAttempts: loop.priorAttempts };
 }
 
 /** Runs the loop to a throw, returning the state the caller is left with. */
@@ -130,12 +174,12 @@ describe('caller-owned attempt state', () => {
     expect(state.current?.attempt).toBe(1);
   });
 
-  it('leaves no attempt in flight after a loop that finishes', async () => {
+  it('leaves only the reported attempt in flight after a loop that finishes', async () => {
     const state = newAttemptLoopState();
     await expect(replayLoop([false, false], 2, state)).resolves.toMatchObject({
       passed: false,
     });
-    expect(state.current).toBeUndefined();
+    expect(state.current?.attempt).toBe(2);
     expect(state.priorAttempts.map((a) => a.attempt)).toEqual([1]);
   });
 });
@@ -289,5 +333,65 @@ describe('describeErroredEvidence', () => {
     expect(describeErroredEvidence({ error: 'boom', priorAttempts: [] })).toBe(
       'no result written; no earlier attempts. boom'
     );
+  });
+});
+
+describe('readErroredEvidenceTree', () => {
+  let root: string;
+  beforeEach(() => {
+    root = mkdtempSync(join(tmpdir(), 'errored-tree-'));
+  });
+  afterEach(() => {
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  /** The three layouts evidence arrives in. See the function's comment. */
+  it('reads the harness layout, a flat download and a nested one', async () => {
+    const { state, error } = await erroredState([false, 'dead'], 2);
+    // Harness layout: .eval-errored/<experiment>/<eval>.json
+    writeErroredEvidence(root, {
+      experiment: 'a',
+      evalId: 'one',
+      error,
+      state,
+    });
+    const harnessFile = erroredEvidencePath(root, 'a', 'one');
+    const body = readFileSync(harnessFile, 'utf8');
+    const dir = join(root, ERRORED_RUNS_DIRNAME);
+    // Flat: gh run download --name errored-attempts-a__two --dir .eval-errored
+    writeFileSync(join(dir, 'two.json'), body);
+    // Nested: gh run download of several artifacts
+    mkdirSync(join(dir, 'errored-attempts-a__three'));
+    writeFileSync(join(dir, 'errored-attempts-a__three', 'three.json'), body);
+
+    const { found, unreadable } = readErroredEvidenceTree(dir);
+    expect(found.map((f) => f.path).sort()).toEqual([
+      'a/one.json',
+      'errored-attempts-a__three/three.json',
+      'two.json',
+    ]);
+    expect(unreadable).toEqual([]);
+  });
+
+  it('reports a corrupt file instead of throwing', async () => {
+    const { state, error } = await erroredState(['dead'], 1);
+    writeErroredEvidence(root, { experiment: 'a', evalId: 'ok', error, state });
+    const dir = join(root, ERRORED_RUNS_DIRNAME);
+    writeFileSync(join(dir, 'a', 'broken.json'), '{ not json');
+    writeFileSync(join(dir, 'a', 'row.json'), '{"experiment":"a","eval":"x"}');
+
+    const { found, unreadable } = readErroredEvidenceTree(dir);
+    expect(found.map((f) => f.path)).toEqual(['a/ok.json']);
+    expect(unreadable.map((u) => u.path).sort()).toEqual([
+      'a/broken.json',
+      'a/row.json',
+    ]);
+  });
+
+  it('is empty when the directory does not exist', () => {
+    expect(readErroredEvidenceTree(join(root, 'nope'))).toEqual({
+      found: [],
+      unreadable: [],
+    });
   });
 });

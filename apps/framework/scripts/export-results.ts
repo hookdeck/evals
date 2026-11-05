@@ -23,6 +23,7 @@ import {
   readRepeatedFlag,
   readSuiteFilters,
 } from '../lib/cli-args.js';
+import { whyNotAResultRow } from '../lib/raw-result.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..', '..', '..');
@@ -163,6 +164,12 @@ async function readResultFile(
   experimentMetadata: Map<string, ExperimentExportMetadata>
 ): Promise<EvalResult | null> {
   const parsed: unknown = JSON.parse(await readFile(filePath, 'utf8'));
+  // Loud, because a dropped file is a missing row and somebody should know.
+  const notARow = whyNotAResultRow(parsed);
+  if (notARow) {
+    console.warn(`skipping ${sourcePath}: ${notARow}`);
+    return null;
+  }
   const result = rawEvalResultSchema.safeParse(parsed);
   if (!result.success) {
     return null;
