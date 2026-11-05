@@ -17,6 +17,9 @@ dist/
 # Raw per-run output: working state, rewritten every run, never published.
 # `results/` is the published contract and IS tracked.
 .eval-runs/
+# What an errored cell's earlier attempts left behind. Never published, and kept
+# out of .eval-runs/ so nothing that reads results can reach it (#97).
+.eval-errored/
 .sync-tmp/
 
 .spike-pristine.json

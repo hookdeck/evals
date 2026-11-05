@@ -236,6 +236,57 @@ gh issue view <n>                # the detail and any discussion
 gh issue list --state closed     # what was already decided, and why
 ```
 
+**Two labels say who fixes the thing, and they are the first filter on that
+list.** `product` is a fact about Hookdeck, its docs or its skills, and the fix
+is almost always in another repository. `harness` is ours — runner, scorers,
+provisioner, seeds and CI — and can be picked up in this repo. The other labels
+— `scenario`, `publishing`, `documentation` — say what an issue is about rather
+than who fixes it, so either of the two can carry any of them: #43 is `product`
+and `scenario`, because the API fix is elsewhere and the scenario it suggests is
+ours.
+
+The label says where the fix goes, not where the finding came from. Most of
+these came out of a run, and #43 opens by saying that none did — it came out of
+building a demo — and carries `product` anyway, because what a reader filtering
+the board wants is the work that is not ours.
+
+The two are otherwise indistinguishable on a board and have opposite next
+actions: a `product` issue needs filing elsewhere and then measuring, a `harness`
+issue needs a pull request here. `product` was called `finding` until 21
+September and carried both. Of the eleven issues it held, five were measurements
+of our own instrument rather than of Hookdeck, and three of those moved to
+`harness`. That is the same conflation the release notes rule against, where an
+open defect in our instrument is neither a product finding nor something
+shipped.
+
+**A `product` issue carries an `Owned by:` line at the top of its body**, naming
+the repository and the title the issue would take there:
+
+```
+**Owned by:** `hookdeck/core` — "Say the project is not an Outpost project instead of returning Not Found"
+```
+
+The label says the fix is elsewhere; only that line says where, and working out
+where is the expensive half. Name both repositories when a finding splits across
+them, as #34 does — documentation in `hookdeck/outpost`, behaviour in
+`hookdeck/core`. Where you cannot tell which repository owns it, write that in
+the line rather than guessing: an issue filed against the wrong repository is
+worse than one not filed. Replace the line with a link once the issue exists.
+
+**Two shapes carry `product` with no `Owned by:` line**, and both have their next
+step here rather than elsewhere. A mapping issue is one: its change has already
+merged elsewhere and it is waiting on a run to measure it, so it opens with a link
+to that change, which is what an `Owned by:` line becomes once the issue exists —
+#27 links the merged `hookdeck/agent-skills` pull request in its first line. An
+open question about our own skills or docs is the other: it cannot name a
+repository until it has an answer, because the answer is what decides whether the
+fix is a skill, a docs page or a scenario. Anything else carrying `product` with
+no line is drift.
+
+A `product` issue is closed by the release that measures the change, not the one
+that ships it — the mapping-issue rule under Releases — so one sitting open after
+its fix merged elsewhere is in the correct state.
+
 The division of labour between the three places, so nothing is duplicated:
 
 | | |
@@ -548,6 +599,28 @@ was.
 **A held run is still worth running.** The artifacts carry the transcripts, and
 transcripts are where the findings come from — the scoreboard has never produced
 one. Holding publication is not the same as skipping the week.
+
+**A partly failed run still publishes; a cancelled one never does.** One errored
+cell used to skip the publish job outright, and on 21 September 75 of 76 completed
+cells went unpublished (#80). The export now checks what came back against every
+pair the run was asked for, names each missing cell in the job summary along with
+whatever stands in for it — a carried row and its date under `--merge`, or nothing —
+and refuses if more than a tenth of the cells are missing. Past that floor something
+systematic happened and somebody should read it first. If publishing is still right,
+raise the floor and re-run **only** the publish job; "Re-run failed jobs" would re-run
+the failed matrix cells too, and pay for them again:
+
+```bash
+gh variable set EVALS_MAX_MISSING_FRACTION --body 0.25   # then re-run publish-results
+gh variable delete EVALS_MAX_MISSING_FRACTION            # back to 0.1
+```
+
+A credit, quota or auth failure cancels the run on purpose, and a cancelled run
+publishes nothing whatever the floor says. The failing job uploads a
+`provider-refused-*` marker before it cancels, and the publish job refuses on any
+marker, so a cancel that did not take still publishes nothing. The regression export always merges,
+whatever the `merge` input says, so a one-cell dispatch cannot replace the record
+with one row (#98).
 
 ## Plans
 

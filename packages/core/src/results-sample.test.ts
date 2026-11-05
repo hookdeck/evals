@@ -46,5 +46,9 @@ describe('the documented results sample', () => {
     );
     expect(rows.some((r) => (r.docs?.calls.length ?? 0) > 0)).toBe(true);
     expect(rows.some((r) => (r.attempts ?? 1) > 1)).toBe(true);
+    // Kept rather than stripped. No published row carried `provenance` until
+    // #96, so `--merge` could not tell a stale carried row from a current one,
+    // and this schema is what carried rows are now parsed with.
+    expect(rows.some((r) => r.provenance?.harness)).toBe(true);
   });
 });

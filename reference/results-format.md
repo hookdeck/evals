@@ -16,14 +16,30 @@ Two files, both a JSON array of run rows, one row per (experiment × eval) pair:
 | `apps/web/src/data/eval-results.json` | benchmark | Yes, this is the scoreboard |
 | `apps/web/src/data/regression-eval-results.json` | regression | No, not read by the app today |
 
-Both are currently `[]`. Nothing has been published yet, so `results-sample.json`
-is the thing to mock against.
+Both are populated by CI. `results-sample.json` is still the thing to mock
+against, because it covers states a given run may not contain.
+
+The published contract is `results/` rather than either file: see
+[Published snapshots](#published-snapshots) below.
 
 **The exported row is narrower than the raw run file.** Each run also writes
-`results/<experiment>/<eval>.json`, which carries the transcript, tool calls,
-token usage and cost. `export-results.ts` deliberately does not copy those
-through. Anything not listed below is unavailable to the UI, whatever a raw
-result file happens to contain.
+`.eval-runs/<experiment>/<eval>.json`, which carries the transcript, tool calls,
+token usage, cost and `priorAttempts` — the transcript and checks of every
+attempt a retry superseded. `export-results.ts` deliberately does not copy any
+of those through. Anything not listed below is unavailable to the UI, whatever a
+raw result file happens to contain. That holds for rows carried forward by
+`--merge` as well: they are parsed with the same schema as fresh rows, and a row
+that no longer parses is reported and dropped rather than republished.
+
+**A cell that errors writes no row at all**, by design: a dead agent process is
+not an answer. What its earlier attempts left goes to
+`.eval-errored/<experiment>/<eval>.json` instead, outside the tree the exporter
+reads, with `errored: true`, the error, `priorAttempts` and the attempt that was
+running when it errored. In CI it is uploaded as a separate
+`errored-attempts-<experiment>__<eval>` artifact, which the publish job never
+downloads. The exporter also refuses any file with `errored: true` or without a
+boolean `passed`, so evidence copied into `.eval-runs/` by mistake is skipped
+with a warning rather than published as a failure.
 
 ## The row
 
@@ -33,6 +49,9 @@ result file happens to contain.
 | `experimentSuite` | enum, optional | `benchmark` \| `no-skills` \| `regression` |
 | `experimentDisplay` | object, optional | See below |
 | `eval` | string | Scenario id, e.g. `benchmark-filtering-001-enterprise-orders` |
+| `ranAt` | string, optional | ISO timestamp of when this cell's run finished. Per row, because a merged file holds rows from several runs |
+| `runId` | string, optional | The GitHub Actions run that produced this row. Absent for local runs and rows before 17 August 2026 |
+| `provenance` | object, optional | `{ harness, scenario, skillsPin? }`: two short fingerprints and a commit. See below |
 | `stage` | enum, optional | `build` \| `investigate` \| `resolve` |
 | `product` | array, optional | `event-gateway` \| `outpost` \| `console` |
 | `topic` | array, optional | See taxonomy below |
@@ -53,6 +72,17 @@ result file happens to contain.
 `anthropic` | `openai` | `moonshotai`, and `reasoningEffort` is `minimal` |
 `low` | `medium` | `high` | `max`.
 
+`provenance`: what the row was measured under. `harness` covers what every
+scenario shares — the base prompt, the sandbox CLI pin, the skills CLI and the
+skills submodule pin — and `scenario` covers the scenario's own files. Two rows
+with the same `scenario` and different `harness` measured the same task under a
+different instrument. Opaque: compare for equality, do not parse. `skillsPin`
+is the skills submodule commit the row ran against, in the clear, possibly with a
+suffix when that checkout had uncommitted changes; absent from rows recorded
+before the harness wrote it. The whole object is absent from
+every row published before November 2026, because the exporter dropped it
+(#96); `export-results --merge` reports such rows as `no provenance recorded`.
+
 `checks`: `{ name, passed, notes?, judgeNotes? }`. **Both note fields matter and
 they are not interchangeable.** `notes` comes from a deterministic check and
 usually states the expectation and the reality ("expected 200, got 401").
@@ -70,6 +100,38 @@ baseline** and should be visually distinct rather than averaged in silently.
 where `source` is `search_docs` | `web_fetch` | `web_search` | `shell_fetch` and
 each page is `{ url, title? }`. `resultChars` approximates how much text the call
 pulled into context; divide by about four for tokens.
+
+## Published snapshots
+
+`results/latest.json` is the most recent publish, `results/runs/<stamp>.json`
+keeps each one, and `results/index.json` lists them newest first. A snapshot
+wraps the rows:
+
+| Field | Type | Notes |
+|---|---|---|
+| `schemaVersion` | number | `1` |
+| `publishedAt` | string | When the snapshot was published, not when its rows ran |
+| `runId` | string, optional | The run that published it. **Not necessarily the run that produced every row** |
+| `counts` | object | `{ rows, experiments, evals, passed, runs }`; `runs` is distinct `runId`s among the rows |
+| `composition` | object | What the snapshot is made of. See below |
+| `results` | array | The rows above |
+
+**A snapshot is not a run.** `export-results --merge` carries forward every cell
+a run did not re-execute, so one snapshot can hold rows measured weeks apart.
+`composition` says so at the top of the file instead of leaving it to be derived:
+
+| Field | Type | Notes |
+|---|---|---|
+| `mixed` | boolean | True when rows come from more than one run, or when any row has no `runId` |
+| `ranAt` | object | `{ earliest?, latest? }` across every row |
+| `carried` | number, optional | Rows whose `runId` is not the snapshot's `runId`. Absent when the snapshot has no `runId` |
+| `runs` | array | `{ runId, rows, earliest?, latest? }` per run, newest first. `runId` is `null` for rows without one |
+
+**Anything rendering one date for a snapshot should check `mixed` first.** When
+it is true, "Results from 28 September" over 38 rows measured on 1 September is
+wrong; say which runs and dates the rows came from. Snapshots published before
+November 2026 have no `composition`; derive the same thing from each row's
+`runId` and `ranAt`, which every row since 17 August carries.
 
 ## Taxonomy
 

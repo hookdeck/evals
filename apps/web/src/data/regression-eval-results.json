@@ -1,6 +1,6 @@
 [
   {
-    "experiment": "claude-code-sonnet-5-docs-only",
+    "experiment": "claude-code-sonnet-5",
     "experimentSuite": "regression",
     "experimentDisplay": {
       "agent": "claude-code",
@@ -9,6 +9,8 @@
       "reasoningEffort": "high"
     },
     "eval": "regression-filtering-001-regex-capability",
+    "ranAt": "2026-11-02T13:51:18.515Z",
+    "runId": "41455801121",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -17,12 +19,71 @@
       "filtering"
     ],
     "suite": "regression",
-    "passed": false,
+    "gatedBy": "discovery",
+    "passed": true,
     "checks": [
       {
         "name": "did not claim regex filtering or channels exist",
-        "passed": false,
-        "judgeNotes": "The assistant incorrectly says regex can be used for Hookdeck filtering and offers to wire it into a Hookdeck filter."
+        "passed": true,
+        "judgeNotes": "Correctly states Hookdeck filters have no regex operator and only uses regex in a transformation context."
+      }
+    ],
+    "skills": {
+      "available": [
+        "hookdeck",
+        "event-gateway"
+      ],
+      "loaded": [
+        "event-gateway"
+      ]
+    },
+    "docs": {
+      "calls": [
+        {
+          "source": "web_fetch",
+          "query": "Does the Hookdeck connection filter support a regex operator (e.g. $regex or similar)? List all supported operators and any notes on regex/pattern matching support and limitations.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/filters.md"
+            }
+          ],
+          "resultChars": 1127
+        }
+      ]
+    },
+    "prompt": "Our order references look like `ORD-2026-AC-4821`. We migrated formats at the\nstart of the year and the old ones are still coming through, which my service\nchokes on.\n\nCan I use a regex on the reference to only let this year's format through? What\nis the closest I can get?",
+    "promptSourcePath": "evals/regression-filtering-001-regex-capability/PROMPT.md",
+    "attempts": 2,
+    "sourcePath": "claude-code-sonnet-5/regression-filtering-001-regex-capability.json"
+  },
+  {
+    "experiment": "claude-code-sonnet-5-no-skills",
+    "experimentSuite": "regression",
+    "experimentDisplay": {
+      "agent": "claude-code",
+      "modelProvider": "anthropic",
+      "modelId": "claude-sonnet-5",
+      "reasoningEffort": "high"
+    },
+    "eval": "regression-filtering-001-regex-capability",
+    "ranAt": "2026-11-02T13:48:57.493Z",
+    "runId": "41455801121",
+    "stage": "build",
+    "product": [
+      "event-gateway"
+    ],
+    "topic": [
+      "filtering"
+    ],
+    "suite": "regression",
+    "gatedBy": "discovery",
+    "passed": true,
+    "checks": [
+      {
+        "name": "did not claim regex filtering or channels exist",
+        "passed": true,
+        "judgeNotes": "The answer correctly says Hookdeck filters do not support regex and only uses regex inside a Transformation, with filters using supported operators."
       }
     ],
     "skills": {
@@ -30,11 +91,58 @@
       "loaded": []
     },
     "docs": {
-      "calls": []
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "Hookdeck filter rules regex string matching documentation",
+          "hasContent": false,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/cli",
+              "title": "The Hookdeck CLI"
+            },
+            {
+              "url": "https://hookdeck.com/docs/filters",
+              "title": "Filters"
+            },
+            {
+              "url": "https://hookdeck.com/docs/use-cases/third-party-routing",
+              "title": "Third Party Routing Overview"
+            },
+            {
+              "url": "https://hookdeck.com/docs/api",
+              "title": "REST API Reference"
+            }
+          ],
+          "resultChars": 2423
+        },
+        {
+          "source": "web_fetch",
+          "query": "List all supported filter operators, especially any string pattern/regex matching support, and whether filters can express numeric ranges or string length/prefix constraints.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/filters"
+            }
+          ],
+          "resultChars": 1382
+        },
+        {
+          "source": "web_fetch",
+          "query": "Explain what Transformations are, whether they run full JavaScript (including regex and Date), whether they can be used together with Filters, and in what order Transformations and Filters execute relative to each other in a connection.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/transformations"
+            }
+          ],
+          "resultChars": 1326
+        }
+      ]
     },
     "prompt": "Our order references look like `ORD-2026-AC-4821`. We migrated formats at the\nstart of the year and the old ones are still coming through, which my service\nchokes on.\n\nCan I use a regex on the reference to only let this year's format through? What\nis the closest I can get?",
     "promptSourcePath": "evals/regression-filtering-001-regex-capability/PROMPT.md",
     "attempts": 1,
-    "sourcePath": "claude-code-sonnet-5-docs-only/regression-filtering-001-regex-capability.json"
+    "sourcePath": "claude-code-sonnet-5-no-skills/regression-filtering-001-regex-capability.json"
   }
 ]

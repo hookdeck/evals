@@ -1,6 +1,11 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { discoverEvals, EVALS_ROOT } from '../lib/discovery.js';
+import {
+  describeErroredEvidence,
+  ERRORED_RUNS_DIRNAME,
+  readErroredEvidenceTree,
+} from '../harness/errored-cell.js';
 
 /**
  * Which cells of a run you have to read, and why.
@@ -29,6 +34,14 @@ import { discoverEvals, EVALS_ROOT } from '../lib/discovery.js';
  */
 
 const RUNS_DIR = join(EVALS_ROOT, '.eval-runs');
+/**
+ * Cells that errored and so have no row in `RUNS_DIR` at all. A pass rate
+ * cannot show them, and neither could this script until #97: an errored cell
+ * was simply absent. In CI they arrive as `errored-attempts-*` artifacts,
+ * separate from `raw-results-*`; download them into this directory to see them
+ * here.
+ */
+const ERRORED_DIR = join(EVALS_ROOT, ERRORED_RUNS_DIRNAME);
 
 interface Check {
   name?: string;
@@ -74,8 +87,21 @@ const CAPABILITY_ENV: Record<string, string> = { outpost: 'OUTPOST_API_KEY' };
  * *provider* skill like `stripe-webhooks` is legitimate — documenting a third
  * party's signature format was never Hookdeck's job, and we ship those skills
  * for exactly this. Flagging every self-install buried the real case in noise.
+ *
+ * `inspect` is a Hookdeck product skill too, published from the same
+ * repository, so a baseline can reach it the same way it reaches the others.
+ * No experiment installs it.
  */
-const PRODUCT_SKILLS = new Set(['hookdeck', 'event-gateway', 'outpost']);
+const PRODUCT_SKILLS = new Set([
+  'hookdeck',
+  'event-gateway',
+  'outpost',
+  'inspect',
+  // `npx skills add hookdeck/agent-skills` with no `--skill` installs every
+  // skill in the repository, and `findSelfInstalledSkills` records it as the
+  // repo rather than guessing a name. It brings all of the above with it.
+  'hookdeck/agent-skills',
+]);
 
 /**
  * Phrases an agent uses when it is waiting for a person.
@@ -229,7 +255,35 @@ function main() {
     if (env.length > 0) needs.set(ev.id, env);
   }
 
-  if (!existsSync(RUNS_DIR)) throw new Error(`no ${RUNS_DIR}`);
+  // First, because these are the cells the scoreboard cannot show at all.
+  const { found: erroredCells, unreadable } =
+    readErroredEvidenceTree(ERRORED_DIR);
+  for (const { path, reason } of unreadable) {
+    console.warn(
+      `  could not read ${ERRORED_RUNS_DIRNAME}/${path}: ${reason}\n`
+    );
+  }
+  if (erroredCells.length > 0) {
+    console.log(
+      `${erroredCells.length} cell(s) errored and have no result. ` +
+        'Not agent failures, and not on the board; what their earlier attempts ' +
+        'left is kept here.\n'
+    );
+    for (const { path, evidence } of erroredCells) {
+      console.log(`  ${evidence.eval} x ${evidence.experiment}`);
+      console.log(`      ERRORED: ${describeErroredEvidence(evidence)}`);
+      console.log(
+        `      → ${ERRORED_RUNS_DIRNAME}/${path} (priorAttempts, erroredAttempt: agentReport, transcript)\n`
+      );
+    }
+  }
+
+  if (!existsSync(RUNS_DIR)) {
+    // An all-errored run leaves evidence and no results; that is a result of
+    // this script, not a reason to throw.
+    if (erroredCells.length > 0) return;
+    throw new Error(`no ${RUNS_DIR}`);
+  }
 
   const rows: Array<{ row: Row; flags: Flag[] }> = [];
   for (const dir of readdirSync(RUNS_DIR)) {
@@ -243,7 +297,16 @@ function main() {
     for (const file of files) {
       const row = JSON.parse(
         readFileSync(join(experimentDir, file), 'utf8')
-      ) as Row;
+      ) as Row & { errored?: boolean };
+      // Evidence copied in from an `errored-attempts-*` download. The exporter
+      // refuses it; say so here too rather than triaging it as a cell.
+      if (row.errored === true) {
+        console.warn(
+          `  .eval-runs/${dir}/${file} is errored-cell evidence, not a result; ` +
+            `move it to ${ERRORED_RUNS_DIRNAME}/\n`
+        );
+        continue;
+      }
       const flags = flagsFor(row, needs.get(row.eval) ?? []);
       if (flags.length > 0) rows.push({ row, flags });
     }

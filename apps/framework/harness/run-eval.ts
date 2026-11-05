@@ -46,11 +46,28 @@ import type {
 } from './types.js';
 import { serializeRedacted } from './redact.js';
 import {
+  buildAttemptRecord,
+  shouldRecordSupersededAttempt,
+  type AttemptRecord,
+} from './attempts.js';
+import {
+  attemptRan,
+  clearErroredEvidence,
+  newAttemptLoopState,
+  settleAttempt,
+  writeErroredEvidence,
+  type AttemptLoopState,
+} from './errored-cell.js';
+import {
   discoverEvals,
   loadExperiments,
   readSessionSeedArgs,
 } from '../lib/discovery.js';
-import { harnessFingerprint, scenarioFingerprint } from '../lib/provenance.js';
+import {
+  harnessFingerprint,
+  scenarioFingerprint,
+  skillsPin,
+} from '../lib/provenance.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..', '..', '..');
@@ -413,7 +430,13 @@ function disposable<T extends { close(): Promise<unknown> }>(
 async function runOne(
   expName: string,
   exp: ExperimentConfig,
-  ev: EvalManifest
+  ev: EvalManifest,
+  /**
+   * Owned by the caller so that what the attempts gathered survives a throw
+   * from inside the loop, which the two guards below rely on. See
+   * `errored-cell.ts` and #97.
+   */
+  loop: AttemptLoopState = newAttemptLoopState()
 ): Promise<
   ScoreResult & {
     attempts: number;
@@ -424,6 +447,11 @@ async function runOne(
     agentReport: string;
     stoppedReason: string;
     usage?: AgentRunResult['usage'];
+    /**
+     * Every attempt this cell ran except the one reported above, oldest first.
+     * Empty for a cell that passed first time. See `attempts.ts`.
+     */
+    priorAttempts: AttemptRecord[];
   }
 > {
   const prompt = parseEvalMarkdown(
@@ -510,6 +538,16 @@ async function runOne(
     lastAgentReport = run.agentReport;
     lastStoppedReason = run.stoppedReason;
     lastUsage = run.usage;
+    // The attempt in flight. If anything below throws — either guard, the
+    // scorer, the rehydrate — this is what the caller keeps of it.
+    attemptRan(loop, {
+      attempt,
+      stoppedReason: run.stoppedReason,
+      agentReport: run.agentReport,
+      transcript: run.transcript,
+      skills: buildSkillResult(availableSkills, run.toolCalls),
+      docs: buildDocsResult(run.toolCalls),
+    });
 
     // An agent that errored before emitting a single event did not attempt the
     // task, so there is nothing to score. Scoring it anyway produces a result
@@ -586,8 +624,35 @@ async function runOne(
         agentReport: run.agentReport,
         stoppedReason: run.stoppedReason,
         usage: run.usage,
+        priorAttempts: loop.priorAttempts,
       };
     }
+
+    // This attempt is about to be overwritten by the next one, so keep it.
+    // The rule lives in `attempts.ts` so it can be tested without an agent.
+    // The final attempt is not superseded, so it stays in flight: the session
+    // teardown that runs when this block exits can still throw, and the caller
+    // would then still have it. See `errored-cell.ts`.
+    settleAttempt(
+      loop,
+      shouldRecordSupersededAttempt({
+        attempt,
+        runs,
+        passed: last.passed,
+        stopOnPass: STOP_ON_PASS,
+      })
+        ? buildAttemptRecord({
+            attempt,
+            result: last,
+            stoppedReason: run.stoppedReason,
+            agentReport: run.agentReport,
+            transcript: run.transcript,
+            skills: buildSkillResult(availableSkills, run.toolCalls),
+            docs: buildDocsResult(run.toolCalls),
+          })
+        : undefined
+    );
+
     logRetryAttempt(expName, ev, attempt, last);
   }
 
@@ -601,6 +666,7 @@ async function runOne(
     agentReport: lastAgentReport,
     stoppedReason: lastStoppedReason,
     usage: lastUsage,
+    priorAttempts: loop.priorAttempts,
   };
 }
 
@@ -818,8 +884,10 @@ async function main() {
     const start = Date.now();
     console.log(`⏳ RUN  ${name} x ${ev.id}`);
     const run = async () => {
+      clearErroredEvidence(ROOT, name, ev.id);
+      const loop = newAttemptLoopState();
       try {
-        const res = await runOne(name, config, ev);
+        const res = await runOne(name, config, ev, loop);
         mkdirSync(dirname(out), { recursive: true });
         const experimentDisplay = getExperimentDisplayMetadata(config);
         // Redacted, not raw. Agents run `env` while exploring and the dump
@@ -857,6 +925,7 @@ async function main() {
             provenance: {
               harness: harnessFingerprint(basePromptFor(ev.mode), ROOT),
               scenario: scenarioFingerprint(ev.dir),
+              skillsPin: skillsPin(ROOT),
             },
             ...ev.metadata,
             ...res,
@@ -872,6 +941,30 @@ async function main() {
         stderr(
           `💥 ERR  ${name} x ${ev.id}: ${e instanceof Error ? e.message : String(e)} (${elapsed}s)`
         );
+        // Still nothing at `out`: that is the point of throwing. What the
+        // attempts before the error left goes to its own directory, which the
+        // exporter does not read. Failing to write it must not mask the error
+        // already being reported, so that is logged and swallowed.
+        try {
+          const kept = writeErroredEvidence(ROOT, {
+            experiment: name,
+            evalId: ev.id,
+            error: e,
+            state: loop,
+            runId: process.env.GITHUB_RUN_ID,
+          });
+          if (kept) {
+            stderr(
+              `   no result written; kept ${loop.priorAttempts.length} earlier attempt(s)` +
+                `${loop.current ? ' and the attempt that errored' : ''} → ${relative(ROOT, kept)}`
+            );
+          }
+        } catch (writeError) {
+          stderr(
+            `   could not keep evidence for ${name} x ${ev.id}: ` +
+              `${writeError instanceof Error ? writeError.message : String(writeError)}`
+          );
+        }
       }
     };
     return run();
