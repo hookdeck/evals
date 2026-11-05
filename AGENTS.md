@@ -1145,12 +1145,23 @@ concurrency group: a group holds one running and one pending job and cancels the
 rest. Shard instead.
 
 **Outpost state is not reset between runs.** `FixedProjectSource` snapshots and
-restores the Hookdeck project, and knows nothing about Outpost. Tenants and
-destinations an Outpost run creates survive into the next one, so the second run
-of a scenario finds `acme` already there and may score a previous run's work.
-`FixedProjectSource` now deletes tenants that were not present when it acquired
-the lease, on release — but that runs in a `catch`-and-ignore, so a run that dies
-before release still leaks and the next run inherits it.
+restores the Hookdeck project, and Outpost has no snapshot to restore from.
+Tenants and destinations an Outpost run creates survive into the next one, so
+the second run of a scenario finds `acme` already there and may score a previous
+run's work. `FixedProjectSource` now deletes tenants that were not present when
+it acquired the lease, on release — but that runs in a `catch`-and-ignore, so a
+run that dies before release still leaks and the next run inherits it.
+
+**The Outpost project has an Event Gateway side, and agents write to it.**
+`OUTPOST_API_KEY` is an ordinary project key, so it works on `api.hookdeck.com`
+and the CLI too. A source, two connections, two destinations and two issue
+triggers were left there on 24 and 25 August and nothing removed them. On 5
+November an `outpost-005` attempt added a topic filter to one of those connections instead of changing the
+Outpost destination's topics. The filter carried into the cell's next two
+attempts, because nothing reset that side. `FixedProjectSource` now deletes every
+gateway resource in the Outpost project on acquire, before the seed, and again
+on release. It refuses if the Outpost key can see anything in the gateway
+project's snapshot, because that means both keys reach one project.
 
 So cleanup on release is not enough on its own, and `applyOutpostSeed` deletes
 each tenant it is about to create. That makes seeding idempotent without
@@ -1257,6 +1268,13 @@ queue URL and leaves `credentials` empty.
 **Reset is to pristine, not to empty.** A new Hookdeck project ships with
 default issue triggers. The first acquire snapshots what the project contains,
 and every reset deletes only what a run added.
+
+The Outpost project's gateway side is reset to empty, and that follows the same
+rule: pristine there *is* empty. Platform project creation gives an Outpost project no issue
+triggers, and no seed creates gateway resources in it. So that baseline is
+declared in code (`OUTPOST_GATEWAY_PRISTINE`), not captured. A captured one
+would come from whatever the last CI job left, because every job is a fresh
+checkout, and it would have recorded the August leftovers as pristine.
 
 **Never sleep for ingestion, poll for it.** Every scorer that sends something
 and reads it back used a fixed `setTimeout`, 8 or 12 seconds. Ingestion is

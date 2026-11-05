@@ -387,3 +387,250 @@ describe('FixedProjectSource Outpost cleanup', () => {
     expect(outpost.deleted).toEqual([]);
   });
 });
+
+/**
+ * `OUTPOST_API_KEY` is a project API key, so it reaches `api.hookdeck.com` as
+ * well as the Outpost subdomain, and an agent can build Event Gateway resources
+ * in the Outpost project with it. One such connection, left from August, was
+ * edited by an `outpost-005` attempt and the edit was still there two attempts
+ * later. These tests model `api.hookdeck.com` as two projects told apart by the
+ * bearer token, which is all that separates them on the real API.
+ */
+describe('FixedProjectSource Outpost project gateway reset', () => {
+  beforeEach(() => vi.restoreAllMocks());
+
+  const GATEWAY_KEY = 'gateway-key';
+  const OUTPOST_KEY = 'outpost-key';
+
+  function fakeTwoProjects(projects: Record<string, Record<string, string[]>>) {
+    const state = new Map<string, Map<string, Set<string>>>();
+    for (const [key, kinds] of Object.entries(projects)) {
+      const byKind = new Map<string, Set<string>>();
+      for (const [kind, ids] of Object.entries(kinds)) {
+        byKind.set(kind, new Set(ids));
+      }
+      state.set(key, byKind);
+    }
+    const deleted: Array<{ key: string; kind: string; id: string }> = [];
+
+    const fetchImpl = vi.fn(async (url: string | URL, init?: RequestInit) => {
+      const u = new URL(String(url));
+      if (u.hostname.includes('outpost')) {
+        // Tenants, operator event destinations and config: none, for these
+        // tests, which are about the gateway side.
+        if (u.pathname.endsWith('/config')) {
+          return new Response(JSON.stringify({}), { status: 200 });
+        }
+        return new Response(JSON.stringify({ models: [] }), { status: 200 });
+      }
+      const key = String(
+        (init?.headers as Record<string, string> | undefined)?.Authorization
+      ).replace(/^Bearer /, '');
+      const project = state.get(key) ?? new Map<string, Set<string>>();
+      state.set(key, project);
+      const [, kind, id] = u.pathname.replace(/^\/[^/]+/, '').split('/');
+      if ((init?.method ?? 'GET') === 'DELETE') {
+        project.get(kind)?.delete(id);
+        deleted.push({ key, kind, id });
+        return new Response('', { status: 200 });
+      }
+      const models = [...(project.get(kind) ?? [])].map((rid) => ({
+        id: rid,
+      }));
+      return new Response(JSON.stringify({ models }), { status: 200 });
+    });
+
+    const add = (key: string, kind: string, id: string) => {
+      const project = state.get(key) ?? new Map<string, Set<string>>();
+      state.set(key, project);
+      const ids = project.get(kind) ?? new Set<string>();
+      project.set(kind, ids);
+      ids.add(id);
+    };
+    const ids = (key: string, kind: string) => [
+      ...(state.get(key)?.get(kind) ?? []),
+    ];
+    return { fetchImpl, deleted, add, ids };
+  }
+
+  function source(snapshotPath = tempSnapshotPath()) {
+    return new FixedProjectSource({
+      apiKey: GATEWAY_KEY,
+      outpostApiKey: OUTPOST_KEY,
+      snapshotPath,
+      outpostConfigPath: join(
+        mkdtempSync(join(tmpdir(), 'hd-evals-')),
+        'outpost-config.json'
+      ),
+    });
+  }
+
+  it('deletes gateway resources an earlier run left in the Outpost project, before the seed', async () => {
+    // The state run 42044644850 found: a source, destination and connection
+    // from August, plus issue triggers, which an Outpost project does not ship
+    // with. A fresh snapshot path is a fresh CI checkout.
+    const api = fakeTwoProjects({
+      [GATEWAY_KEY]: { 'issue-triggers': ['it_default'] },
+      [OUTPOST_KEY]: {
+        connections: ['web_leftover'],
+        sources: ['src_leftover'],
+        destinations: ['des_leftover'],
+        'issue-triggers': ['it_leftover'],
+      },
+    });
+    vi.stubGlobal('fetch', api.fetchImpl);
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await source().acquire();
+
+    expect(
+      api.deleted.filter((d) => d.key === OUTPOST_KEY).map((d) => d.kind)
+    ).toEqual(['connections', 'sources', 'destinations', 'issue-triggers']);
+    // The gateway project keeps its defaults: the Outpost baseline is empty,
+    // the gateway one is not.
+    expect(api.ids(GATEWAY_KEY, 'issue-triggers')).toEqual(['it_default']);
+  });
+
+  it('does not let a crashed attempt hand its edits to the next attempt', async () => {
+    // Attempts 1 -> 2 -> 3 of one cell: each is a new acquire, and none of
+    // them released. The reset has to happen on the way in.
+    const api = fakeTwoProjects({ [GATEWAY_KEY]: {}, [OUTPOST_KEY]: {} });
+    vi.stubGlobal('fetch', api.fetchImpl);
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const snapshotPath = tempSnapshotPath();
+
+    await source(snapshotPath).acquire();
+    api.add(OUTPOST_KEY, 'connections', 'web_attempt_1');
+    // no release
+
+    await source(snapshotPath).acquire();
+    expect(api.ids(OUTPOST_KEY, 'connections')).toEqual([]);
+  });
+
+  it('deletes what the lease created on release', async () => {
+    const api = fakeTwoProjects({ [GATEWAY_KEY]: {}, [OUTPOST_KEY]: {} });
+    vi.stubGlobal('fetch', api.fetchImpl);
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const s = source();
+
+    const lease = await s.acquire();
+    api.add(OUTPOST_KEY, 'sources', 'src_agent');
+    await s.release(lease);
+
+    expect(api.ids(OUTPOST_KEY, 'sources')).toEqual([]);
+  });
+
+  it('says what it deleted, so a leftover is visible in the log', async () => {
+    const api = fakeTwoProjects({
+      [GATEWAY_KEY]: {},
+      [OUTPOST_KEY]: { connections: ['web_leftover'] },
+    });
+    vi.stubGlobal('fetch', api.fetchImpl);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await source().acquire();
+
+    expect(warn.mock.calls.flat().join('\n')).toContain(
+      'connections web_leftover'
+    );
+  });
+
+  it('refuses to reset when the Outpost key reaches the gateway project', async () => {
+    // Two keys, one project. The Outpost baseline is "delete everything", which
+    // would take the gateway project's default issue triggers with it.
+    const api = fakeTwoProjects({
+      [GATEWAY_KEY]: { 'issue-triggers': ['it_default'] },
+      [OUTPOST_KEY]: { 'issue-triggers': ['it_default', 'it_other'] },
+    });
+    vi.stubGlobal('fetch', api.fetchImpl);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await source().acquire();
+
+    expect(api.deleted.filter((d) => d.key === OUTPOST_KEY)).toEqual([]);
+    expect(warn.mock.calls.flat().join('\n')).toContain('skipped');
+  });
+
+  it('does nothing extra when both keys are the same', async () => {
+    const api = fakeTwoProjects({
+      [GATEWAY_KEY]: { 'issue-triggers': ['it_default'] },
+    });
+    vi.stubGlobal('fetch', api.fetchImpl);
+    const s = new FixedProjectSource({
+      apiKey: GATEWAY_KEY,
+      outpostApiKey: GATEWAY_KEY,
+      snapshotPath: tempSnapshotPath(),
+    });
+
+    const lease = await s.acquire();
+    await s.release(lease);
+
+    expect(api.deleted).toEqual([]);
+    expect(api.ids(GATEWAY_KEY, 'issue-triggers')).toEqual(['it_default']);
+  });
+
+  it('touches no Outpost project when no Outpost key is configured', async () => {
+    const api = fakeTwoProjects({
+      [GATEWAY_KEY]: {},
+      [OUTPOST_KEY]: { connections: ['web_leftover'] },
+    });
+    vi.stubGlobal('fetch', api.fetchImpl);
+    const prior = process.env.OUTPOST_API_KEY;
+    delete process.env.OUTPOST_API_KEY;
+    try {
+      const s = new FixedProjectSource({
+        apiKey: GATEWAY_KEY,
+        snapshotPath: tempSnapshotPath(),
+      });
+      await s.release(await s.acquire());
+    } finally {
+      if (prior !== undefined) process.env.OUTPOST_API_KEY = prior;
+    }
+
+    expect(api.ids(OUTPOST_KEY, 'connections')).toEqual(['web_leftover']);
+  });
+
+  it('does not throw when the release-time reset fails', async () => {
+    const api = fakeTwoProjects({ [GATEWAY_KEY]: {}, [OUTPOST_KEY]: {} });
+    vi.stubGlobal('fetch', api.fetchImpl);
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const s = source();
+    const lease = await s.acquire();
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string | URL, init?: RequestInit) => {
+        const auth = (init?.headers as Record<string, string> | undefined)
+          ?.Authorization;
+        if (auth === `Bearer ${OUTPOST_KEY}`) {
+          return new Response('boom', { status: 500 });
+        }
+        return api.fetchImpl(url, init);
+      })
+    );
+
+    await expect(s.release(lease)).resolves.toBeUndefined();
+  });
+
+  it('fails the acquire when the Outpost project cannot be reset', async () => {
+    // Before the agent runs, nothing has been paid for, and a scenario started
+    // on top of a leftover scores as though it were valid.
+    const api = fakeTwoProjects({ [GATEWAY_KEY]: {} });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string | URL, init?: RequestInit) => {
+        const auth = (init?.headers as Record<string, string> | undefined)
+          ?.Authorization;
+        if (
+          auth === `Bearer ${OUTPOST_KEY}` &&
+          !new URL(String(url)).hostname.includes('outpost')
+        ) {
+          return new Response('boom', { status: 500 });
+        }
+        return api.fetchImpl(url, init);
+      })
+    );
+
+    await expect(source().acquire()).rejects.toThrow(/500/);
+  });
+});

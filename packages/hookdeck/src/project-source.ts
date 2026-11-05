@@ -60,6 +60,46 @@ export interface PristineSnapshot {
   ids: Record<string, string[]>;
 }
 
+/**
+ * What the Event Gateway side of the Outpost project contains when nothing has
+ * touched it: nothing.
+ *
+ * `OUTPOST_API_KEY` is an ordinary project API key, so it authenticates
+ * `api.hookdeck.com` and the CLI as well as the Outpost subdomain, and an agent
+ * can create sources and connections in the Outpost project with it. Agents
+ * did: on 24 and 25 August a source, two destinations, two connections and two
+ * issue triggers appeared there — one destination on `outpost-003`'s alert URL,
+ * the other on a `mock.hookdeck.com` path of the kind `outpost-001` accepted
+ * before its endpoint was fixed — and nothing reset them; three of them were
+ * updated again in September. On 5 November `outpost-005` found one of those
+ * connections, added a topic filter to it instead of changing the Outpost
+ * destination's topics, and the filter survived from attempt 1 into attempts 2
+ * and 3 of the same cell.
+ *
+ * **Declared rather than captured.** The gateway project is reset to a snapshot
+ * taken on first acquire, but in CI every job is a fresh checkout, so a captured
+ * snapshot is taken from whatever the last job left — here it would have
+ * recorded those leftovers as pristine and protected them. The tenant cleanup
+ * below gives the same reason for not persisting a tenant baseline. A declared
+ * baseline cannot be poisoned by a run that died.
+ *
+ * **Empty, unlike the gateway project, and that is not a contradiction of
+ * "pristine, not empty".** A new Event Gateway project ships with four issue
+ * triggers; an Outpost project ships with none, because the platform's project
+ * creation sets up an Outpost project without the gateway defaults (read in the
+ * Event Gateway implementation, not inferred from the API). Consistent with
+ * that, the two issue triggers found here were created within a minute of
+ * the leftover source and connection. No Outpost seed creates gateway
+ * resources either. So for this
+ * project, pristine *is* empty. If a scenario ever needs a gateway resource in
+ * the Outpost project, its seed creates it, and the reset before the next seed
+ * removes it.
+ */
+export const OUTPOST_GATEWAY_PRISTINE: PristineSnapshot = {
+  capturedAt: 'declared',
+  ids: {},
+};
+
 export interface FixedProjectSourceOptions {
   apiKey: string;
   projectId?: string;
@@ -85,6 +125,7 @@ export class FixedProjectSource implements ProjectSource {
   private readonly outpostConfigPath: string;
   private cachedClient?: HookdeckClient;
   private cachedOutpostClient?: OutpostClient;
+  private cachedOutpostGatewayClient?: HookdeckClient;
   private outpostTenantsAtAcquire?: Set<string>;
   private outpostConfigAtAcquire?: Record<string, unknown>;
   private operatorEventDestinationsAtAcquire?: OperatorEventDestination[];
@@ -143,9 +184,35 @@ export class FixedProjectSource implements ProjectSource {
     return this.cachedOutpostClient;
   }
 
+  /**
+   * The Event Gateway API, authenticated as the Outpost project.
+   *
+   * Same host as `client`, different key, so a different project. Undefined
+   * when Outpost is off, and when the two keys are the same string — that is
+   * one project, already reset by `client`, and resetting it again to the
+   * Outpost baseline would delete the gateway project's default issue triggers.
+   */
+  private get outpostGatewayClient(): HookdeckClient | undefined {
+    const apiKey = this.options.outpostApiKey ?? process.env.OUTPOST_API_KEY;
+    if (!apiKey || apiKey === this.options.apiKey) return undefined;
+    if (!this.cachedOutpostGatewayClient) {
+      this.cachedOutpostGatewayClient = new HookdeckClient({
+        apiKey,
+        baseUrl: this.options.baseUrl,
+      });
+    }
+    return this.cachedOutpostGatewayClient;
+  }
+
   async acquire(): Promise<LeasedProject> {
     const snapshot = await this.loadOrCaptureSnapshot();
-    await this.resetToPristine(snapshot);
+    await this.resetToPristine(this.client, snapshot);
+    // Before the seed, not only on release: a run that dies before release
+    // must not hand its gateway resources in the Outpost project to the next
+    // one, and in CI the next one is usually a different job. Throws, like the
+    // reset above, because a scenario started on top of a leftover produces a
+    // result that looks valid and is not, and nothing has been paid for yet.
+    await this.resetOutpostGateway(snapshot);
     this.outpostTenantsAtAcquire = await this.listOutpostTenants();
     this.outpostConfigAtAcquire = await this.loadOrCaptureOutpostConfig();
     this.operatorEventDestinationsAtAcquire =
@@ -165,12 +232,23 @@ export class FixedProjectSource implements ProjectSource {
    * rather than from a per-run timestamp.
    */
   async release(_project: LeasedProject): Promise<void> {
+    let snapshot: PristineSnapshot | undefined;
     try {
-      const snapshot = await this.loadOrCaptureSnapshot();
-      await this.resetToPristine(snapshot);
+      snapshot = await this.loadOrCaptureSnapshot();
+      await this.resetToPristine(this.client, snapshot);
     } catch {
       // Swallowed deliberately: a failed release must not fail the run, and
       // the next acquire will clean up regardless.
+    }
+    if (snapshot) {
+      try {
+        await this.resetOutpostGateway(snapshot);
+      } catch (error) {
+        // Same reasoning, and the next acquire resets this side too.
+        console.warn(
+          `outpost project gateway reset: release did not complete (${(error as Error).message})`
+        );
+      }
     }
     await this.releaseOutpostTenants();
     await this.restoreOperatorEventDestinations();
@@ -502,18 +580,79 @@ export class FixedProjectSource implements ProjectSource {
     }
   }
 
-  /** Delete everything the snapshot does not list, in dependency order. */
-  private async resetToPristine(snapshot: PristineSnapshot): Promise<void> {
+  /**
+   * Delete everything the snapshot does not list, in dependency order, and
+   * return what was deleted.
+   */
+  private async resetToPristine(
+    client: HookdeckClient,
+    snapshot: PristineSnapshot
+  ): Promise<Array<{ kind: ResourceKind; resource: HookdeckResource }>> {
+    const deleted: Array<{ kind: ResourceKind; resource: HookdeckResource }> =
+      [];
     // Connections reference sources and destinations, so they go first.
     for (const kind of RESOURCE_KINDS) {
       const keep = new Set(snapshot.ids[kind] ?? []);
-      const existing: HookdeckResource[] = await this.client.list(
-        kind as ResourceKind
-      );
+      const existing: HookdeckResource[] = await client.list(kind);
       for (const resource of existing) {
         if (keep.has(resource.id)) continue;
-        await this.client.delete(kind as ResourceKind, resource.id);
+        await client.delete(kind, resource.id);
+        deleted.push({ kind, resource });
       }
+    }
+    return deleted;
+  }
+
+  /**
+   * Reset the Event Gateway side of the Outpost project to
+   * `OUTPOST_GATEWAY_PRISTINE`, which is empty.
+   *
+   * Refuses when the Outpost key turns out to reach the gateway project after
+   * all — two different keys for one project, say. The baseline here is "delete
+   * everything", so pointing it at the gateway project would delete its default
+   * issue triggers. The test is whether
+   * anything this key can see is in the gateway project's own snapshot: two
+   * projects never share a resource id.
+   *
+   * Says what it deleted. Release normally leaves nothing for acquire to find,
+   * so a deletion at acquire means a run died before releasing or something
+   * outside the harness wrote to the project — both worth seeing in a log.
+   */
+  private async resetOutpostGateway(
+    gatewaySnapshot: PristineSnapshot
+  ): Promise<void> {
+    const client = this.outpostGatewayClient;
+    if (!client) return;
+
+    const gatewayIds = new Set(Object.values(gatewaySnapshot.ids).flat());
+    for (const kind of RESOURCE_KINDS) {
+      const shared = (await client.list(kind)).filter((r) =>
+        gatewayIds.has(r.id)
+      );
+      if (shared.length > 0) {
+        console.warn(
+          `outpost project gateway reset: skipped, because OUTPOST_API_KEY can see ${kind} ` +
+            `${shared.map((r) => r.id).join(', ')} from the gateway project's pristine ` +
+            'snapshot. The two keys appear to belong to one project, and resetting it ' +
+            "to the Outpost baseline would delete that project's defaults."
+        );
+        return;
+      }
+    }
+
+    const deleted = await this.resetToPristine(
+      client,
+      OUTPOST_GATEWAY_PRISTINE
+    );
+    if (deleted.length > 0) {
+      console.warn(
+        `outpost project gateway reset: deleted ${deleted
+          .map(
+            ({ kind, resource }) =>
+              `${kind} ${resource.id}${resource.name ? ` (${resource.name})` : ''}`
+          )
+          .join(', ')}`
+      );
     }
   }
 }
