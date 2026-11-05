@@ -48,6 +48,7 @@ import {
 } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import type { AttemptRecord } from './attempts.js';
+import { describeError } from './describe-error.js';
 import { serializeRedacted, type SecretValue } from './redact.js';
 import type { DocsResult, SkillResult, TranscriptPart } from './types.js';
 
@@ -180,7 +181,9 @@ export function buildErroredEvidence(input: ErroredCellInput): ErroredEvidence {
     experiment: input.experiment,
     eval: input.evalId,
     errored: true,
-    error: err instanceof Error ? err.message : String(err),
+    // The whole cause chain, not the top message: "fetch failed" alone does
+    // not say what was unreachable. Redacted on the way to disk with the rest.
+    error: describeError(err),
     ranAt: input.ranAt ?? new Date().toISOString(),
     runId: input.runId,
     priorAttempts: [...input.state.priorAttempts],

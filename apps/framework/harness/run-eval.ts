@@ -50,6 +50,7 @@ import {
   shouldRecordSupersededAttempt,
   type AttemptRecord,
 } from './attempts.js';
+import { describeError } from './describe-error.js';
 import {
   attemptRan,
   clearErroredEvidence,
@@ -938,9 +939,7 @@ async function main() {
       } catch (e) {
         errored.push(new Error(`${name} x ${ev.id}`, { cause: e }));
         const elapsed = Math.round((Date.now() - start) / 1000);
-        stderr(
-          `💥 ERR  ${name} x ${ev.id}: ${e instanceof Error ? e.message : String(e)} (${elapsed}s)`
-        );
+        stderr(`💥 ERR  ${name} x ${ev.id}: ${describeError(e)} (${elapsed}s)`);
         // Still nothing at `out`: that is the point of throwing. What the
         // attempts before the error left goes to its own directory, which the
         // exporter does not read. Failing to write it must not mask the error
@@ -983,6 +982,9 @@ async function main() {
   console.error = stderr;
 
   if (errored.length > 0) {
+    // Node prints nested causes as `[cause]: [TypeError]` past depth two, so
+    // the AggregateError below hides the reason. Say it first, in full.
+    for (const e of errored) stderr(`💥 ${describeError(e)}`);
     throw new AggregateError(errored, `${errored.length} eval(s) errored`);
   }
 }
