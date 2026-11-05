@@ -18,7 +18,14 @@ export interface AttributableRow {
   passed: boolean;
   /** What the harness offered the agent. Absent on rows from before it was recorded. */
   skills?: { available?: string[] };
-  /** Absent on rows from before it was recorded, and on published rows until #96. */
+  /**
+   * Written on every raw result from #26 on. A published row carries it only
+   * once the exporter keeps it: #96 (fixed in #103) starts copying
+   * `provenance` into published rows, and that row schema keeps `skillsPin`
+   * only if it names it, because a `z.object` strips unknown keys. Until then
+   * a published row has no pin, and the ref fallback in `compare-snapshots`
+   * applies.
+   */
   provenance?: { skillsPin?: string };
 }
 
@@ -76,4 +83,50 @@ export function skillsPinMoved(
   const b = rowSkillsPin(after, toRefPin);
   if (!a || !b) return true;
   return a !== b;
+}
+
+/** Moved cells, split by what else moved under them. */
+export interface MoveBuckets<T> {
+  /** Nothing else moved: the only bucket attributable to the agent. */
+  behaviour: T[];
+  /** The skills pin moved under a skills-arm cell; scoring files did not. */
+  skillsPin: T[];
+  /** Scoring files moved; the skills pin did not (or the cell reads no skills). */
+  scoring: T[];
+  /** Both moved. Neither a correction nor a skills effect can be claimed alone. */
+  both: T[];
+}
+
+/**
+ * Sort moved cells into buckets.
+ *
+ * Neither cause takes precedence over the other. An earlier version let a
+ * scoring change win, which looked harmless and was not: the scoring check is a
+ * file diff that includes the shared runtime, so one comment-only edit there
+ * marks every scenario as rescored, and every skills-arm cell across a pin bump
+ * was then reported as a correction. A cell with both causes gets its own
+ * bucket, so it is never described as either one alone.
+ */
+export function classifyMoves<T extends AttributableRow>(
+  moved: T[],
+  beforeOf: (row: T) => AttributableRow,
+  scoringChanged: (evalId: string) => boolean,
+  fromRefPin: string | undefined,
+  toRefPin: string | undefined
+): MoveBuckets<T> {
+  const buckets: MoveBuckets<T> = {
+    behaviour: [],
+    skillsPin: [],
+    scoring: [],
+    both: [],
+  };
+  for (const row of moved) {
+    const scoring = scoringChanged(row.eval);
+    const pin = skillsPinMoved(beforeOf(row), row, fromRefPin, toRefPin);
+    if (scoring && pin) buckets.both.push(row);
+    else if (pin) buckets.skillsPin.push(row);
+    else if (scoring) buckets.scoring.push(row);
+    else buckets.behaviour.push(row);
+  }
+  return buckets;
 }

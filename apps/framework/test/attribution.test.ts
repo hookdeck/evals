@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   type AttributableRow,
+  classifyMoves,
   onSkillsArm,
   rowSkillsPin,
   skillsPinMoved,
@@ -102,5 +103,44 @@ describe('skillsPinMoved', () => {
     const before = row({ passed: false, provenance: { skillsPin: NEW } });
     const after = row({ provenance: { skillsPin: `${NEW}+dirty` } });
     expect(skillsPinMoved(before, after, NEW, NEW)).toBe(true);
+  });
+});
+
+describe('classifyMoves', () => {
+  // The flipped pair, as in the review of #102: the same scenario moving on a
+  // skills arm and on its -no-skills twin.
+  const skillsCell = row({ passed: false });
+  const baselineCell = baseline({ passed: false });
+  const moved = [skillsCell, baselineCell];
+  const beforeOf = (r: AttributableRow) => ({ ...r, passed: !r.passed });
+
+  it('never reports a skills-arm cell as a correction when the pin also moved', () => {
+    // From a ref where scoring files changed under every scenario — v0.4.0,
+    // after a comment-only edit to the shared runtime — and the pin moved.
+    // Letting scoring win put every skills-arm cell in "corrections" and left
+    // the skills bucket permanently empty for the release it exists for.
+    const b = classifyMoves(moved, beforeOf, () => true, OLD, NEW);
+    expect(b.both).toEqual([skillsCell]);
+    expect(b.scoring).toEqual([baselineCell]);
+    expect(b.skillsPin).toEqual([]);
+    expect(b.behaviour).toEqual([]);
+  });
+
+  it('puts a skills-arm cell in the skills bucket when only the pin moved', () => {
+    const b = classifyMoves(moved, beforeOf, () => false, OLD, NEW);
+    expect(b.skillsPin).toEqual([skillsCell]);
+    expect(b.behaviour).toEqual([baselineCell]);
+    expect(b.both).toEqual([]);
+  });
+
+  it('is a scoring change alone when the pin did not move', () => {
+    const b = classifyMoves(moved, beforeOf, () => true, NEW, NEW);
+    expect(b.scoring).toEqual([skillsCell, baselineCell]);
+    expect(b.both).toEqual([]);
+  });
+
+  it('attributes to the agent only when nothing else moved', () => {
+    const b = classifyMoves(moved, beforeOf, () => false, NEW, NEW);
+    expect(b.behaviour).toEqual([skillsCell, baselineCell]);
   });
 });
