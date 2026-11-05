@@ -899,53 +899,23 @@ jobs:
     if: ${{ (failure() || cancelled()) && github.event_name == 'schedule' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Open or update the alert issue
+      # A sparse checkout of the alert script alone: the logic lives in a file
+      # so it can be run against a past run with DRY_RUN=1 before it is
+      # trusted, which an inline block cannot.
+      - name: Checkout
+        uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
+        with:
+          sparse-checkout: .github/scripts
+          sparse-checkout-cone-mode: false
+
+      - name: Open or update the alert issues
         env:
           GH_TOKEN: ${{ github.token }}
-          # This job has no checkout, so `gh` has no git remote to infer the
-          # repository from — and it does not fall back to `GITHUB_REPOSITORY`.
-          # Without this the alert step fails and notifies nobody, which is the
-          # failure it exists to prevent.
+          # Explicit even with a checkout: the first version of this job had
+          # none, `gh` could not infer the repository, and the alert step
+          # failed and notified nobody.
           GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         shell: bash
-        run: |
-          set -euo pipefail
-
-          # One issue, reopened and commented rather than a new one each week.
-          # A suite that breaks and stays broken should read as one problem
-          # getting worse, not as four identical issues nobody closes.
-          existing="$(gh issue list --label regression-alert --state open \
-            --json number --jq '.[0].number // empty')"
-
-          # Indented for the YAML block scalar, then de-indented for GitHub:
-          # four or more leading spaces after a blank line is a markdown code
-          # block, so the first version of this rendered the whole alert as
-          # monospace with literal `**` and `1.` in it.
-          body="$(sed 's/^  //' <<EOF
-            The weekly regression run failed: ${RUN_URL}
-
-            Regression scenarios guard mistakes we have already seen and fixed,
-            so every agent passing is the expected state. A failure is one of
-            three things, in rough order of likelihood:
-
-            1. **The harness broke.** A scorer, a seed or a credential — the
-               most common cause by some distance, and the one to rule out
-               first.
-            2. **A guarded mistake came back.** The documentation or skill
-               change that fixed it has been undone or outgrown.
-            3. **Noise.** The run takes two attempts per cell, so this is the
-               least likely of the three.
-
-            Read the failing cell's transcript before anything else.
-          EOF
-          )"
-          if [ -n "$existing" ]; then
-            gh issue comment "$existing" --body "$body"
-          else
-            gh issue create \
-              --title "Weekly regression run is failing" \
-              --label regression-alert \
-              --label harness \
-              --body "$body"
-          fi
+        run: bash .github/scripts/regression-alert.sh
