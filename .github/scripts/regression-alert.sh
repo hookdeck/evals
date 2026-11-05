@@ -127,7 +127,10 @@ jobs="$(jq -s '.' <<<"$jobs")"
 started="1970-01-01T00:00:00Z"
 if [ "$attempt" -gt 1 ]; then
   started="$(retry gh api "repos/${GH_REPO}/actions/runs/${RUN_ID}/attempts/${attempt}" \
-    --jq '.run_started_at')" || started=""
+    --jq '.run_started_at // empty')" || started=""
+  # A null or missing start time is unreadable, not a timestamp: the string
+  # "null" sorts above every real one, so it would filter out a current refusal.
+  case "$started" in 20[0-9][0-9]-*) ;; *) started="" ;; esac
 fi
 refused=""
 refusal_unknown=0
