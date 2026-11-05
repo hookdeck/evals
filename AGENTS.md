@@ -198,9 +198,12 @@ cell.** Until #103, publishing was skipped whenever any matrix job failed. On a 
 regression run a red check fails its job, so `regression-eval-results.json` could never
 record a failing scheduled cell. Dispatched runs did not fail on a red check, so they
 published theirs: `passed: false` rows arrived on 1 October and 2 November. A dispatch with `merge` left at its default also replaced every row with
-that run's own (#98). The regression export now always merges. On 5 November it holds two
-rows, both from a one-scenario dispatch on 2 November (run 41455801121), and fills back
-up as later runs merge into it.
+that run's own (#98). The regression export now always merges. The first full run after
+#103, a dispatch on 5 November ([run 42038277214](https://github.com/hookdeck/evals/actions/runs/42038277214)),
+published all eighteen rows in `2da24ec`, every one passing on its first attempt. That
+includes all six arms of `regression-filtering-001-regex-capability`, which had failed in
+every weekly run from 5 October to 2 November. It is one run, so it does not settle the
+next paragraph.
 
 **"Every agent passing is the expected state" is still an assumption for one
 scenario.** `regression-filtering-001-regex-capability` failed every weekly run from
