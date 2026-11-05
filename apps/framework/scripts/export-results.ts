@@ -472,7 +472,8 @@ function reportCoverage(
 async function writeStepSummary(
   coverage: Coverage<EvalResult> | undefined,
   carriedCount: number,
-  stale: Array<{ row: Provenanced; why: string }>
+  stale: Array<{ row: Provenanced; why: string }>,
+  rejected: Array<{ key: string; reason: string }>
 ) {
   const target = process.env.GITHUB_STEP_SUMMARY;
   if (!target) return;
@@ -510,6 +511,14 @@ async function writeStepSummary(
       ''
     );
   }
+  if (rejected.length > 0) {
+    lines.push(
+      `**${rejected.length} previously published row(s) dropped** because they no longer parse as a published row:`,
+      '',
+      ...rejected.map(({ key, reason }) => `- \`${key}\`: ${reason}`),
+      ''
+    );
+  }
   await appendFile(target, `${lines.join('\n')}\n`);
 }
 
@@ -530,6 +539,7 @@ async function main() {
   let results = newResults;
   let carriedCount = 0;
   let staleRows: Array<{ row: Provenanced; why: string }> = [];
+  let rejectedRows: Array<{ key: string; reason: string }> = [];
   if (MERGE && existsSync(outputPath)) {
     const existing: unknown = JSON.parse(await readFile(outputPath, 'utf8'));
     if (!Array.isArray(existing)) {
@@ -539,7 +549,16 @@ async function main() {
     }
     const replaced = new Set(newResults.map(pairKey));
     const { rows: previous, rejected } = sanitizeCarried(existing);
+    rejectedRows = rejected;
     if (rejected.length > 0) {
+      // An annotation as well as the log line: a row leaving the published
+      // file is a change to what the page shows, and nobody reads export logs.
+      if (process.env.GITHUB_ACTIONS === 'true') {
+        console.log(
+          `::warning::dropping ${rejected.length} previously published row(s) from ` +
+            `${relative(ROOT, outputPath)} that no longer parse as a published row; see the job summary`
+        );
+      }
       console.warn(
         `\ndropping ${rejected.length} previously published row(s) that no longer parse as a published row:`
       );
@@ -586,7 +605,7 @@ async function main() {
     );
   }
 
-  await writeStepSummary(coverage, carriedCount, staleRows);
+  await writeStepSummary(coverage, carriedCount, staleRows, rejectedRows);
 
   if (coverage?.refuse) {
     throw new Error(

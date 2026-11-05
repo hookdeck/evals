@@ -41,7 +41,7 @@ that no longer parses is reported and dropped rather than republished.
 | `eval` | string | Scenario id, e.g. `benchmark-filtering-001-enterprise-orders` |
 | `ranAt` | string, optional | ISO timestamp of when this cell's run finished. Per row, because a merged file holds rows from several runs |
 | `runId` | string, optional | The GitHub Actions run that produced this row. Absent for local runs and rows before 17 August 2026 |
-| `provenance` | object, optional | `{ harness, scenario }`, two short fingerprints. See below |
+| `provenance` | object, optional | `{ harness, scenario, skillsPin? }`: two short fingerprints and a commit. See below |
 | `stage` | enum, optional | `build` \| `investigate` \| `resolve` |
 | `product` | array, optional | `event-gateway` \| `outpost` \| `console` |
 | `topic` | array, optional | See taxonomy below |
@@ -66,7 +66,10 @@ that no longer parses is reported and dropped rather than republished.
 scenario shares — the base prompt, the sandbox CLI pin, the skills CLI and the
 skills submodule pin — and `scenario` covers the scenario's own files. Two rows
 with the same `scenario` and different `harness` measured the same task under a
-different instrument. Opaque: compare for equality, do not parse. Absent from
+different instrument. Opaque: compare for equality, do not parse. `skillsPin`
+is the skills submodule commit the row ran against, in the clear, possibly with a
+suffix when that checkout had uncommitted changes; absent from rows recorded
+before the harness wrote it. The whole object is absent from
 every row published before November 2026, because the exporter dropped it
 (#96); `export-results --merge` reports such rows as `no provenance recorded`.
 

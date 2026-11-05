@@ -1,3 +1,4 @@
+import { rawEvalResultSchema } from '@hookdeck-evals/core/eval-metadata';
 import { describe, expect, it } from 'vitest';
 import {
   assessCoverage,
@@ -65,6 +66,23 @@ describe('sanitizeCarried', () => {
     expect(rejected).toEqual([]);
     expect(rows[0]).not.toHaveProperty('transcript');
     expect(rows[0].provenance).toEqual({ harness: 'H', scenario: 'S' });
+  });
+
+  it('keeps every provenance field the harness records, on both paths', () => {
+    // `provenance` is a plain `z.object`, which strips keys it does not name.
+    // A field the harness adds without a schema change vanishes silently, as
+    // `provenance` itself did until #96. `skillsPin` is the one #102 adds.
+    const provenance = {
+      harness: 'H',
+      scenario: 'S',
+      skillsPin: '6ea10a4baf8114d54bdfed8a31c85b9b4d4f91db',
+    };
+    // Fresh: `readResultFile` copies `provenance` from this parse.
+    const fresh = rawEvalResultSchema.parse(row('a', 'e1', { provenance }));
+    expect(fresh.provenance).toEqual(provenance);
+    // Carried: re-parsed with the published row's schema.
+    const { rows } = sanitizeCarried([row('a', 'e1', { provenance })]);
+    expect(rows[0].provenance).toEqual(provenance);
   });
 
   it('rejects, and names, a row that no longer parses', () => {

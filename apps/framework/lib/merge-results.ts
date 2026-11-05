@@ -19,7 +19,7 @@ export interface Provenanced {
   eval: string;
   ranAt?: string;
   runId?: string;
-  provenance?: { harness?: string; scenario?: string };
+  provenance?: { harness?: string; scenario?: string; skillsPin?: string };
 }
 
 export function pairKey(row: { experiment: string; eval: string }): string {

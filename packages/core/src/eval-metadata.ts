@@ -481,11 +481,18 @@ const evalResultShape = {
    * Optional: rows exported before November 2026 do not carry it. The harness
    * wrote it from late August, but the exporter's whitelist dropped it, so no
    * published row had one until #96 was fixed.
+   *
+   * `skillsPin` is the skills submodule commit the row ran against, in the
+   * clear rather than only inside the `harness` hash. A plain `z.object`
+   * strips keys it does not list, so every field the harness writes here has
+   * to be named or it never reaches a published row — which is exactly what
+   * happened to `provenance` itself.
    */
   provenance: z
     .object({
       harness: z.string().optional(),
       scenario: z.string().optional(),
+      skillsPin: z.string().optional(),
     })
     .optional(),
   stage: evalStageSchema.optional(),

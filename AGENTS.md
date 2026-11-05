@@ -599,7 +599,9 @@ gh variable delete EVALS_MAX_MISSING_FRACTION            # back to 0.1
 ```
 
 A credit, quota or auth failure cancels the run on purpose, and a cancelled run
-publishes nothing whatever the floor says. The regression export always merges,
+publishes nothing whatever the floor says. The failing job uploads a
+`provider-refused-*` marker before it cancels, and the publish job refuses on any
+marker, so a cancel that did not take still publishes nothing. The regression export always merges,
 whatever the `merge` input says, so a one-cell dispatch cannot replace the record
 with one row (#98).
 

@@ -417,9 +417,35 @@ jobs:
           # Deliberately narrow. A scenario failing its checks does not fail
           # this step at all, and an ordinary one-off error should not cancel
           # five hours of other work, so only these patterns abort the run.
-          if [ "$eval_status" -ne 0 ] && grep -qiE "no credits remaining|insufficient_quota|exceeded your current quota|invalid_api_key|incorrect api key|authentication_error|401 unauthorized" "$run_log"; then
-            echo "::error::Provider is refusing requests (credits, quota or auth). Cancelling the run: every remaining job would fail the same way."
-            gh run cancel "${{ github.run_id }}" --repo "${{ github.repository }}" || true
+          #
+          # Load-bearing since `publish-results` stopped requiring a green
+          # matrix: a refusal this misses is an ordinary failed cell, and a run
+          # of them is published if it stays under the floor. Credit, billing,
+          # quota and auth only:
+          #
+          # - OpenAI: `insufficient_quota` / "exceeded your current quota", and
+          #   the 429 `credit_balance_exhausted` the preflight above names.
+          # - Anthropic: "credit balance is too low", the 402 `billing_error`
+          #   and the 401 `authentication_error` (platform.claude.com/docs/en/api/errors).
+          #
+          # Not `permission_error` or rate limits: those can be one model or one
+          # minute, and cancelling every other experiment for them is the
+          # opposite mistake.
+          #
+          # This step only records the refusal. The two steps after it leave a
+          # marker `publish-results` refuses on, then cancel the run, in that
+          # order, so a cancel that does not take still cannot be published.
+          refusals="no credits remaining|credit balance is too low|credit_balance_exhausted|billing_error|insufficient_quota|exceeded your current quota|invalid_api_key|incorrect api key|authentication_error|401 unauthorized"
+          if [ "$eval_status" -ne 0 ] && grep -qiE "$refusals" "$run_log"; then
+            echo "::error::Provider is refusing requests (credits, billing, quota or auth): $(grep -oiE "$refusals" "$run_log" | sort -u | paste -sd, -). Cancelling the run: every remaining job would fail the same way."
+            {
+              echo "experiment=${{ matrix.experiment }}"
+              echo "eval=${{ matrix.eval_id }}"
+              # The matched patterns only, never the log lines: an artifact on a
+              # public repository is not masked the way the job log is, and an
+              # auth error can quote part of the key.
+              echo "matched=$(grep -oiE "$refusals" "$run_log" | sort -u | paste -sd, -)"
+            } > provider-refused.marker
             exit 1
           fi
 
@@ -441,6 +467,42 @@ jobs:
             echo "::error::no result written for ${{ matrix.experiment }} x ${{ matrix.eval_id }} (experiment skipped?)"
             exit 1
           fi
+
+      # A provider refusal leaves a marker before anything tries to cancel.
+      # `publish-results` already skips a cancelled run, but that depends on the
+      # cancel taking effect; this artifact is the fallback it checks for, so a
+      # run whose provider refused is never published even if the cancel below
+      # fails. `failure()` because the step before has just exited non-zero.
+      - name: Record provider refusal
+        if: ${{ failure() && hashFiles('provider-refused.marker') != '' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: provider-refused-${{ matrix.experiment }}__${{ matrix.eval_id }}
+          path: provider-refused.marker
+          if-no-files-found: error
+          # As long as the raw results, so a re-run of `publish-results` weeks
+          # later still sees it.
+          retention-days: 90
+
+      - name: Cancel the run
+        # Fails closed. This used to be `gh run cancel … || true` inside the
+        # step above, so a cancel that did not take let every remaining job run
+        # and pay. Retried, and if it still fails the error says so: the
+        # marker above still stops `publish-results`, but the remaining cells
+        # will run until somebody cancels by hand.
+        if: ${{ failure() && hashFiles('provider-refused.marker') != '' }}
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            if gh run cancel "${{ github.run_id }}" --repo "${{ github.repository }}"; then
+              echo "Cancel requested (attempt ${attempt})."
+              exit 1
+            fi
+            echo "gh run cancel failed (attempt ${attempt}), retrying"
+            sleep $((attempt * 10))
+          done
+          echo "::error::Could not cancel run ${{ github.run_id }} after three attempts. The provider-refusal marker stops publish-results, but the remaining cells will keep running and billing: cancel the run by hand."
+          exit 1
 
       - name: Upload raw results
         # Even when the cell failed or errored. The transcript of a failing cell
@@ -627,6 +689,16 @@ jobs:
           available="$(gh api --paginate \
             "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts?per_page=100" \
             --jq '.artifacts[] | select(.expired | not) | .name')"
+
+          # A matrix job that saw the provider refuse requests uploads a marker
+          # before it cancels the run. This job is skipped once the run is
+          # cancelled, so reaching here with a marker means the cancel did not
+          # take, and the cells after the refusal measured a dead key. Refuse.
+          refused="$(grep -E '^provider-refused-' <<< "$available" || true)"
+          if [ -n "$refused" ]; then
+            echo "::error::A provider refused requests during this run, so it is not published, whatever the floor says: $(paste -sd, - <<< "$refused")"
+            exit 1
+          fi
           while IFS= read -r name; do
             if grep -qxF "$name" <<< "$available"; then
               gh run download ${{ github.run_id }} --name "$name" --dir "downloaded-results/$name"
@@ -649,6 +721,12 @@ jobs:
           MAX_MISSING_FRACTION: ${{ vars.EVALS_MAX_MISSING_FRACTION || '0.1' }}
         run: |
           set -euo pipefail
+
+          # An override is meant for one re-run, and a forgotten one quietly
+          # loosens every run after it.
+          if [ "$MAX_MISSING_FRACTION" != "0.1" ]; then
+            echo "::warning::EVALS_MAX_MISSING_FRACTION is set to ${MAX_MISSING_FRACTION}, not the default 0.1. Delete the variable once this publish is done: gh variable delete EVALS_MAX_MISSING_FRACTION"
+          fi
 
           mkdir -p .eval-runs
           pairs='${{ needs.prepare.outputs.pairs }}'
