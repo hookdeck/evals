@@ -212,6 +212,18 @@ across all six experiments, two attempts each. Every agent passing is the expect
 state, so a failing check **fails the job** here — the opposite of the benchmark suite,
 where a failure is a score — and the run opens or updates an issue labelled
 `regression-alert`, because a red run in a tab nobody has open is not a notification.
+It is one issue per failing scenario, titled `Regression failing: <eval id>`, and each
+failing cell is labelled by the step that failed: a red check is the agent or the
+scorer, and an errored eval step means the cell has no verdict, usually the harness, a
+provider or the agent CLI rather than the agent's answer. A provider refusal, a cell
+that failed at setup, a cancelled or timed-out cell, or a failure outside the matrix
+goes to one run-level issue instead, because none of them is a verdict on a scenario. A
+closed issue with the same title is reopened, so a guard that regresses again keeps its
+history. Until November there was one issue for everything, and a harness `fetch
+failed` landed on a rubric thread and read as more of the same. The logic is
+`.github/scripts/regression-alert.sh`; run it with
+`DRY_RUN=1 GH_REPO=hookdeck/evals RUN_ID=<run> RUN_URL=<url>` against a past run before
+changing it.
 
 **Measured on the first run**, 1 October 2026 ([run 36869979661](https://github.com/hookdeck/evals/actions/runs/36869979661)): eighteen cells,
 **seventeen passed**, fifty minutes of wall clock. The cells run one at a time
