@@ -1,8 +1,14 @@
+import { execFileSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { scenarioFingerprint } from '../lib/provenance.js';
+import {
+  SKILLS_PIN_DIRTY_SUFFIX,
+  SKILLS_PIN_UNAVAILABLE,
+  scenarioFingerprint,
+  skillsPin,
+} from '../lib/provenance.js';
 
 /**
  * The defect these guard against shipped for weeks: `--merge` carried forward
@@ -68,5 +74,66 @@ describe('scenarioFingerprint', () => {
       'node_modules/pkg/index.js': 'whatever',
     });
     expect(scenarioFingerprint(plain)).toBe(scenarioFingerprint(noisy));
+  });
+});
+
+describe('skillsPin', () => {
+  // A throwaway superproject with the submodule path laid out as the harness
+  // expects. Commits carry an inline identity so the test does not depend on
+  // the machine's git config.
+  const git = (cwd: string, ...args: string[]) =>
+    execFileSync(
+      'git',
+      [
+        '-c',
+        'user.name=t',
+        '-c',
+        'user.email=t@t',
+        '-c',
+        'commit.gpgsign=false',
+        ...args,
+      ],
+      { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }
+    ).trim();
+
+  function superproject(): string {
+    const root = mkdtempSync(join(tmpdir(), 'prov-pin-'));
+    dirs.push(root);
+    git(root, 'init', '-q');
+    writeFileSync(join(root, 'README.md'), 'super');
+    git(root, 'add', '.');
+    git(root, 'commit', '-q', '-m', 'super');
+    mkdirSync(join(root, 'submodules/agent-skills'), { recursive: true });
+    return root;
+  }
+
+  function initSkills(root: string): string {
+    const dir = join(root, 'submodules/agent-skills');
+    git(dir, 'init', '-q');
+    writeFileSync(join(dir, 'SKILL.md'), 'skill');
+    git(dir, 'add', '.');
+    git(dir, 'commit', '-q', '-m', 'skills');
+    return git(dir, 'rev-parse', 'HEAD');
+  }
+
+  it('records the commit the skills are checked out at', () => {
+    const root = superproject();
+    const sha = initSkills(root);
+    expect(skillsPin(root)).toBe(sha);
+  });
+
+  it('marks uncommitted edits, because those are what gets installed', () => {
+    const root = superproject();
+    const sha = initSkills(root);
+    writeFileSync(join(root, 'submodules/agent-skills/SKILL.md'), 'edited');
+    expect(skillsPin(root)).toBe(`${sha}${SKILLS_PIN_DIRTY_SUFFIX}`);
+  });
+
+  it('does not report the superproject commit for an uninitialised submodule', () => {
+    // The trap: an empty submodule directory sits inside the superproject's
+    // repository, so a naive rev-parse there answers with the wrong commit.
+    const root = superproject();
+    expect(skillsPin(root)).toBe(SKILLS_PIN_UNAVAILABLE);
+    expect(skillsPin(root)).not.toBe(git(root, 'rev-parse', 'HEAD'));
   });
 });
