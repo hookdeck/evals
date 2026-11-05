@@ -898,6 +898,12 @@ jobs:
     # clone that could not rebase, and a re-run against a moved branch (#74).
     if: ${{ (failure() || cancelled()) && github.event_name == 'schedule' }}
     runs-on: ubuntu-latest
+    # Narrower than the workflow's: this job reads the run and writes issues,
+    # and nothing else.
+    permissions:
+      contents: read
+      actions: read
+      issues: write
     steps:
       # A sparse checkout of the alert script alone: the logic lives in a file
       # so it can be run against a past run with DRY_RUN=1 before it is
@@ -916,6 +922,7 @@ jobs:
           # failed and notified nobody.
           GH_REPO: ${{ github.repository }}
           RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         shell: bash
         run: bash .github/scripts/regression-alert.sh
