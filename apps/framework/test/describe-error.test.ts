@@ -103,6 +103,18 @@ describe('describeError', () => {
     );
   });
 
+  it('caps a large thrown object, so a header deep inside it does not print', () => {
+    const request = {
+      url: 'https://api.example.test/v1/thing',
+      body: 'x'.repeat(2000),
+      headers: { Authorization: 'Bearer sk-not-a-real-token' },
+    };
+    const line = describeError(new Error('outer', { cause: request }));
+    expect(line).not.toContain('sk-not-a-real-token');
+    expect(line).toMatch(/… \(\d+ chars\)$/);
+    expect(line.length).toBeLessThan(600);
+  });
+
   it('keeps the root cause when the chain is longer than maxDepth', () => {
     let e: Error = new Error('root cause');
     for (let i = 1; i <= 8; i += 1) e = new Error(`layer ${i}`, { cause: e });

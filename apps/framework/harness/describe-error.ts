@@ -73,12 +73,30 @@ function describeOne(e: Error, withSubErrors: boolean): string {
   return text;
 }
 
+/**
+ * Longest a non-error value may print. A thrown object can carry a request,
+ * and an uncapped inspect of one printed its `Authorization` header in full
+ * where `String()` had printed `[object Object]`. The job log masks exact
+ * secret values, but that is a second line of defence, not a reason to print.
+ */
+const MAX_VALUE_LENGTH = 500;
+
 /** A thrown value that is not an Error, including null-prototype objects. */
 function describeValue(value: unknown): string {
-  if (typeof value === 'string') return value;
-  try {
-    return inspect(value, { depth: 2, breakLength: Number.POSITIVE_INFINITY });
-  } catch {
-    return Object.prototype.toString.call(value);
+  let text: string;
+  if (typeof value === 'string') {
+    text = value;
+  } else {
+    try {
+      text = inspect(value, {
+        depth: 2,
+        breakLength: Number.POSITIVE_INFINITY,
+      });
+    } catch {
+      text = Object.prototype.toString.call(value);
+    }
   }
+  return text.length > MAX_VALUE_LENGTH
+    ? `${text.slice(0, MAX_VALUE_LENGTH)}… (${text.length} chars)`
+    : text;
 }
