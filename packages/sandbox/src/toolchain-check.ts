@@ -107,8 +107,14 @@ export function classifyToolchainProbe(
   expectedVersion: string = HOOKDECK_CLI_VERSION
 ): ToolchainOutcome {
   const { shell, result } = probe;
-  const output = oneLine(`${result.stdout}\n${result.stderr}`) || 'no output';
-  const stdoutLines = result.stdout.split('\n').map((line) => line.trim());
+  // Colour is stripped before anything is matched. A CLI release that styles
+  // `--version` would otherwise put an escape code against the version
+  // number, fail the whole-token match on every cell of a working image, and
+  // cancel the run.
+  const stdout = stripAnsi(result.stdout);
+  const output =
+    oneLine(`${stdout}\n${stripAnsi(result.stderr)}`) || 'no output';
+  const stdoutLines = stdout.split('\n').map((line) => line.trim());
 
   if (
     result.exitCode === NOT_ON_PATH_EXIT &&
@@ -128,10 +134,10 @@ export function classifyToolchainProbe(
   // A whole whitespace-delimited token, so 12.5.0 and 2.5.0-beta.1 do not
   // pass for 2.5.0.
   const pinned = new RegExp(`(^|\\s)v?${escapeRegExp(expectedVersion)}(\\s|$)`);
-  if (pinned.test(result.stdout)) return { kind: 'ok' };
+  if (pinned.test(stdout)) return { kind: 'ok' };
   // Only a recognisable version line counts as the wrong version. Output that
   // says nothing about a version is not evidence about the image.
-  if (/\bversion\s+\S+/.test(result.stdout)) {
+  if (/\bversion\s+\S+/.test(stdout)) {
     return {
       kind: 'wrong-version',
       detail: `${shell}: \`hookdeck\` is not the pinned ${expectedVersion}: ${output}`,
@@ -203,6 +209,22 @@ export async function assertPinnedToolchain(
         'the cell.'
     );
   }
+}
+
+const ESC = String.fromCharCode(0x1b);
+const BEL = String.fromCharCode(0x07);
+/**
+ * ANSI escape sequences: CSI (`ESC [ … final`, which covers SGR colour) and
+ * OSC (`ESC ] … BEL` or `ESC ] … ESC \`, which covers hyperlinks). Built from
+ * character codes so the source carries no literal control characters.
+ */
+const ANSI = new RegExp(
+  `${ESC}\\[[0-?]*[ -/]*[@-~]|${ESC}\\][^${BEL}${ESC}]*(?:${BEL}|${ESC}\\\\)`,
+  'g'
+);
+
+export function stripAnsi(text: string): string {
+  return text.replace(ANSI, '');
 }
 
 function oneLine(text: string): string {

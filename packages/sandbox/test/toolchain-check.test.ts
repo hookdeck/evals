@@ -150,6 +150,39 @@ describe('classifyToolchainProbe', () => {
     }
   });
 
+  it('reads through colour, so a styled --version does not cancel every run', () => {
+    const esc = '\u001b';
+    const bel = '\u0007';
+    const coloured = (version: string) =>
+      ok(
+        `${esc}[1mhookdeck${esc}[0m version ${esc}[32m${version}${esc}[0m\r\n`
+      );
+    expect(
+      classifyToolchainProbe({
+        shell: 'login',
+        result: coloured(HOOKDECK_CLI_VERSION),
+      })
+    ).toEqual({ kind: 'ok' });
+    // An OSC 8 hyperlink around the version, terminated either way.
+    for (const end of [bel, `${esc}\\`]) {
+      expect(
+        classifyToolchainProbe({
+          shell: 'login',
+          result: ok(
+            `hookdeck version ${esc}]8;;https://example.test${end}${HOOKDECK_CLI_VERSION}${esc}]8;;${end}\n`
+          ),
+        })
+      ).toEqual({ kind: 'ok' });
+    }
+    // Stripping colour must not turn a different version into the pin.
+    const other = classifyToolchainProbe(
+      { shell: 'login', result: coloured('3.1.0') },
+      '2.5.0'
+    );
+    expect(other.kind).toBe('wrong-version');
+    expect(other.kind === 'ok' ? '' : other.detail).not.toContain(esc);
+  });
+
   it('calls a timeout, a dead container or no version line inconclusive', () => {
     for (const result of [
       timedOut,
