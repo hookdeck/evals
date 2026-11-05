@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   HOOKDECK_CLI_VERSION,
@@ -40,6 +40,18 @@ export interface Provenance {
   harness: string;
   /** The scenario's own files. Changes when its prompt, seed or scorer does. */
   scenario: string;
+  /**
+   * The `hookdeck/agent-skills` commit the skills came from, readable rather
+   * than hashed. It is already one input to `harness`, but a hash can only say
+   * *that* something shared moved, and a skills-pin move needs a different
+   * response from a base-prompt change: it alters what a skills arm reads and
+   * nothing a baseline arm sees. `compare-snapshots` reads this to stop
+   * attributing a moved skills-arm cell to the agent. See #26.
+   *
+   * Recorded on every row, baseline arms included, so a row never has to be
+   * interpreted to know which skills commit was checked out when it ran.
+   */
+  skillsPin: string;
 }
 
 const SHORT = 12;
@@ -48,24 +60,45 @@ function short(input: string): string {
   return createHash('sha256').update(input).digest('hex').slice(0, SHORT);
 }
 
+export const SKILLS_PIN_UNAVAILABLE = 'skills-pin-unavailable';
+
+/** Appended when the submodule has uncommitted changes. */
+export const SKILLS_PIN_DIRTY_SUFFIX = '+dirty';
+
 /**
- * The pinned skills commit.
+ * The skills commit a run actually installs from.
  *
- * Read from git rather than from `.gitmodules`, because the pin is the recorded
- * commit and not the branch — #26 is open precisely because that pin can move
- * without anything in the results saying so. Absent outside a git checkout,
- * which is honest: an unknown pin should not hash to the same value as a known
- * one, so it contributes a distinct marker rather than an empty string.
+ * Read from git rather than from `.gitmodules`, because the pin is a commit and
+ * not a branch — #26 was opened precisely because that pin can move without
+ * anything in the results saying so.
+ *
+ * The submodule's checked-out commit rather than the superproject's recorded
+ * gitlink, because the sandbox copies whatever is on disk. In CI the two are
+ * the same commit. Locally they diverge exactly when someone is iterating on a
+ * skill, which is when a row claiming the recorded pin would be wrong; for the
+ * same reason uncommitted edits are marked rather than hidden.
+ *
+ * Unavailable when the submodule is not initialised, which is honest: an
+ * unknown pin should not read or hash the same as a known one. The `.git`
+ * check matters — an empty, uninitialised submodule directory sits inside the
+ * superproject's repository, so `git rev-parse HEAD` there would quietly answer
+ * with the *superproject's* commit.
  */
-function skillsPin(root: string): string {
-  try {
-    return execFileSync('git', ['rev-parse', 'HEAD:submodules/agent-skills'], {
-      cwd: root,
+export function skillsPin(root: string): string {
+  const dir = join(root, 'submodules/agent-skills');
+  if (!existsSync(join(dir, '.git'))) return SKILLS_PIN_UNAVAILABLE;
+  const git = (args: string[]) =>
+    execFileSync('git', args, {
+      cwd: dir,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
     }).trim();
+  try {
+    const sha = git(['rev-parse', 'HEAD']);
+    const dirty = git(['status', '--porcelain']).length > 0;
+    return dirty ? `${sha}${SKILLS_PIN_DIRTY_SUFFIX}` : sha;
   } catch {
-    return 'skills-pin-unavailable';
+    return SKILLS_PIN_UNAVAILABLE;
   }
 }
 
