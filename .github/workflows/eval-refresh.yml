@@ -18,14 +18,16 @@ name: Refresh eval results
 # unnoticed until somebody asked about it four days later.
 #
 # Measured on the first run, 1 October 2026 (run 36869979661): eighteen cells
-# at two attempts each, seventeen passed, fifty minutes of wall clock. The
-# fifty minutes is whole-run time including runner queueing, not per-cell — the
-# cells run in parallel, so no per-cell figure can be read off it. The run
-# concluded `success` despite its failed cell, which is what #99 fixed: see
+# at up to two attempts each, stopping on a pass. Seventeen passed first time
+# and the failing cell used both, so nineteen attempts. Fifty minutes of wall
+# clock. The cells run one at a time (`max-parallel: 1` below): their jobs ran
+# 13:37:30 to 14:26:26 UTC and summed to 2,881 seconds, about 2.7 minutes per
+# cell, and prepare, publish and queueing were the other two minutes or so. The
+# run concluded `success` despite its failed cell, which is what #99 fixed: see
 # "Check the regression suite passed" below. The $5-and-ten-minutes estimate that
 # used to sit here was a planning figure from before any regression run
-# existed; cost is still unmeasured, because nothing in the harness records it
-# for an agent that reports tokens rather than dollars.
+# existed. Cost is still unmeasured: the regression export carries no `usage`,
+# and Codex reports tokens, not dollars.
 #
 # **Benchmark runs are dispatched against a bucket of work, not a calendar.**
 # Something changed what we measure, or something shipped to the product, and

@@ -178,10 +178,11 @@ where a failure is a score — and the run opens or updates an issue labelled
 `regression-alert`, because a red run in a tab nobody has open is not a notification.
 
 **Measured on the first run**, 1 October 2026 ([run 36869979661](https://github.com/hookdeck/evals/actions/runs/36869979661)): eighteen cells,
-**seventeen passed**, fifty minutes of wall clock. Whole-run time including runner
-queueing — the cells run in parallel, so there is no per-cell figure in it. The "$5 and
-ten minutes" that circulated was a planning estimate from before any regression run
-existed. Cost is still unmeasured.
+**seventeen passed**, fifty minutes of wall clock. The cells run one at a time
+(`max-parallel: 1`): their jobs summed to 2,881 seconds, about 2.7 minutes per cell, and
+prepare, publish and queueing were the other two minutes or so. The "$5 and ten minutes"
+that circulated was a planning estimate from before any regression run existed. Cost is
+still unmeasured, because the regression export carries no `usage`.
 
 **That run was reported as green and was not.** `regression-filtering-001-regex-capability`
 failed for `claude-code-sonnet-5` across both attempts, and the run still concluded
@@ -192,17 +193,20 @@ gate (#99): the check now keys on the suite alone, so a dispatched regression ru
 the same cells a scheduled one does, and its conclusion means the same on either
 trigger. Only the `regression-alert` issue is still opened by the scheduled run alone.
 
-**The committed regression file can now hold a failing cell, and keeps every cell.**
-Until #103, publishing was skipped whenever any matrix job failed, which on the
-regression suite is every run with a red check, so `regression-eval-results.json` could
-not record one. A dispatch with `merge` left at its default also replaced every row with
+**The committed regression file can now hold a failing scheduled cell, and keeps every
+cell.** Until #103, publishing was skipped whenever any matrix job failed. On a scheduled
+regression run a red check fails its job, so `regression-eval-results.json` could never
+record a failing scheduled cell. Dispatched runs did not fail on a red check, so they
+published theirs: `passed: false` rows arrived on 1 October and 2 November. A dispatch with `merge` left at its default also replaced every row with
 that run's own (#98). The regression export now always merges. On 5 November it holds two
 rows, both from a one-scenario dispatch on 2 November (run 41455801121), and fills back
 up as later runs merge into it.
 
 **"Every agent passing is the expected state" is still an assumption for one
 scenario.** `regression-filtering-001-regex-capability` failed every weekly run from
-5 October to 2 November. The transcripts read on 2 November show two causes (#92):
+5 October to 2 November. Those runs' transcripts were never uploaded (#93), so the
+causes come from later runs (#92): a local re-run whose failing transcript #94 kept,
+and two dispatches on 2 November (runs 41430462176 and 41455801121). Two causes:
 
 - the rubric failed correct answers for the word they opened with, fixed by #95;
 - Claude Code without our skills invented a `$regex` filter operator in one of two
@@ -226,7 +230,7 @@ consuming, at about $185 a month plus $90-110 a matrix. Five weeklies had produc
 harness defect and a lot of variance data about a delta we already know we cannot
 measure precisely enough (#2).
 
-The workflow was disabled between 1 October 07:30 and 13:30 UTC so the monthly matrix
+The workflow was disabled on 1 October, from about 07:30 until 13:36 UTC, so the monthly matrix
 could not fire while the schedule was being changed. It is active again. Disabling is
 the way to stop a cron without a commit, and it blocks `workflow_dispatch` too:
 
