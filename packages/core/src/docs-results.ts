@@ -174,6 +174,44 @@ function resultCharCount(result: unknown): number | undefined {
   return extractTruncatedResultCharCount(result) ?? result.length;
 }
 
+/**
+ * Claude Code's WebFetch answers an HTTP error with a fixed stub instead of the
+ * page, whatever the status: "The server returned HTTP 404 Not Found.\n\nThe
+ * response body was not retrieved. If this URL requires authentication, …".
+ */
+const WEB_FETCH_HTTP_ERROR_PATTERN =
+  /^The server returned HTTP (\d{3})\b[^\n]*\n\nThe response body was not retrieved\b/;
+
+/** One line of `curl -f` refusing an HTTP error, which reaches the model when the exit code is lost down a pipe. */
+const CURL_HTTP_ERROR_LINE_PATTERN =
+  /^curl: \(22\) The requested URL returned error: (\d{3})\s*$/;
+
+/** The status of a WebFetch that came back as the HTTP-error stub rather than a page. */
+function webFetchHttpError(result: unknown): number | undefined {
+  if (typeof result !== 'string') return undefined;
+  const match = result.match(WEB_FETCH_HTTP_ERROR_PATTERN);
+  return match ? Number(match[1]) : undefined;
+}
+
+/**
+ * The status of a shell fetch whose entire output is `curl: (22)` errors.
+ *
+ * `curl -fsSL url | sed …` exits 0 because the pipe keeps sed's status, so the
+ * call is not routed to `error` and its only output is curl's complaint. Only an
+ * output made of nothing else counts: a script that also printed a real page
+ * cannot be split per url, so it keeps its content.
+ */
+function curlHttpError(result: unknown): number | undefined {
+  if (typeof result !== 'string') return undefined;
+  const lines = result.split('\n').filter((line) => line.trim() !== '');
+  if (lines.length === 0) return undefined;
+  const statuses = lines.map(
+    (line) => line.trim().match(CURL_HTTP_ERROR_LINE_PATTERN)?.[1]
+  );
+  if (statuses.some((status) => status === undefined)) return undefined;
+  return Number(statuses[0]);
+}
+
 /** True when a tool call is one of the channels docs activation tracks (worth rehydrating if truncated). */
 function isDocsRelatedCall(call: ToolCallRecord): boolean {
   return (
@@ -253,12 +291,18 @@ export function buildDocsResult(toolCalls: ToolCallRecord[]): DocsResult {
       // `prompt`, so that's the meaningful "ask" here (same role `query`
       // plays for search_docs), not the url. Url still recorded, in `pages`.
       const prompt = typeof body.prompt === 'string' ? body.prompt : undefined;
+      const httpError = webFetchHttpError(result);
       calls.push({
         source: 'web_fetch',
         query: prompt ?? call.url,
         hasContent: true,
         pages: [{ url: call.url }],
         resultChars: resultCharCount(result),
+        // Written whenever there is a result to check, so `null` records that
+        // the check ran and the result was not an error stub. An absent value
+        // is reserved for rows exported before the check existed, which is the
+        // only case a reader may infer an error from `resultChars` instead.
+        ...(result !== undefined && { httpError: httpError ?? null }),
       });
       continue;
     }
@@ -313,6 +357,21 @@ export function buildDocsResult(toolCalls: ToolCallRecord[]): DocsResult {
       // fall back to the query's shape, which is all there is to go on.
       if (URL_PATTERN.test(query)) {
         if (!isDocsUrl(query)) continue;
+        // A result we can see means this was Claude Code's WebSearch, which
+        // answers a url-shaped query with a hit list like any other, not with
+        // the page. Codex's hosted search never hands the CLI a result, so only
+        // it reaches the fallback below, where the url is all there is to go on.
+        if (result !== undefined) {
+          const hits = extractPages(result);
+          calls.push({
+            source: 'web_search',
+            query,
+            hasContent: hits.length > 0 ? false : undefined,
+            pages: hits,
+            resultChars: resultCharCount(result),
+          });
+          continue;
+        }
         calls.push({
           source: 'web_search',
           query,
@@ -350,12 +409,14 @@ export function buildDocsResult(toolCalls: ToolCallRecord[]): DocsResult {
       const curlExitUnproven =
         CURL_PATTERN.test(command) && !CURL_FAIL_FLAG_PATTERN.test(command);
       const ownsResult = shellFetchOwnsResult(command);
+      const httpError = curlHttpError(result);
       calls.push({
         source: 'shell_fetch',
         query: command,
         hasContent: !curlExitUnproven && ownsResult ? true : undefined,
         pages: urls.map((url) => ({ url })),
         resultChars: resultCharCount(result),
+        httpError: httpError ?? null,
       });
       continue;
     }

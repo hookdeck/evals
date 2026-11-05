@@ -1,6 +1,12 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { discoverEvals, EVALS_ROOT } from '../lib/discovery.js';
+import {
+  DOCS_REACH_MEANING,
+  type DocsReach,
+  type DocsReachCall,
+  docsReach,
+} from '../lib/docs-reach.js';
 
 /**
  * Read a snapshot and say what kind of failures it contains.
@@ -27,6 +33,7 @@ import { discoverEvals, EVALS_ROOT } from '../lib/discovery.js';
  * ```bash
  * pnpm --filter @hookdeck-evals/framework report-results
  * pnpm --filter @hookdeck-evals/framework report-results results/runs/2026-08-21.json
+ * pnpm --filter @hookdeck-evals/framework report-results --queries
  * ```
  */
 
@@ -37,11 +44,6 @@ interface Check {
   passed?: boolean;
 }
 
-interface DocsCall {
-  source?: string;
-  pages?: unknown[];
-}
-
 interface Row {
   experiment: string;
   eval: string;
@@ -49,7 +51,7 @@ interface Row {
   gatedBy?: GatedBy;
   suite?: string;
   checks?: Check[];
-  docs?: { calls?: DocsCall[] };
+  docs?: { calls?: DocsReachCall[] };
 }
 
 interface Snapshot {
@@ -67,7 +69,11 @@ function load(path: string): Snapshot {
 }
 
 function main() {
-  const [path = 'results/latest.json'] = process.argv.slice(2);
+  const args = process.argv.slice(2);
+  const showQueries = args.includes('--queries');
+  const [path = 'results/latest.json'] = args.filter(
+    (a) => !a.startsWith('--')
+  );
   const snapshot = load(path);
 
   // Benchmark only. Regression scenarios are meant to pass everywhere, so
@@ -113,11 +119,17 @@ function main() {
     );
   }
 
-  if (failures.length === 0) {
-    console.log('  No failures.');
-    return;
-  }
+  // The docs reports below do not depend on there being failures, so a clean
+  // snapshot still prints them, and `--queries` still answers.
+  if (failures.length === 0) console.log('  No failures.');
+  else reportFailures(groups);
 
+  reportDocsReach(snapshot.results);
+  if (showQueries) reportDocsQueries(snapshot.results);
+}
+
+/** The failing cells, split by what gates each scenario. */
+function reportFailures(groups: Map<string, Row[]>) {
   report(
     groups.get('discovery') ?? [],
     'Discovery — the agent could not find out how',
@@ -157,8 +169,6 @@ function main() {
       console.log(`    ${id}`);
     }
   }
-
-  reportDocsReach(snapshot.results);
 }
 
 /**
@@ -169,46 +179,52 @@ function main() {
  * not a confound, and not something to design out. That distinction is the whole
  * reason this prints two numbers instead of one.
  *
- * What is worth watching is the other half, and printing it per experiment moved
- * the answer. Aggregated by arm it reads as a skills effect — 296 calls in
- * `-no-skills` against 83 in `+skills`, 58% empty against 37%. Split by
- * experiment on the 25 August snapshot, most of that is the agent:
+ * What is worth watching is the other half, and it has to be split five ways.
+ * Only `read` means page text reached the agent. `hits` is a list of links,
+ * `error` is a fetch that answered with an HTTP error, `none` is a result with
+ * nothing attributable to the docs, and `unobserved` is a hosted search whose
+ * results never reach us at all — see `lib/docs-reach.ts` for which agent
+ * produces which, and why the two-bucket version was wrong in both directions.
  *
- *     claude-code-sonnet-5              21 calls    0 empty (0%)
- *     claude-code-sonnet-5-no-skills    64 calls    0 empty (0%)
- *     codex-gpt-5.4-mini                43 calls   26 empty (60%)
- *     codex-gpt-5.4-mini-no-skills     196 calls  144 empty (73%)
- *     codex-gpt-5.6                     19 calls    5 empty (26%)
- *     codex-gpt-5.6-no-skills           36 calls   30 empty (83%)
+ * So read this per row, never pooled. `read` is signal about the docs and the
+ * skills. The others are mostly facts about how a given agent goes looking, and
+ * a delta that moves when they move is not a skills effect.
  *
- * **Both Claude arms are at zero.** Claude Code reaches docs with `web_fetch`,
- * which returns a page; Codex leans on `web_search`, which frequently returns
- * none. There is still a real skills effect inside each Codex pair — 60 against
- * 73, 26 against 83 — but it is the smaller term, and the aggregate hid that by
- * pooling two agents with different habits.
+ * The rate is `read` over the calls we could observe, not over every call.
+ * Counting `unobserved` in the denominator makes it a measure of tool mix: an
+ * arm that searches through Codex's hosted `web_search` reads as barely touching
+ * the docs however much it learned from them, which is #61's confound again.
  *
- * So read this per row, never pooled: `reached` is signal about the docs and the
- * skills, `empty` is mostly a fact about the agent's search path, and a delta
- * that moves when `empty` moves is neither. See #61, and #2 for the scenario
- * where this presented as a clean skills win.
+ * `--queries` prints what was actually searched for. For a hosted search the
+ * query is the only observable there is, so it is the only way to ask what an
+ * agent was trying to find out — which is the question a skills delta usually
+ * turns out to be about. See #83, and #61 for the number that rested on the old
+ * bucket.
  */
+const DOCS_REACH_ORDER: DocsReach[] = [
+  'read',
+  'hits',
+  'error',
+  'none',
+  'unobserved',
+];
+
 function reportDocsReach(rows: Row[]) {
   const arms = new Map<
     string,
-    { reached: number; empty: number; bySource: Map<string, number> }
+    { counts: Map<DocsReach, number>; bySource: Map<string, number> }
   >();
 
   for (const row of rows) {
     const calls = row.docs?.calls ?? [];
     if (calls.length === 0) continue;
     const arm = arms.get(row.experiment) ?? {
-      reached: 0,
-      empty: 0,
+      counts: new Map<DocsReach, number>(),
       bySource: new Map<string, number>(),
     };
     for (const call of calls) {
-      if ((call.pages ?? []).length > 0) arm.reached += 1;
-      else arm.empty += 1;
+      const reach = docsReach(call);
+      arm.counts.set(reach, (arm.counts.get(reach) ?? 0) + 1);
       const source = call.source ?? 'unknown';
       arm.bySource.set(source, (arm.bySource.get(source) ?? 0) + 1);
     }
@@ -219,21 +235,136 @@ function reportDocsReach(rows: Row[]) {
 
   console.log('\n  How each arm reached the docs:');
   for (const [experiment, arm] of [...arms].sort()) {
-    const total = arm.reached + arm.empty;
-    const pct = Math.round((100 * arm.empty) / total);
+    const total = [...arm.counts.values()].reduce((a, b) => a + b, 0);
+    const read = arm.counts.get('read') ?? 0;
+    const observed = total - (arm.counts.get('unobserved') ?? 0);
+    const rate =
+      observed === 0
+        ? 'no calls observed'
+        : `read ${read} of ${observed} observed (${Math.round((100 * read) / observed)}%)`;
+    const buckets = DOCS_REACH_ORDER.map(
+      (reach) => `${reach} ${String(arm.counts.get(reach) ?? 0).padStart(3)}`
+    ).join('  ');
     const mix = [...arm.bySource]
       .sort((a, b) => b[1] - a[1])
       .map(([source, n]) => `${source} ${n}`)
       .join(', ');
     console.log(
       `    ${experiment.padEnd(32)} ${String(total).padStart(4)} calls  ` +
-        `${String(arm.reached).padStart(4)} reached a page  ` +
-        `${String(arm.empty).padStart(4)} empty (${pct}%)  [${mix}]`
+        `${buckets}   ${rate.padEnd(30)}  [${mix}]`
+    );
+  }
+  for (const reach of DOCS_REACH_ORDER) {
+    console.log(`    ${reach.padEnd(11)} ${DOCS_REACH_MEANING[reach]}`);
+  }
+  console.log(
+    '    Only `read` means page text reached the agent; `error` is a docs url that\n' +
+      '    did not resolve. Do not read a delta that moves with the others as one.\n' +
+      '    `--queries` shows what was asked, and every docs url that errored.'
+  );
+}
+
+/**
+ * What each arm went looking for, and what came back.
+ *
+ * The query is the one part of a hosted search we always see, so for Codex it is
+ * the only evidence of what the agent was trying to find out. That turns out to
+ * be the interesting half: `verification-002`'s baseline searched twice for an
+ * ElevenLabs source type, got nothing it could use, and built a generic `WEBHOOK`
+ * source with hand-rolled HMAC — while the arm with the skill named the preset
+ * and passed. A pass rate cannot show that. Two queries and their outcome can.
+ *
+ * Off by default because it is long. Grouped by scenario rather than by arm, so
+ * the two arms of a pair sit next to each other and the diff is readable.
+ *
+ * It ends with every docs url that answered with an HTTP error. Most are urls an
+ * agent guessed — a path that reads like it should exist, or an older layout —
+ * and a guess the docs keep failing is a finding about the docs, not the agent.
+ */
+function reportDocsQueries(rows: Row[]) {
+  const byEval = new Map<string, Row[]>();
+  for (const row of rows) {
+    if ((row.docs?.calls ?? []).length === 0) continue;
+    byEval.set(row.eval, [...(byEval.get(row.eval) ?? []), row]);
+  }
+  if (byEval.size === 0) {
+    console.log('\n  No docs calls recorded in this snapshot.');
+    return;
+  }
+
+  console.log('\n  What each arm asked the docs:');
+  for (const [evalId, evalRows] of [...byEval].sort()) {
+    console.log(`\n    ${evalId}`);
+    for (const row of [...evalRows].sort((a, b) =>
+      a.experiment.localeCompare(b.experiment)
+    )) {
+      const calls = row.docs?.calls ?? [];
+      console.log(
+        `      ${row.experiment}  ${row.passed ? 'passed' : 'FAILED'}  ${calls.length} calls`
+      );
+      for (const call of calls) {
+        const query = (call.query ?? '').replace(/\s+/g, ' ').trim();
+        const reach = docsReach(call);
+        const label = reach === 'error' ? `error ${httpStatus(call)}` : reach;
+        console.log(
+          `        ${label.padEnd(11)} ${call.source ?? 'unknown'}  ${query}`
+        );
+      }
+    }
+  }
+
+  reportDocsErrors(rows);
+}
+
+/** The status a fetch error answered with, or `?` for a row exported before it was recorded. */
+function httpStatus(call: DocsReachCall): string {
+  return call.httpError === undefined || call.httpError === null
+    ? '?'
+    : String(call.httpError);
+}
+
+/** Every docs url that answered with an HTTP error, with how often and from which arms. */
+function reportDocsErrors(rows: Row[]) {
+  const byUrl = new Map<
+    string,
+    { statuses: Set<string>; count: number; arms: Set<string> }
+  >();
+  for (const row of rows) {
+    for (const call of row.docs?.calls ?? []) {
+      if (docsReach(call) !== 'error') continue;
+      for (const page of call.pages ?? []) {
+        const url = (page as { url?: string }).url ?? '(no url)';
+        const entry = byUrl.get(url) ?? {
+          statuses: new Set<string>(),
+          count: 0,
+          arms: new Set<string>(),
+        };
+        entry.statuses.add(httpStatus(call));
+        entry.count += 1;
+        entry.arms.add(row.experiment);
+        byUrl.set(url, entry);
+      }
+    }
+  }
+  if (byUrl.size === 0) {
+    console.log(
+      '\n  No docs url answered with an HTTP error in this snapshot.'
+    );
+    return;
+  }
+  console.log(
+    `\n  Docs urls that answered with an HTTP error (${byUrl.size}):`
+  );
+  for (const [url, entry] of [...byUrl].sort(
+    (a, b) => b[1].count - a[1].count || a[0].localeCompare(b[0])
+  )) {
+    console.log(
+      `    ${[...entry.statuses].join('/').padEnd(4)} x${entry.count}  ${url}  [${[...entry.arms].sort().join(', ')}]`
     );
   }
   console.log(
-    '    A high empty rate is an external search index returning nothing, not a\n' +
-      '    documentation or skills gap. Do not read a delta that moves with it as one.'
+    '    `?` is a row exported before the status was recorded: it is recognised\n' +
+      '    by the size of the error text, which does not say which status it was.'
   );
 }
 

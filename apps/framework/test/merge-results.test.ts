@@ -85,6 +85,45 @@ describe('sanitizeCarried', () => {
     expect(rows[0].provenance).toEqual(provenance);
   });
 
+  it("keeps a docs call's httpError in all three states, so a carried row is classified as it was published", () => {
+    // `null` is the marker that a fetch was checked: if this path dropped it,
+    // a carried row would fall back to length inference and a real page of the
+    // stub's size would be republished as an error.
+    const calls = [
+      {
+        source: 'web_fetch',
+        query: 'ok',
+        hasContent: true,
+        pages: [{ url: 'https://hookdeck.com/docs/a' }],
+        resultChars: 215,
+        httpError: null,
+      },
+      {
+        source: 'web_fetch',
+        query: 'missing',
+        hasContent: true,
+        pages: [{ url: 'https://hookdeck.com/docs/b' }],
+        resultChars: 215,
+        httpError: 404,
+      },
+      {
+        source: 'web_fetch',
+        query: 'legacy',
+        hasContent: true,
+        pages: [{ url: 'https://hookdeck.com/docs/c' }],
+        resultChars: 215,
+      },
+    ];
+    const { rows, rejected } = sanitizeCarried([
+      row('a', 'e1', { docs: { calls } }),
+    ]);
+    expect(rejected).toEqual([]);
+    const kept = rows[0].docs?.calls ?? [];
+    expect(kept[0].httpError).toBeNull();
+    expect(kept[1].httpError).toBe(404);
+    expect('httpError' in kept[2]).toBe(false);
+  });
+
   it('rejects, and names, a row that no longer parses', () => {
     const { rows, rejected } = sanitizeCarried([
       row('a', 'e1', { stage: 'deploy' }),
