@@ -17,11 +17,17 @@ name: Refresh eval results
 # instead of going red where nobody looks. The 21 September failure sat
 # unnoticed until somebody asked about it four days later.
 #
-# Cost and duration are not yet measured. The $5-and-ten-minutes figure that
-# used to sit here came from `.plans/delivery-plan.md` at planning time, before
-# any regression run existed; measured wall clock on the benchmark is about
-# 3.4 minutes per cell serialised, which would put eighteen cells nearer an
-# hour. Replace this sentence with a measurement after the first run.
+# Measured on the first run, 1 October 2026 (run 36869979661): eighteen cells
+# at up to two attempts each, stopping on a pass. Seventeen passed first time
+# and the failing cell used both, so nineteen attempts. Fifty minutes of wall
+# clock. The cells run one at a time (`max-parallel: 1` below): their jobs ran
+# 13:37:30 to 14:26:26 UTC and summed to 2,881 seconds, about 2.7 minutes per
+# cell, and prepare, publish and queueing were the other two minutes or so. The
+# run concluded `success` despite its failed cell, which is what #99 fixed: see
+# "Check the regression suite passed" below. The $5-and-ten-minutes estimate that
+# used to sit here was a planning figure from before any regression run
+# existed. Cost is still unmeasured: the regression export carries no `usage`,
+# and Codex reports tokens, not dollars.
 #
 # **Benchmark runs are dispatched against a bucket of work, not a calendar.**
 # Something changed what we measure, or something shipped to the product, and

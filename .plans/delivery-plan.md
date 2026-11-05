@@ -74,25 +74,26 @@ could settle.
 carried such a table and both went stale within a day. `results/latest.json` is
 authoritative, and GitHub Issues carries what is left to do.
 
-**The aided delta is not zero, and it is not one number.** This section previously
-recorded it as zero on the evidence then available, and then as **-3** for the weakest
-model. Both -3 readings come from 13 August, the credit-outage day, and no run since has
-reproduced them: the eight runs after it read **-2** (one read 0). As of 26 August the
-figures are **+1 for Claude Sonnet 5, 0 for GPT-5.6, and -2 for GPT-5.4-mini**. The sign
-replicated; the magnitude did not. A skills delta reported as a single figure hides a
-sign change, and the negative one is a finding about our documentation rather than about
-the model. Tracked as an issue.
+**The aided delta is not zero, and it is not one number yet.** This section recorded it
+as zero on the evidence then available, then as **-3** for the weakest model, then as
+**-2** with "the sign replicated". Neither held. Keyed per execution rather than per
+snapshot file, the six full-suite runs of the weak pair read -3, -2, -1, +1, +4 and +4
+(13 and 17 August; 1, 7, 14 and 28 September). The -3 is from the credit-outage day. The
+run-after-run -2 was one 17 August execution republished into seven snapshots. #2, opened
+to explain why skills made the weak model worse, was closed on 22 September with that
+premise withdrawn. Do not report a skills delta as a single figure, and do not call a sign
+replicated until it has replicated.
 
-The composition matters more than the number and has changed completely since 13 August.
-One scenario is worse with skills in every published run and no other manages it; the
-rest of the original -3 dissolved into no difference. Reading the delta from a total is
-how a single execution republished into seven snapshots came to be reported as a
-result holding across eight runs.
+The composition moves more than the total. `transform-001` was worse with skills in the
+first three executions and in none of the last three. On 14 and 28 September no scenario
+was worse with skills. Across the four September executions the gain is mostly Outpost:
+19/20 against 12/20, with Event Gateway at 47/56 against 46/56. Read the delta per row,
+never from a total.
 
 For scale, supabase/evals' own published results show +3, +1, +1, 0 and -1 across five
-agents, so a mixed and occasionally negative delta is not anomalous. What is new is
-that ours is negative *specifically on the weakest model*, which points at a mechanism
-rather than at noise.
+agents, so a mixed delta is not anomalous. The one mechanism that is documented rather
+than inferred still stands: a skill that lists example values is read as an exhaustive
+list, which once led a weak model to conclude a supported provider was unsupported.
 
 **Investigate and resolve moved up and are now the thin part.** They were scheduled
 last because they are hardest to seed. Against thirteen build scenarios they now hold
@@ -1331,10 +1332,13 @@ supabase/evals' `eval-refresh.yml` sets `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, a
   run inform?" had stopped having an answer. The weekly and monthly figures below are
   the historical record of what that cost.
 - **Regression suite weekly**, and on every docs or skills change once that is wired
-  up. 3 scenarios x 6 experiments = 18 runs. Cost and wall clock are **not measured**:
-  the "$5 and under 10 minutes" written here was a planning estimate from before any
-  regression run existed, and the benchmark's measured 3.4 minutes per cell serialised
-  would put 18 cells nearer an hour. Replace this with a figure after the first run.
+  up. 3 scenarios x 6 experiments = 18 cells. **Wall clock, measured on the first run**
+  (1 October 2026, run 36869979661): fifty minutes. The cells run one at a time
+  (`max-parallel: 1`), and their jobs summed to 2,881 seconds, about 2.7 minutes per
+  cell; prepare, publish and queueing were the other two minutes or so. The "$5 and
+  under 10 minutes" written here was a planning estimate from before any regression
+  run existed. **Cost is still not measured**: the regression export carries no
+  `usage`, and Codex reports tokens rather than dollars.
 - **A repository variable holds publication.** `EVALS_PUBLISH=false` lets the schedule
   keep running and keep collecting transcripts while nothing reaches the website.
   Built after a cron nearly published twelve failures that were ours, and cancelling it
