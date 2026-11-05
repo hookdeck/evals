@@ -583,6 +583,28 @@ was.
 transcripts are where the findings come from — the scoreboard has never produced
 one. Holding publication is not the same as skipping the week.
 
+**A partly failed run still publishes; a cancelled one never does.** One errored
+cell used to skip the publish job outright, and on 21 September 75 of 76 completed
+cells went unpublished (#80). The export now checks what came back against every
+pair the run was asked for, names each missing cell in the job summary along with
+whatever stands in for it — a carried row and its date under `--merge`, or nothing —
+and refuses if more than a tenth of the cells are missing. Past that floor something
+systematic happened and somebody should read it first. If publishing is still right,
+raise the floor and re-run **only** the publish job; "Re-run failed jobs" would re-run
+the failed matrix cells too, and pay for them again:
+
+```bash
+gh variable set EVALS_MAX_MISSING_FRACTION --body 0.25   # then re-run publish-results
+gh variable delete EVALS_MAX_MISSING_FRACTION            # back to 0.1
+```
+
+A credit, quota or auth failure cancels the run on purpose, and a cancelled run
+publishes nothing whatever the floor says. The failing job uploads a
+`provider-refused-*` marker before it cancels, and the publish job refuses on any
+marker, so a cancel that did not take still publishes nothing. The regression export always merges,
+whatever the `merge` input says, so a one-cell dispatch cannot replace the record
+with one row (#98).
+
 ## Plans
 
 `.plans/` holds the planning documents. Start with

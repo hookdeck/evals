@@ -9,6 +9,9 @@
       "reasoningEffort": "high"
     },
     "eval": "benchmark-filtering-001-enterprise-orders",
+    "ranAt": "2026-11-05T10:12:40.512Z",
+    "runId": "41500000000",
+    "provenance": { "harness": "3f9c1a7be210", "scenario": "a41d0e6c9b52" },
     "stage": "build",
     "product": ["event-gateway"],
     "topic": ["filtering"],
