@@ -84,6 +84,10 @@ const PRODUCT_SKILLS = new Set([
   'event-gateway',
   'outpost',
   'inspect',
+  // `npx skills add hookdeck/agent-skills` with no `--skill` installs every
+  // skill in the repository, and `findSelfInstalledSkills` records it as the
+  // repo rather than guessing a name. It brings all of the above with it.
+  'hookdeck/agent-skills',
 ]);
 
 /**
