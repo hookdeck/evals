@@ -36,6 +36,16 @@ import type { SandboxCommandResult } from './types.js';
 const PROBE = 'command -v hookdeck && hookdeck --version';
 
 /**
+ * The prefix of the error this check throws. The `Run evals` step in
+ * `eval-refresh.yml` greps the job log for it, treats it as a run-level
+ * failure like a provider refusal, leaves a `sandbox-broken` marker that
+ * `publish-results` refuses on, and cancels the run: every job builds the
+ * same image, so one broken sandbox means all of them are. A test fails if
+ * the workflow and this string drift apart.
+ */
+export const SANDBOX_SELF_CHECK_FAILED = 'sandbox self-check failed';
+
+/**
  * The two shells an agent can be handed. `runShell` already runs `bash -c`
  * with the harness's PATH, so the login probe nests a `bash -lc` inside it,
  * which is exactly what Codex does.
@@ -103,7 +113,7 @@ export async function assertPinnedToolchain(sandbox: {
   }
   if (problems.length > 0) {
     throw new Error(
-      'sandbox self-check failed: the pinned Hookdeck CLI is not what an ' +
+      `${SANDBOX_SELF_CHECK_FAILED}: the pinned Hookdeck CLI is not what an ` +
         `agent's shell runs, so this cell was not started and is not scored. ` +
         `${problems.join('; ')}. The PATH for both shells is set in ` +
         'packages/sandbox/Dockerfile.'

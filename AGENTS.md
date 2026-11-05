@@ -1332,8 +1332,10 @@ unpinned `npx -y hookdeck-cli@latest`, or not at all — all of it scored as
 though both agents had the same baseline. So anything an agent needs on PATH
 has to be on it for both kinds of shell: the image sets it in `ENV` and again
 in `/etc/profile.d/`, and `toolchain-check.ts` errors a cell before it starts
-if either shell does not resolve the pinned version. Setting `PATH` on
-`docker exec` alone is not enough.
+if either shell does not resolve the pinned version. In CI that failure is
+treated like a provider refusal: it leaves a `sandbox-broken` marker that
+`publish-results` refuses on and cancels the run, because every job builds the
+same image. Setting `PATH` on `docker exec` alone is not enough.
 
 **Credentials reach the agent through `EvalSession.sandboxEnv`.** The session is
 created before the sandbox because the sandbox needs the lease. Disposal runs in

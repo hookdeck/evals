@@ -10,6 +10,7 @@ import {
 } from '../src/image.js';
 import {
   assertPinnedToolchain,
+  SANDBOX_SELF_CHECK_FAILED,
   TOOLCHAIN_PROBES,
   toolchainProblem,
 } from '../src/toolchain-check.js';
@@ -100,6 +101,25 @@ describe('assertPinnedToolchain', () => {
     );
     await expect(assertPinnedToolchain(sandbox)).rejects.toThrow(
       /sandbox self-check failed.*not scored.*login \(bash -lc\).*command not found/s
+    );
+  });
+
+  it('fails with the string CI cancels the run on', async () => {
+    // `eval-refresh.yml` greps the job log for this prefix to cancel the run
+    // and leave a `sandbox-broken` marker that blocks publishing. If the two
+    // drift, a broken image goes back to erroring every cell one at a time.
+    const workflow = readFileSync(
+      new URL('../../../.github/workflows/eval-refresh.yml', import.meta.url),
+      'utf8'
+    );
+    expect(workflow).toContain(`sandbox_broken="${SANDBOX_SELF_CHECK_FAILED}"`);
+    expect(workflow).toContain('> sandbox-broken.marker');
+    expect(workflow).toMatch(/grep -E '\^sandbox-broken-'/);
+
+    const sandbox = fake(() => notFound);
+    const error = await assertPinnedToolchain(sandbox).catch((e) => e);
+    expect(String(error.message).startsWith(SANDBOX_SELF_CHECK_FAILED)).toBe(
+      true
     );
   });
 });

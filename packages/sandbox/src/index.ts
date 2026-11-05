@@ -36,6 +36,7 @@ export type {
 } from './agent-environment.js';
 export {
   assertPinnedToolchain,
+  SANDBOX_SELF_CHECK_FAILED,
   toolchainProblem,
   TOOLCHAIN_PROBES,
 } from './toolchain-check.js';
