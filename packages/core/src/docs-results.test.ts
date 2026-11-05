@@ -965,6 +965,79 @@ describe('buildDocsResult', () => {
 
     expect(result.calls[0].resultChars).toBe(Math.round(50.8 * 1024));
   });
+
+  it("records the status when Claude Code's WebFetch answers with its HTTP-error stub instead of the page", () => {
+    const stub =
+      'The server returned HTTP 404 Not Found.\n\nThe response body was not retrieved. If this URL requires authentication, use an authenticated tool (e.g. `gh` for GitHub, or an MCP-provided fetch tool) instead of WebFetch.';
+    const result = buildDocsResult([
+      toolCall(
+        'WebFetch',
+        { prompt: 'retries' },
+        {
+          name: 'web_fetch',
+          url: 'https://hookdeck.com/docs/retry',
+          result: stub,
+        }
+      ),
+    ]);
+
+    expect(result.calls).toEqual([
+      {
+        source: 'web_fetch',
+        query: 'retries',
+        hasContent: true,
+        pages: [{ url: 'https://hookdeck.com/docs/retry' }],
+        resultChars: stub.length,
+        httpError: 404,
+      },
+    ]);
+  });
+
+  it('records the status when a piped curl -f printed nothing but curl (22)', () => {
+    // The pipe keeps sed's exit code, so this is not routed to `error`.
+    const command =
+      '/bin/bash -lc "curl -fsSL https://hookdeck.com/docs/api/connections.md | sed -n \'1,260p\'"';
+    const result = buildDocsResult([
+      toolCall(
+        'command_execution',
+        { command },
+        {
+          name: 'shell',
+          command,
+          result: 'curl: (22) The requested URL returned error: 404\n',
+        }
+      ),
+    ]);
+
+    expect(result.calls[0].httpError).toBe(404);
+    expect(result.calls[0].pages).toEqual([
+      { url: 'https://hookdeck.com/docs/api/connections.md' },
+    ]);
+  });
+
+  it("parses the hit list of Claude Code's WebSearch on a url-shaped query, rather than recording the query as a page", () => {
+    const result = buildDocsResult([
+      toolCall(
+        'WebSearch',
+        { query: 'https://hookdeck.com/docs/retries' },
+        {
+          name: 'web_search',
+          result:
+            'Links: [{"title":"Rules","url":"https://hookdeck.com/docs/rules"}]',
+        }
+      ),
+    ]);
+
+    expect(result.calls).toEqual([
+      {
+        source: 'web_search',
+        query: 'https://hookdeck.com/docs/retries',
+        hasContent: false,
+        pages: [{ url: 'https://hookdeck.com/docs/rules', title: 'Rules' }],
+        resultChars: expect.any(Number),
+      },
+    ]);
+  });
 });
 
 describe('rehydrateTruncatedDocsResults', () => {

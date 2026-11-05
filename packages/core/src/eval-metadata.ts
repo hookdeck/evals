@@ -433,6 +433,15 @@ export const docsCallSchema = z.object({
   // truncate this way). Omitted when the trace exposes no result, including
   // Codex web_search and failed calls whose output is recorded as an error.
   resultChars: z.number().optional(),
+  // The HTTP status a fetch answered with instead of the page, when its result
+  // was recognisably an error rather than content: Claude Code's WebFetch error
+  // stub ("The server returned HTTP 404 Not Found. The response body was not
+  // retrieved…"), or a piped `curl -f` whose whole output is `curl: (22) The
+  // requested URL returned error: 404`. `hasContent` is left as the source
+  // emits it, so this field is what says no page arrived. A docs url an agent
+  // guessed that 404s is itself a finding, which is why this keeps the status
+  // rather than collapsing the call into "nothing".
+  httpError: z.number().optional(),
 });
 export type DocsCall = z.infer<typeof docsCallSchema>;
 

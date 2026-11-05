@@ -1,5 +1,6 @@
+import { buildDocsResult, type ToolCallRecord } from '@hookdeck-evals/core';
 import { describe, expect, it } from 'vitest';
-import { docsReach } from '../lib/docs-reach.js';
+import { docsReach, inferredLegacyHttpError } from '../lib/docs-reach.js';
 
 /**
  * The defect these guard against was published, and it ran in both directions:
@@ -20,6 +21,7 @@ describe('docsReach', () => {
   it('counts a shell fetch with no proof either way as read, because a url was fetched', () => {
     expect(
       docsReach({
+        source: 'shell_fetch',
         pages: [{ url: 'https://hookdeck.com/docs' }],
         resultChars: 4208,
       })
@@ -78,5 +80,222 @@ describe('docsReach', () => {
 
   it('treats a missing pages array as no pages rather than throwing', () => {
     expect(docsReach({ resultChars: 12 })).toBe('none');
+  });
+
+  it('counts a fetch that recorded an HTTP error as error, whatever hasContent says', () => {
+    expect(
+      docsReach({
+        source: 'web_fetch',
+        pages: [{ url: 'https://hookdeck.com/docs/retry' }],
+        hasContent: true,
+        resultChars: 215,
+        httpError: 404,
+      })
+    ).toBe('error');
+  });
+
+  it('counts a web_search with a result and a url for a page as hits, not read', () => {
+    // A row exported before the emitter learned that Claude's WebSearch answers a
+    // url-shaped query with a hit list: it named the query as its page.
+    expect(
+      docsReach({
+        source: 'web_search',
+        pages: [{ url: 'https://hookdeck.com/docs/retries' }],
+        resultChars: 1800,
+      })
+    ).toBe('hits');
+  });
+
+  it('still counts a Codex open_page as read, because it is the one web_search marked as page text', () => {
+    expect(
+      docsReach({
+        source: 'web_search',
+        pages: [{ url: 'https://hookdeck.com/docs/retries' }],
+        hasContent: true,
+        resultChars: 3000,
+      })
+    ).toBe('read');
+  });
+});
+
+/**
+ * Published rows exported before `httpError` existed can only be recognised by
+ * the size of the error text, because the text itself is not exported.
+ */
+describe('inferredLegacyHttpError', () => {
+  it('recognises the 215-character WebFetch 404 stub', () => {
+    const call = {
+      source: 'web_fetch' as const,
+      pages: [{ url: 'https://hookdeck.com/docs/retry' }],
+      hasContent: true,
+      resultChars: 215,
+    };
+    expect(inferredLegacyHttpError(call)).toBe(true);
+    expect(docsReach(call)).toBe('error');
+  });
+
+  it('recognises a piped curl -f whose only output was curl (22)', () => {
+    const call = {
+      source: 'shell_fetch' as const,
+      query:
+        '/bin/bash -lc "curl -fsSL https://hookdeck.com/docs/api/connections.md | sed -n \'1,260p\'"',
+      pages: [{ url: 'https://hookdeck.com/docs/api/connections.md' }],
+      hasContent: true,
+      resultChars: 49,
+    };
+    expect(inferredLegacyHttpError(call)).toBe(true);
+    expect(docsReach(call)).toBe('error');
+  });
+
+  it('leaves an unflagged curl of the same size alone, since its output is not known to be an error', () => {
+    expect(
+      inferredLegacyHttpError({
+        source: 'shell_fetch',
+        query: 'curl -s https://hookdeck.com/docs/x.md | grep y',
+        pages: [{ url: 'https://hookdeck.com/docs/x.md' }],
+        resultChars: 49,
+      })
+    ).toBe(false);
+  });
+
+  it('defers to a recorded httpError rather than guessing', () => {
+    expect(
+      inferredLegacyHttpError({
+        source: 'web_fetch',
+        resultChars: 215,
+        httpError: 403,
+      })
+    ).toBe(false);
+  });
+});
+
+/**
+ * The emitter and the classifier are two halves of one contract: the shapes
+ * below are copied from real tool calls in the raw results behind
+ * `results/latest.json`, fed through `buildDocsResult`, and classified. A change
+ * to either half that breaks the pair fails here rather than in a published
+ * number.
+ */
+describe('buildDocsResult → docsReach', () => {
+  function classify(call: ToolCallRecord) {
+    const { calls } = buildDocsResult([call]);
+    expect(calls).toHaveLength(1);
+    return { call: calls[0], reach: docsReach(calls[0]) };
+  }
+
+  it("classifies Claude Code's WebFetch 404 stub as error, keeping the status and the url it guessed", () => {
+    const { call, reach } = classify({
+      endpoint: 'WebFetch',
+      name: 'web_fetch',
+      url: 'https://hookdeck.com/docs/retry',
+      body: { prompt: 'How do retries work?' },
+      result:
+        'The server returned HTTP 404 Not Found.\n\nThe response body was not retrieved. If this URL requires authentication, use an authenticated tool (e.g. `gh` for GitHub, or an MCP-provided fetch tool) instead of WebFetch.',
+      ts: 0,
+    });
+    expect(reach).toBe('error');
+    expect(call.httpError).toBe(404);
+    expect(call.resultChars).toBe(215);
+    expect(call.pages).toEqual([{ url: 'https://hookdeck.com/docs/retry' }]);
+  });
+
+  it('recognises the WebFetch stub for a status other than 404', () => {
+    const { call, reach } = classify({
+      endpoint: 'WebFetch',
+      name: 'web_fetch',
+      url: 'https://hookdeck.com/docs/private',
+      body: {},
+      result:
+        'The server returned HTTP 403 Forbidden.\n\nThe response body was not retrieved. If this URL requires authentication, use an authenticated tool (e.g. `gh` for GitHub, or an MCP-provided fetch tool) instead of WebFetch.',
+      ts: 0,
+    });
+    expect(reach).toBe('error');
+    expect(call.httpError).toBe(403);
+  });
+
+  it('keeps a real WebFetch page as read, even when it quotes a status', () => {
+    const { call, reach } = classify({
+      endpoint: 'WebFetch',
+      name: 'web_fetch',
+      url: 'https://hookdeck.com/docs/destinations',
+      body: { prompt: 'What does a 404 do?' },
+      result:
+        'A destination that returns HTTP 404 Not Found is treated as a failed attempt and retried according to the retry rule.',
+      ts: 0,
+    });
+    expect(reach).toBe('read');
+    expect(call.httpError).toBeUndefined();
+  });
+
+  it("classifies Claude Code's WebSearch on a url-shaped query as hits, from its hit list", () => {
+    const { call, reach } = classify({
+      endpoint: 'WebSearch',
+      name: 'web_search',
+      body: { query: 'https://hookdeck.com/docs/retries' },
+      result:
+        'Web search results for query: "https://hookdeck.com/docs/retries"\n\n' +
+        'Links: [{"title":"Retries | Hookdeck","url":"https://hookdeck.com/docs/retries"}]\n\nSummary.',
+      ts: 0,
+    });
+    expect(reach).toBe('hits');
+    expect(call.hasContent).toBe(false);
+    expect(call.pages).toEqual([
+      { url: 'https://hookdeck.com/docs/retries', title: 'Retries | Hookdeck' },
+    ]);
+  });
+
+  it("classifies Codex's hosted search as unobserved", () => {
+    const { reach } = classify({
+      endpoint: 'web_search',
+      name: 'web_search',
+      body: {
+        query: 'site:hookdeck.com/docs sources ElevenLabs Hookdeck',
+        action: { type: 'search' },
+      },
+      ts: 0,
+    });
+    expect(reach).toBe('unobserved');
+  });
+
+  it("classifies Codex's url-shaped search with no result as unobserved", () => {
+    const { reach } = classify({
+      endpoint: 'web_search',
+      name: 'web_search',
+      body: { query: 'https://hookdeck.com/docs/outpost/llms.txt' },
+      ts: 0,
+    });
+    expect(reach).toBe('unobserved');
+  });
+
+  it('classifies a piped curl -f that hit curl (22) as error, keeping the status', () => {
+    const command =
+      '/bin/bash -lc "curl -fsSL https://hookdeck.com/docs/api/connections.md | sed -n \'1,260p\'"';
+    const { call, reach } = classify({
+      endpoint: 'command_execution',
+      name: 'shell',
+      command,
+      body: { command },
+      result: 'curl: (22) The requested URL returned error: 404\n',
+      ts: 0,
+    });
+    expect(reach).toBe('error');
+    expect(call.httpError).toBe(404);
+    expect(call.resultChars).toBe(49);
+  });
+
+  it('keeps a shell fetch that printed a page alongside a curl (22) as read, since it cannot be split per url', () => {
+    const command =
+      'curl -fsSL https://hookdeck.com/docs/a.md; curl -fsSL https://hookdeck.com/docs/b.md';
+    const { call, reach } = classify({
+      endpoint: 'command_execution',
+      name: 'shell',
+      command,
+      body: { command },
+      result:
+        '# Page A\n\nReal content.\ncurl: (22) The requested URL returned error: 404\n',
+      ts: 0,
+    });
+    expect(reach).toBe('read');
+    expect(call.httpError).toBeUndefined();
   });
 });

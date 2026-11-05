@@ -3,8 +3,9 @@ import { join } from 'node:path';
 import { discoverEvals, EVALS_ROOT } from '../lib/discovery.js';
 import {
   DOCS_REACH_MEANING,
-  docsReach,
   type DocsReach,
+  type DocsReachCall,
+  docsReach,
 } from '../lib/docs-reach.js';
 
 /**
@@ -43,20 +44,6 @@ interface Check {
   passed?: boolean;
 }
 
-interface DocsCall {
-  source?: string;
-  // Whichever field was the call's "ask": a search term, a url, a shell command.
-  // For a hosted search this is the only part we ever see, which is why
-  // `--queries` exists.
-  query?: string;
-  pages?: unknown[];
-  // False when the result was a list of links rather than page text.
-  hasContent?: boolean;
-  // Omitted when the trace exposed no result at all, which is what separates a
-  // hosted search we cannot see from one that genuinely returned nothing.
-  resultChars?: number;
-}
-
 interface Row {
   experiment: string;
   eval: string;
@@ -64,7 +51,7 @@ interface Row {
   gatedBy?: GatedBy;
   suite?: string;
   checks?: Check[];
-  docs?: { calls?: DocsCall[] };
+  docs?: { calls?: DocsReachCall[] };
 }
 
 interface Snapshot {
@@ -132,11 +119,17 @@ function main() {
     );
   }
 
-  if (failures.length === 0) {
-    console.log('  No failures.');
-    return;
-  }
+  // The docs reports below do not depend on there being failures, so a clean
+  // snapshot still prints them, and `--queries` still answers.
+  if (failures.length === 0) console.log('  No failures.');
+  else reportFailures(groups);
 
+  reportDocsReach(snapshot.results);
+  if (showQueries) reportDocsQueries(snapshot.results);
+}
+
+/** The failing cells, split by what gates each scenario. */
+function reportFailures(groups: Map<string, Row[]>) {
   report(
     groups.get('discovery') ?? [],
     'Discovery — the agent could not find out how',
@@ -176,9 +169,6 @@ function main() {
       console.log(`    ${id}`);
     }
   }
-
-  reportDocsReach(snapshot.results);
-  if (showQueries) reportDocsQueries(snapshot.results);
 }
 
 /**
@@ -189,16 +179,21 @@ function main() {
  * not a confound, and not something to design out. That distinction is the whole
  * reason this prints two numbers instead of one.
  *
- * What is worth watching is the other half, and it has to be split four ways.
+ * What is worth watching is the other half, and it has to be split five ways.
  * Only `read` means page text reached the agent. `hits` is a list of links,
- * `none` is a result we saw that carried nothing, and `unobserved` is a hosted
- * search whose results never reach us at all — see `lib/docs-reach.ts` for which
- * agent produces which, and why the two-bucket version was wrong in both
- * directions.
+ * `error` is a fetch that answered with an HTTP error, `none` is a result with
+ * nothing attributable to the docs, and `unobserved` is a hosted search whose
+ * results never reach us at all — see `lib/docs-reach.ts` for which agent
+ * produces which, and why the two-bucket version was wrong in both directions.
  *
  * So read this per row, never pooled. `read` is signal about the docs and the
- * skills. The other three are mostly facts about how a given agent goes looking,
- * and a delta that moves when they move is not a skills effect.
+ * skills. The others are mostly facts about how a given agent goes looking, and
+ * a delta that moves when they move is not a skills effect.
+ *
+ * The rate is `read` over the calls we could observe, not over every call.
+ * Counting `unobserved` in the denominator makes it a measure of tool mix: an
+ * arm that searches through Codex's hosted `web_search` reads as barely touching
+ * the docs however much it learned from them, which is #61's confound again.
  *
  * `--queries` prints what was actually searched for. For a hosted search the
  * query is the only observable there is, so it is the only way to ask what an
@@ -206,7 +201,13 @@ function main() {
  * turns out to be about. See #83, and #61 for the number that rested on the old
  * bucket.
  */
-const DOCS_REACH_ORDER: DocsReach[] = ['read', 'hits', 'none', 'unobserved'];
+const DOCS_REACH_ORDER: DocsReach[] = [
+  'read',
+  'hits',
+  'error',
+  'none',
+  'unobserved',
+];
 
 function reportDocsReach(rows: Row[]) {
   const arms = new Map<
@@ -236,7 +237,11 @@ function reportDocsReach(rows: Row[]) {
   for (const [experiment, arm] of [...arms].sort()) {
     const total = [...arm.counts.values()].reduce((a, b) => a + b, 0);
     const read = arm.counts.get('read') ?? 0;
-    const pct = Math.round((100 * read) / total);
+    const observed = total - (arm.counts.get('unobserved') ?? 0);
+    const rate =
+      observed === 0
+        ? 'no calls observed'
+        : `read ${read} of ${observed} observed (${Math.round((100 * read) / observed)}%)`;
     const buckets = DOCS_REACH_ORDER.map(
       (reach) => `${reach} ${String(arm.counts.get(reach) ?? 0).padStart(3)}`
     ).join('  ');
@@ -246,15 +251,16 @@ function reportDocsReach(rows: Row[]) {
       .join(', ');
     console.log(
       `    ${experiment.padEnd(32)} ${String(total).padStart(4)} calls  ` +
-        `${buckets}   ${String(pct).padStart(3)}% read  [${mix}]`
+        `${buckets}   ${rate.padEnd(30)}  [${mix}]`
     );
   }
   for (const reach of DOCS_REACH_ORDER) {
     console.log(`    ${reach.padEnd(11)} ${DOCS_REACH_MEANING[reach]}`);
   }
   console.log(
-    '    Only `read` is signal about the docs or the skills. Do not read a delta\n' +
-      '    that moves with the other three as one. `--queries` shows what was asked.'
+    '    Only `read` means page text reached the agent; `error` is a docs url that\n' +
+      '    did not resolve. Do not read a delta that moves with the others as one.\n' +
+      '    `--queries` shows what was asked, and every docs url that errored.'
   );
 }
 
@@ -270,6 +276,10 @@ function reportDocsReach(rows: Row[]) {
  *
  * Off by default because it is long. Grouped by scenario rather than by arm, so
  * the two arms of a pair sit next to each other and the diff is readable.
+ *
+ * It ends with every docs url that answered with an HTTP error. Most are urls an
+ * agent guessed — a path that reads like it should exist, or an older layout —
+ * and a guess the docs keep failing is a finding about the docs, not the agent.
  */
 function reportDocsQueries(rows: Row[]) {
   const byEval = new Map<string, Row[]>();
@@ -294,12 +304,66 @@ function reportDocsQueries(rows: Row[]) {
       );
       for (const call of calls) {
         const query = (call.query ?? '').replace(/\s+/g, ' ').trim();
+        const reach = docsReach(call);
+        const label = reach === 'error' ? `error ${httpStatus(call)}` : reach;
         console.log(
-          `        ${docsReach(call).padEnd(11)} ${call.source ?? 'unknown'}  ${query}`
+          `        ${label.padEnd(11)} ${call.source ?? 'unknown'}  ${query}`
         );
       }
     }
   }
+
+  reportDocsErrors(rows);
+}
+
+/** The status a fetch error answered with, or `?` for a row exported before it was recorded. */
+function httpStatus(call: DocsReachCall): string {
+  return call.httpError === undefined ? '?' : String(call.httpError);
+}
+
+/** Every docs url that answered with an HTTP error, with how often and from which arms. */
+function reportDocsErrors(rows: Row[]) {
+  const byUrl = new Map<
+    string,
+    { statuses: Set<string>; count: number; arms: Set<string> }
+  >();
+  for (const row of rows) {
+    for (const call of row.docs?.calls ?? []) {
+      if (docsReach(call) !== 'error') continue;
+      for (const page of call.pages ?? []) {
+        const url = (page as { url?: string }).url ?? '(no url)';
+        const entry = byUrl.get(url) ?? {
+          statuses: new Set<string>(),
+          count: 0,
+          arms: new Set<string>(),
+        };
+        entry.statuses.add(httpStatus(call));
+        entry.count += 1;
+        entry.arms.add(row.experiment);
+        byUrl.set(url, entry);
+      }
+    }
+  }
+  if (byUrl.size === 0) {
+    console.log(
+      '\n  No docs url answered with an HTTP error in this snapshot.'
+    );
+    return;
+  }
+  console.log(
+    `\n  Docs urls that answered with an HTTP error (${byUrl.size}):`
+  );
+  for (const [url, entry] of [...byUrl].sort(
+    (a, b) => b[1].count - a[1].count || a[0].localeCompare(b[0])
+  )) {
+    console.log(
+      `    ${[...entry.statuses].join('/').padEnd(4)} x${entry.count}  ${url}  [${[...entry.arms].sort().join(', ')}]`
+    );
+  }
+  console.log(
+    '    `?` is a row exported before the status was recorded: it is recognised\n' +
+      '    by the size of the error text, which does not say which status it was.'
+  );
 }
 
 /** What each scenario's frontmatter says right now, by eval id. */
