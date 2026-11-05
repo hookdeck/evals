@@ -116,10 +116,11 @@ export function skillsPin(root: string): string {
  * and is the treatment being measured, not a change to the instrument.
  *
  * The sandbox image definition is in here because the image decides what an
- * agent's shell can run. Until it was, a Dockerfile change that gave Codex the
- * pinned CLI it had been missing on PATH left every row's harness hash exactly
- * where it was, so rows measured with and without the CLI read as measured
- * under one instrument.
+ * agent's shell can run. Until it was, a Dockerfile change meant to put the
+ * pinned CLI on PATH for Codex's login shells, where it had been
+ * `command not found`, would have left every row's harness hash where it was,
+ * so rows either side of it would read as measured under one instrument
+ * whether or not the change worked.
  */
 export function harnessFingerprint(
   basePrompt: string,

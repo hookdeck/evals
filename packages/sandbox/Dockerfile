@@ -16,12 +16,12 @@ ENV NPM_CONFIG_PREFIX=/home/node/.npm-global
 # That prefix has to be on PATH in every shell an agent can start, and there
 # are two kinds. A non-login shell (`bash -c`, which Claude Code and the
 # harness use) inherits PATH from the environment, so the ENV below covers it.
-# A login shell (`bash -lc`, which is how Codex runs every command) does not:
+# A login shell (`bash -lc`, which is how Codex runs most commands) does not:
 # Debian's /etc/profile overwrites PATH with a fixed list that has no npm
-# prefix in it, so the pinned `hookdeck` was `command not found` on every Codex
-# arm (found in run 42044644850; `toolchain-check.ts` now refuses to start a
-# cell without it). /etc/profile then sources /etc/profile.d/*.sh, which is
-# where the prefix is put back.
+# prefix in it, so the pinned `hookdeck` was `command not found` in Codex's
+# login shells on all four Codex arms (found in run 42044644850;
+# `toolchain-check.ts` now refuses to start a cell without it). /etc/profile
+# then sources /etc/profile.d/*.sh, which is where the prefix is put back.
 #
 # A profile.d entry rather than symlinks into /usr/local/bin, because it covers
 # the whole prefix: `skills`, and anything the agent itself installs globally

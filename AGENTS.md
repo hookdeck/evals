@@ -1322,20 +1322,24 @@ deleted through the API, so a shared project accumulates history, and a scorer
 that just asks "did an event arrive?" will eventually say yes because of an
 earlier run.
 
-**Codex runs every command in a login shell, and a login shell rebuilds PATH.**
-Codex's tool calls are `/bin/bash -lc '…'`, so Debian's `/etc/profile` runs
-and replaces whatever PATH the harness passed in with a fixed list. Claude Code
-runs `bash -c` and inherits it. Until this was found, in release run
-42044644850, the pinned `hookdeck` in the npm prefix was `command not found`
-on every Codex arm, and the agents reached it by absolute path, by `npx`, by an
-unpinned `npx -y hookdeck-cli@latest`, or not at all — all of it scored as
-though both agents had the same baseline. So anything an agent needs on PATH
-has to be on it for both kinds of shell: the image sets it in `ENV` and again
-in `/etc/profile.d/`, and `toolchain-check.ts` errors a cell before it starts
-if either shell does not resolve the pinned version. In CI that failure is
-treated like a provider refusal: it leaves a `sandbox-broken` marker that
-`publish-results` refuses on and cancels the run, because every job builds the
-same image. Setting `PATH` on `docker exec` alone is not enough.
+**Codex runs most commands in a login shell, and a login shell rebuilds PATH.**
+In release run 42044644850, 2,233 of Codex's 2,456 shell commands were
+`/bin/bash -lc '…'`; the rest were `bash -c`. A login shell runs Debian's
+`/etc/profile`, which replaces whatever PATH the harness passed in with a fixed
+list. Claude Code runs `bash -c` and inherits it. Of the Codex attempts in that
+run that invoked the pinned `hookdeck`, 26/26, 18/22, 16/16 and 19/19 across
+the four arms met `command not found`, and the four that did not had run it
+only through `bash -c`. The agents carried on by absolute path, by `npx`, by an
+unpinned `npx -y hookdeck-cli@latest`, or through the REST API — all of it
+scored as though both agents had the same baseline. So anything an agent needs
+on PATH has to be on it for both kinds of shell: the image sets it in `ENV` and
+again in `/etc/profile.d/`, and `toolchain-check.ts` errors a cell before it
+starts if either shell does not resolve the pinned version. A missing or wrong
+CLI is treated in CI like a provider refusal: it leaves a `sandbox-broken`
+marker that `publish-results` refuses on and cancels the run, because every
+job builds the same image. A probe that times out or hits a dead container is
+retried once and then errors only its own cell. Setting `PATH` on
+`docker exec` alone is not enough.
 
 **Credentials reach the agent through `EvalSession.sandboxEnv`.** The session is
 created before the sandbox because the sandbox needs the lease. Disposal runs in

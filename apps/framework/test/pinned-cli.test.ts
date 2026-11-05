@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  describePinnedCliEvidence,
   pinnedCliEvidence,
+  pinnedCliFlags,
   shellActivity,
 } from '../lib/pinned-cli.js';
 
@@ -39,8 +39,31 @@ describe('pinnedCliEvidence', () => {
       unpinned: [],
       absolutePath: true,
     });
-    expect(describePinnedCliEvidence(evidence!, '2.5.0')).toMatch(
-      /command not found.*absolute path.*not measured with the pinned CLI/
+    // Not "unpinned": the absolute path reached the pinned 2.5.0. What is
+    // wrong with the row is that the agent had to go and find it.
+    const flags = pinnedCliFlags(evidence!, '2.5.0');
+    expect(flags.map((f) => f.label)).toEqual(['PINNED CLI NOT ON PATH']);
+    expect(flags[0].detail).toMatch(
+      /command not found.*absolute path.*installed but not on PATH/
+    );
+    expect(flags[0].detail).not.toMatch(/not measured with the pinned CLI/);
+  });
+
+  it('says unpinned only when a different hookdeck-cli actually ran', () => {
+    const flags = pinnedCliFlags(
+      {
+        notFound: true,
+        unpinned: ['hookdeck-cli@latest'],
+        absolutePath: false,
+      },
+      '2.5.0'
+    );
+    expect(flags.map((f) => f.label)).toEqual([
+      'PINNED CLI NOT ON PATH',
+      'UNPINNED CLI',
+    ]);
+    expect(flags[1].detail).toBe(
+      'ran hookdeck-cli@latest instead of 2.5.0, so this row was not measured with the pinned CLI'
     );
   });
 

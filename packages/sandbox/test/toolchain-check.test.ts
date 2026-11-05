@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -10,9 +10,11 @@ import {
 } from '../src/image.js';
 import {
   assertPinnedToolchain,
+  classifyToolchainProbe,
+  NOT_ON_PATH,
   SANDBOX_SELF_CHECK_FAILED,
+  SANDBOX_SELF_CHECK_INCONCLUSIVE,
   TOOLCHAIN_PROBES,
-  toolchainProblem,
 } from '../src/toolchain-check.js';
 import type { SandboxCommandResult } from '../src/types.js';
 
@@ -27,56 +29,152 @@ const ok = (stdout: string): SandboxCommandResult => ({
   stdout,
   stderr: '',
 });
-const notFound: SandboxCommandResult = {
+/** What the real probe returns when `command -v hookdeck` resolves nothing. */
+const notOnPath: SandboxCommandResult = {
   ok: false,
-  exitCode: 127,
-  stdout: '',
-  stderr: '/bin/bash: line 1: hookdeck: command not found\n',
+  exitCode: 3,
+  stdout: `${NOT_ON_PATH}\n`,
+  stderr: '',
 };
 const resolved = ok(
   `${NPM_BIN}/hookdeck\nhookdeck version ${HOOKDECK_CLI_VERSION}\n`
 );
+/** coreutils `timeout` firing inside the container. */
+const timedOut: SandboxCommandResult = {
+  ok: false,
+  exitCode: 124,
+  stdout: '',
+  stderr: '[command timed out after 60s and was terminated]',
+};
+/** `docker exec` against a container that has gone: exit 1, nothing on stdout. */
+const deadContainer: SandboxCommandResult = {
+  ok: false,
+  exitCode: 1,
+  stdout: '',
+  stderr: 'Error response from daemon: container abc is not running',
+};
 
-describe('toolchainProblem', () => {
+/** Run a probe for real, in a local shell with the given PATH. */
+function runLocally(command: string, path: string): SandboxCommandResult {
+  const result = spawnSync('bash', ['-c', command], {
+    env: { PATH: path },
+    encoding: 'utf8',
+  });
+  return {
+    ok: result.status === 0,
+    exitCode: result.status,
+    stdout: result.stdout,
+    stderr: result.stderr,
+  };
+}
+
+/** A directory holding a stand-in `hookdeck` that prints the given version. */
+function fakeCliDir(version: string): string {
+  const dir = mkdtempSync(join(tmpdir(), 'hd-fake-cli-'));
+  const bin = join(dir, 'hookdeck');
+  writeFileSync(
+    bin,
+    `#!/bin/sh\n[ "$1" = "--version" ] && echo "hookdeck version ${version}"\n`
+  );
+  chmodSync(bin, 0o755);
+  return dir;
+}
+
+/**
+ * The login probe with `-l` dropped, so it runs here without this machine's
+ * own /etc/profile deciding the PATH. What it checks is that the probe
+ * survives being nested in single quotes.
+ */
+const nestedProbe = TOOLCHAIN_PROBES[1].command.replace(
+  /^bash -lc /,
+  'bash -c '
+);
+
+describe('the probe, run for real', () => {
+  it('reports a missing CLI with the sentinel and exit 3', () => {
+    for (const command of [TOOLCHAIN_PROBES[0].command, nestedProbe]) {
+      const result = runLocally(command, '/usr/bin:/bin');
+      expect(result.exitCode).toBe(3);
+      expect(result.stdout.trim()).toBe(NOT_ON_PATH);
+      expect(classifyToolchainProbe({ shell: 's', result }).kind).toBe(
+        'not-on-path'
+      );
+    }
+  });
+
+  it('accepts the pin and refuses another version', () => {
+    for (const command of [TOOLCHAIN_PROBES[0].command, nestedProbe]) {
+      const pinned = runLocally(
+        command,
+        `${fakeCliDir(HOOKDECK_CLI_VERSION)}:/usr/bin:/bin`
+      );
+      expect(classifyToolchainProbe({ shell: 's', result: pinned })).toEqual({
+        kind: 'ok',
+      });
+      const other = runLocally(command, `${fakeCliDir('3.1.0')}:/usr/bin:/bin`);
+      expect(classifyToolchainProbe({ shell: 's', result: other }).kind).toBe(
+        'wrong-version'
+      );
+    }
+  });
+});
+
+describe('classifyToolchainProbe', () => {
   it('accepts a shell that resolves the pinned version', () => {
     expect(
-      toolchainProblem({ shell: 'login', result: resolved })
-    ).toBeUndefined();
+      classifyToolchainProbe({ shell: 'login', result: resolved })
+    ).toEqual({ kind: 'ok' });
     expect(
-      toolchainProblem({
+      classifyToolchainProbe({
         shell: 'login',
         result: ok(`hookdeck version v${HOOKDECK_CLI_VERSION}\n`),
       })
-    ).toBeUndefined();
+    ).toEqual({ kind: 'ok' });
   });
 
-  it('refuses the shell that cannot find it, which is what Codex got', () => {
-    const problem = toolchainProblem({ shell: 'login', result: notFound });
-    expect(problem).toMatch(/^login: /);
-    expect(problem).toContain('command not found');
-    expect(problem).toContain('exit 127');
+  it('calls a missing CLI a fact about the image, which is what Codex got', () => {
+    const outcome = classifyToolchainProbe({
+      shell: 'login',
+      result: notOnPath,
+    });
+    expect(outcome.kind).toBe('not-on-path');
   });
 
-  it('refuses a different version, including one that contains the pin', () => {
+  it('calls a different version a fact about the image, including one that contains the pin', () => {
     for (const other of ['2.5.1', '12.5.0', '2.5.0-beta.1', '3.1.0']) {
-      expect(
-        toolchainProblem(
-          { shell: 'login', result: ok(`hookdeck version ${other}\n`) },
-          '2.5.0'
-        )
-      ).toContain('not the pinned 2.5.0');
+      const outcome = classifyToolchainProbe(
+        { shell: 'login', result: ok(`hookdeck version ${other}\n`) },
+        '2.5.0'
+      );
+      expect(outcome.kind).toBe('wrong-version');
+    }
+  });
+
+  it('calls a timeout, a dead container or no version line inconclusive', () => {
+    for (const result of [
+      timedOut,
+      deadContainer,
+      { ...timedOut, exitCode: 137 },
+      { ...timedOut, exitCode: null },
+      ok(`${NPM_BIN}/hookdeck\n`),
+    ]) {
+      expect(classifyToolchainProbe({ shell: 'login', result }).kind).toBe(
+        'inconclusive'
+      );
     }
   });
 });
 
 describe('assertPinnedToolchain', () => {
-  const fake = (byCommand: (command: string) => SandboxCommandResult) => {
+  const fake = (
+    byCommand: (command: string, call: number) => SandboxCommandResult
+  ) => {
     const seen: string[] = [];
     return {
       seen,
       runShell: async (command: string) => {
         seen.push(command);
-        return byCommand(command);
+        return byCommand(command, seen.length);
       },
     };
   };
@@ -95,16 +193,50 @@ describe('assertPinnedToolchain', () => {
     }
   });
 
-  it('throws when only the login shell is broken, naming it', async () => {
+  it('cancels-the-run error when only the login shell is missing the CLI', async () => {
     const sandbox = fake((command) =>
-      command.startsWith('bash -lc') ? notFound : resolved
+      command.startsWith('bash -lc') ? notOnPath : resolved
     );
-    await expect(assertPinnedToolchain(sandbox)).rejects.toThrow(
-      /sandbox self-check failed.*not scored.*login \(bash -lc\).*command not found/s
+    const error = await assertPinnedToolchain(sandbox).catch((e) => e);
+    expect(error.message).toMatch(
+      /^sandbox self-check failed.*not scored.*login \(bash -lc\).*resolved nothing/s
     );
+    // A deterministic outcome is not retried.
+    expect(sandbox.seen).toHaveLength(2);
   });
 
-  it('fails with the string CI cancels the run on', async () => {
+  it('retries a transient failure once and passes if the retry does', async () => {
+    const sandbox = fake((_, call) => (call === 1 ? timedOut : resolved));
+    await assertPinnedToolchain(sandbox);
+    expect(sandbox.seen).toHaveLength(3);
+  });
+
+  it('errors only this cell when a probe stays inconclusive', async () => {
+    const sandbox = fake((command) =>
+      command.startsWith('bash -lc') ? deadContainer : resolved
+    );
+    const error = await assertPinnedToolchain(sandbox).catch((e) => e);
+    expect(
+      String(error.message).startsWith(SANDBOX_SELF_CHECK_INCONCLUSIVE)
+    ).toBe(true);
+    // Must not carry the string CI cancels the whole run on.
+    expect(error.message).not.toContain(SANDBOX_SELF_CHECK_FAILED);
+    expect(sandbox.seen).toHaveLength(3);
+  });
+
+  it('treats a probe that throws as inconclusive', async () => {
+    const sandbox = {
+      runShell: async () => {
+        throw new Error('sandbox command timed out after 80000ms');
+      },
+    };
+    const error = await assertPinnedToolchain(sandbox).catch((e) => e);
+    expect(
+      String(error.message).startsWith(SANDBOX_SELF_CHECK_INCONCLUSIVE)
+    ).toBe(true);
+  });
+
+  it('fails with the string CI cancels the run on, and CI is wired to it', async () => {
     // `eval-refresh.yml` greps the job log for this prefix to cancel the run
     // and leave a `sandbox-broken` marker that blocks publishing. If the two
     // drift, a broken image goes back to erroring every cell one at a time.
@@ -112,11 +244,28 @@ describe('assertPinnedToolchain', () => {
       new URL('../../../.github/workflows/eval-refresh.yml', import.meta.url),
       'utf8'
     );
+    const step = (name: string) => {
+      const start = workflow.indexOf(`- name: ${name}\n`);
+      expect(start, `step "${name}"`).toBeGreaterThan(-1);
+      const next = workflow.indexOf('- name: ', start + 1);
+      return workflow.slice(start, next === -1 ? undefined : next);
+    };
+
     expect(workflow).toContain(`sandbox_broken="${SANDBOX_SELF_CHECK_FAILED}"`);
     expect(workflow).toContain('> sandbox-broken.marker');
     expect(workflow).toMatch(/grep -E '\^sandbox-broken-'/);
 
-    const sandbox = fake(() => notFound);
+    const record = step('Record broken sandbox');
+    expect(record).toContain("hashFiles('sandbox-broken.marker')");
+    expect(record).toContain('path: sandbox-broken.marker');
+    expect(record).toContain('name: sandbox-broken-');
+
+    const cancel = step('Cancel the run');
+    const cancelIf = cancel.split('\n').find((line) => /^\s+if:/.test(line));
+    expect(cancelIf).toContain("'sandbox-broken.marker'");
+    expect(cancelIf).toContain("'provider-refused.marker'");
+
+    const sandbox = fake(() => notOnPath);
     const error = await assertPinnedToolchain(sandbox).catch((e) => e);
     expect(String(error.message).startsWith(SANDBOX_SELF_CHECK_FAILED)).toBe(
       true

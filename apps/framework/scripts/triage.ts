@@ -7,8 +7,8 @@ import {
   readErroredEvidenceTree,
 } from '../harness/errored-cell.js';
 import {
-  describePinnedCliEvidence,
   pinnedCliEvidence,
+  pinnedCliFlags,
   type RowLike,
   shellActivity,
 } from '../lib/pinned-cli.js';
@@ -243,15 +243,11 @@ function flagsFor(row: Row, requiredEnv: string[]): Flag[] {
     flags.push({ label: 'NO TOOL CALLS', detail: 'scored without acting' });
   }
 
-  // Pass or fail: a row measured on a different CLI, or none, is not the
-  // baseline it claims to be either way. See `lib/pinned-cli.ts`.
+  // Pass or fail: a row whose agent could not find the pinned CLI, or ran a
+  // different one, is not the baseline it claims to be either way. See
+  // `lib/pinned-cli.ts`.
   const cli = pinnedCliEvidence(shellActivity(row));
-  if (cli) {
-    flags.push({
-      label: 'PINNED CLI NOT USED',
-      detail: describePinnedCliEvidence(cli),
-    });
-  }
+  if (cli) flags.push(...pinnedCliFlags(cli));
 
   return flags;
 }

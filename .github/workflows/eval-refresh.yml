@@ -463,6 +463,12 @@ jobs:
           # will fail, and the run should stop rather than error every remaining
           # cell one at a time. The string is the error's own prefix, and a test in
           # `packages/sandbox` fails if the two drift apart.
+          #
+          # Only a deterministic answer carries it: `command -v hookdeck`
+          # resolving nothing, or the wrong version. A probe that times out or
+          # hits a dead container is retried once and then throws
+          # "sandbox self-check could not complete", which errors that cell
+          # alone and does not match here.
           sandbox_broken="sandbox self-check failed"
           if [ "$eval_status" -ne 0 ] && grep -qF "$sandbox_broken" "$run_log"; then
             echo "::error::The sandbox image failed its self-check: the pinned Hookdeck CLI is not on PATH for the agent's shells. Cancelling the run: every remaining job builds the same image."

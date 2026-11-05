@@ -59,7 +59,7 @@ const CLIENT_TIMEOUT_HEADROOM_MS = 20_000;
 
 /**
  * PATH for commands the harness runs. Covers a non-login shell only: a login
- * shell (`bash -lc`, which Codex uses for every command) re-reads
+ * shell (`bash -lc`, which Codex uses for most commands) re-reads
  * /etc/profile and replaces it, which is why the image also puts the npm
  * prefix back from /etc/profile.d. See the Dockerfile and `toolchain-check.ts`.
  */
