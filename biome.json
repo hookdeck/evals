@@ -11,6 +11,7 @@
       "**/dist",
       "apps/web",
       ".eval-runs",
+      ".eval-errored",
       "results",
       "submodules",
       "skills",

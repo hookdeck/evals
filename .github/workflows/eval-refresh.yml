@@ -477,6 +477,24 @@ jobs:
           # is against nothing.
           retention-days: 90
 
+      - name: Upload errored-cell evidence
+        # A cell that errors writes no result file, by design, and until #97 it
+        # took the transcripts of its earlier attempts with it. The harness now
+        # keeps them in `.eval-errored/`. A separate artifact rather than a
+        # second path on the one above: upload-artifact roots a multi-path
+        # artifact at the paths' common ancestor, which would nest every
+        # `raw-results-*` file under `.eval-runs/<experiment>/` and break the
+        # publish job's copy. The publish job never downloads this one, so
+        # nothing in it can become a row. Absent for a cell that did not error.
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: errored-attempts-${{ matrix.experiment }}__${{ matrix.eval_id }}
+          path: .eval-errored/${{ matrix.experiment }}/
+          if-no-files-found: ignore
+          # Same as raw-results, for the same reasons.
+          retention-days: 90
+
 
       - name: Check the regression suite passed
         # A scenario failing its checks does not fail the eval step: in the
