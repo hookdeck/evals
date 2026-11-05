@@ -77,10 +77,30 @@ nothing. `selfInstalled` is skills the agent fetched from the network itself.
 **A `no-skills` row with a product skill in `selfInstalled` is not a valid
 baseline** and should be visually distinct rather than averaged in silently.
 
-`docs`: `{ calls: [...] }`, each call `{ source, query, hasContent?, resultChars?, pages }`
+`docs`: `{ calls: [...] }`, each call `{ source, query, hasContent?, resultChars?, httpError?, pages }`
 where `source` is `search_docs` | `web_fetch` | `web_search` | `shell_fetch` and
 each page is `{ url, title? }`. `resultChars` approximates how much text the call
-pulled into context; divide by about four for tokens.
+pulled into context; divide by about four for tokens. It is omitted when no
+result was visible, which is every Codex hosted `web_search`.
+
+`httpError` is set on `web_fetch` and `shell_fetch` calls that have a result, and
+has three states:
+
+| value | meaning |
+|---|---|
+| a number | the fetch answered with that HTTP error status instead of the page: Claude Code's WebFetch error stub, or a piped `curl -f` whose whole output is `curl: (22) …`. `pages` still names the url that was asked for. |
+| `null` | the result was checked and was not an error |
+| absent | the row was exported before the check existed (November 2026), or the source is never checked |
+
+A consumer that wants to recognise errors on older rows has to infer them, and
+`apps/framework/lib/docs-reach.ts` does so from `resultChars` only when
+`httpError` is absent. Never infer when it is `null`: a real page can be any
+length.
+
+`hasContent: false` means the result was a list of links rather than page text.
+For Claude Code's WebSearch, `pages` is the hits it returned, including when the
+query was itself a url. Rows exported before November 2026 recorded such a
+url-shaped query as its own page, with `hasContent` absent.
 
 ## Taxonomy
 

@@ -1,4 +1,5 @@
 import { buildDocsResult, type ToolCallRecord } from '@hookdeck-evals/core';
+import { docsCallSchema } from '@hookdeck-evals/core/eval-metadata';
 import { describe, expect, it } from 'vitest';
 import { docsReach, inferredLegacyHttpError } from '../lib/docs-reach.js';
 
@@ -167,6 +168,63 @@ describe('inferredLegacyHttpError', () => {
       })
     ).toBe(false);
   });
+
+  it('never infers on a fresh row, whose null httpError says the check ran', () => {
+    const call = {
+      source: 'web_fetch' as const,
+      pages: [{ url: 'https://hookdeck.com/docs/x' }],
+      hasContent: true,
+      resultChars: 215,
+      httpError: null,
+    };
+    expect(inferredLegacyHttpError(call)).toBe(false);
+    expect(docsReach(call)).toBe('read');
+  });
+
+  it('reads a real 215-character page fetched today as read, and the same size on a legacy row as error', () => {
+    // The reviewer's reproduction: a successful fetch has no status to record,
+    // so without the null marker its length alone would call it an error.
+    const page = `# Short page\n\n${'x'.repeat(215 - '# Short page\n\n'.length)}`;
+    expect(page).toHaveLength(215);
+    const { calls } = buildDocsResult([
+      {
+        endpoint: 'WebFetch',
+        name: 'web_fetch',
+        url: 'https://hookdeck.com/docs/short',
+        body: {},
+        result: page,
+        ts: 0,
+      },
+    ]);
+    expect(calls[0].resultChars).toBe(215);
+    expect(calls[0].httpError).toBeNull();
+    expect(docsReach(calls[0])).toBe('read');
+
+    // The same call as exported before the check existed: no httpError key.
+    const { httpError: _dropped, ...legacy } = calls[0];
+    expect('httpError' in legacy).toBe(false);
+    expect(docsReach(legacy)).toBe('error');
+  });
+
+  it('keeps the null marker through the export schema and JSON, which is how a published row reaches the reporter', () => {
+    const { calls } = buildDocsResult([
+      {
+        endpoint: 'WebFetch',
+        name: 'web_fetch',
+        url: 'https://hookdeck.com/docs/short',
+        body: {},
+        result: 'y'.repeat(215),
+        ts: 0,
+      },
+    ]);
+    // The exporter whitelists each row through the schema, and a plain
+    // `z.object` strips keys it does not list, so the marker has to survive it.
+    const published = docsCallSchema.parse(
+      JSON.parse(JSON.stringify(calls[0]))
+    );
+    expect(published.httpError).toBeNull();
+    expect(docsReach(published)).toBe('read');
+  });
 });
 
 /**
@@ -224,7 +282,7 @@ describe('buildDocsResult → docsReach', () => {
       ts: 0,
     });
     expect(reach).toBe('read');
-    expect(call.httpError).toBeUndefined();
+    expect(call.httpError).toBeNull();
   });
 
   it("classifies Claude Code's WebSearch on a url-shaped query as hits, from its hit list", () => {
@@ -296,6 +354,6 @@ describe('buildDocsResult → docsReach', () => {
       ts: 0,
     });
     expect(reach).toBe('read');
-    expect(call.httpError).toBeUndefined();
+    expect(call.httpError).toBeNull();
   });
 });

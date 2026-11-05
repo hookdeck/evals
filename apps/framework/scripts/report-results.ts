@@ -318,7 +318,9 @@ function reportDocsQueries(rows: Row[]) {
 
 /** The status a fetch error answered with, or `?` for a row exported before it was recorded. */
 function httpStatus(call: DocsReachCall): string {
-  return call.httpError === undefined ? '?' : String(call.httpError);
+  return call.httpError === undefined || call.httpError === null
+    ? '?'
+    : String(call.httpError);
 }
 
 /** Every docs url that answered with an HTTP error, with how often and from which arms. */

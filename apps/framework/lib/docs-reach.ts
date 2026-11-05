@@ -33,7 +33,9 @@ import type { DocsCall } from '@hookdeck-evals/core';
  *
  * The fields do different jobs. `resultChars` separates "we saw a result"
  * from "there was no result to see" (omitted). `httpError` says the result was
- * an error rather than the page. `hasContent` separates page text from a list
+ * an error rather than the page: a status, `null` for checked and fine, or
+ * absent on rows exported before the check, which are the only ones inferred
+ * by length. `hasContent` separates page text from a list
  * of links.
  *
  * Order matters. An observed result that is empty, or that names no docs page,
@@ -69,8 +71,12 @@ export type DocsReachCall = Partial<
  * - `shell_fetch` from a `curl -f` (so `hasContent: true`) at **49** characters
  *   is exactly `curl: (22) The requested URL returned error: NNN\n`.
  *
- * Rows that carry `httpError` never reach this, so it stops mattering as the
- * published snapshots age out.
+ * Only a row with no `httpError` key at all is inferred. The emitter writes the
+ * key on every `web_fetch` and `shell_fetch` it builds, `null` when the result
+ * was not an error, so a fresh row is never judged by its length: a real page
+ * that happens to be 215 characters long stays a read. Without that marker this
+ * would misfire on new rows indefinitely, because a successful fetch is exactly
+ * the case that has no status to record.
  */
 export function inferredLegacyHttpError(call: DocsReachCall): boolean {
   if (call.httpError !== undefined) return false;
@@ -87,7 +93,10 @@ export function inferredLegacyHttpError(call: DocsReachCall): boolean {
 
 export function docsReach(call: DocsReachCall): DocsReach {
   if (call.resultChars === undefined) return 'unobserved';
-  if (call.httpError !== undefined || inferredLegacyHttpError(call))
+  if (
+    (call.httpError !== undefined && call.httpError !== null) ||
+    inferredLegacyHttpError(call)
+  )
     return 'error';
   if (call.resultChars === 0 || (call.pages ?? []).length === 0) return 'none';
   if (call.hasContent === false) return 'hits';

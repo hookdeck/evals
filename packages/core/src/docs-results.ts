@@ -298,7 +298,11 @@ export function buildDocsResult(toolCalls: ToolCallRecord[]): DocsResult {
         hasContent: true,
         pages: [{ url: call.url }],
         resultChars: resultCharCount(result),
-        ...(httpError !== undefined && { httpError }),
+        // Written whenever there is a result to check, so `null` records that
+        // the check ran and the result was not an error stub. An absent value
+        // is reserved for rows exported before the check existed, which is the
+        // only case a reader may infer an error from `resultChars` instead.
+        ...(result !== undefined && { httpError: httpError ?? null }),
       });
       continue;
     }
@@ -412,7 +416,7 @@ export function buildDocsResult(toolCalls: ToolCallRecord[]): DocsResult {
         hasContent: !curlExitUnproven && ownsResult ? true : undefined,
         pages: urls.map((url) => ({ url })),
         resultChars: resultCharCount(result),
-        ...(httpError !== undefined && { httpError }),
+        httpError: httpError ?? null,
       });
       continue;
     }

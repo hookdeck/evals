@@ -459,6 +459,7 @@ describe('buildDocsResult', () => {
         hasContent: true,
         pages: [{ url: 'https://hookdeck.com/changelog.md' }],
         resultChars: '# Changelog\n\n2026-06-12 breaking-change ...'.length,
+        httpError: null,
       },
     ]);
   });
@@ -480,6 +481,7 @@ describe('buildDocsResult', () => {
         query: command,
         pages: [{ url: 'https://hookdeck.com/changelog.md' }],
         resultChars: 'unrelated local notes'.length,
+        httpError: null,
       },
     ]);
     expect(result.calls[0].hasContent).toBeUndefined();
@@ -502,6 +504,7 @@ describe('buildDocsResult', () => {
         query: command,
         pages: [{ url: 'https://hookdeck.com/changelog.md' }],
         resultChars: '# Changelog'.length,
+        httpError: null,
       },
     ]);
     // Result shared with other command(s) means we can't be certain about content attribution.
@@ -530,6 +533,7 @@ describe('buildDocsResult', () => {
           { url: 'https://hookdeck.com/docs/transformations/auth-headers.md' },
         ],
         resultChars: '# Auth\n\n# Auth headers'.length,
+        httpError: null,
       },
     ]);
     // Result shared with other command(s) means we can't be certain about content attribution.
@@ -728,6 +732,7 @@ describe('buildDocsResult', () => {
         query: command,
         pages: [{ url: 'https://hookdeck.com/changelog.md' }],
         resultChars: '# Changelog\n\nreal content'.length,
+        httpError: null,
       },
     ]);
     expect(result.calls[0].hasContent).toBeUndefined();
@@ -749,6 +754,7 @@ describe('buildDocsResult', () => {
         query: command,
         pages: [{ url: 'https://hookdeck.com/changelog.md' }],
         resultChars: '404: Not Found'.length,
+        httpError: null,
       },
     ]);
     expect(result.calls[0].hasContent).toBeUndefined();
@@ -776,6 +782,7 @@ describe('buildDocsResult', () => {
         hasContent: true,
         pages: [{ url: 'https://hookdeck.com/changelog.md' }],
         resultChars: '500 organizations now use Hookdeck in production'.length,
+        httpError: null,
       },
     ]);
   });
