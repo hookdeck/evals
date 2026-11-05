@@ -770,8 +770,10 @@ with a plausible partial score, and one was written as a `2/6` agent failure), a
 run that failed while its own report claims success (nine of twelve baselines in
 one run, every one of them confidently building on the wrong product), a
 declared credential the agent never referenced, a skill offered and never
-opened, a baseline that self-installed a product skill, and a cell whose only
-green checks are the ones an idle agent satisfies.
+opened, a baseline that self-installed a product skill, a cell whose only
+green checks are the ones an idle agent satisfies, and a cell whose agent could
+not find the pinned CLI or ran a different one (69 of the 76 Codex cells in run
+42044644850).
 
 Nothing flagged is not the same as nothing to learn. It means no cell tripped a
 signal the script knows about, and the signals it knows about are the ones that
@@ -1319,6 +1321,19 @@ before generalising from a pair.
 deleted through the API, so a shared project accumulates history, and a scorer
 that just asks "did an event arrive?" will eventually say yes because of an
 earlier run.
+
+**Codex runs every command in a login shell, and a login shell rebuilds PATH.**
+Codex's tool calls are `/bin/bash -lc '…'`, so Debian's `/etc/profile` runs
+and replaces whatever PATH the harness passed in with a fixed list. Claude Code
+runs `bash -c` and inherits it. Until this was found, in release run
+42044644850, the pinned `hookdeck` in the npm prefix was `command not found`
+on every Codex arm, and the agents reached it by absolute path, by `npx`, by an
+unpinned `npx -y hookdeck-cli@latest`, or not at all — all of it scored as
+though both agents had the same baseline. So anything an agent needs on PATH
+has to be on it for both kinds of shell: the image sets it in `ENV` and again
+in `/etc/profile.d/`, and `toolchain-check.ts` errors a cell before it starts
+if either shell does not resolve the pinned version. Setting `PATH` on
+`docker exec` alone is not enough.
 
 **Credentials reach the agent through `EvalSession.sandboxEnv`.** The session is
 created before the sandbox because the sandbox needs the lease. Disposal runs in

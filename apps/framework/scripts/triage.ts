@@ -6,6 +6,12 @@ import {
   ERRORED_RUNS_DIRNAME,
   readErroredEvidenceTree,
 } from '../harness/errored-cell.js';
+import {
+  describePinnedCliEvidence,
+  pinnedCliEvidence,
+  type RowLike,
+  shellActivity,
+} from '../lib/pinned-cli.js';
 
 /**
  * Which cells of a run you have to read, and why.
@@ -48,7 +54,7 @@ interface Check {
   passed?: boolean;
 }
 
-interface Row {
+interface Row extends RowLike {
   experiment: string;
   eval: string;
   passed?: boolean;
@@ -235,6 +241,16 @@ function flagsFor(row: Row, requiredEnv: string[]): Flag[] {
 
   if (row.passed === false && (row.toolCalls?.length ?? 0) === 0) {
     flags.push({ label: 'NO TOOL CALLS', detail: 'scored without acting' });
+  }
+
+  // Pass or fail: a row measured on a different CLI, or none, is not the
+  // baseline it claims to be either way. See `lib/pinned-cli.ts`.
+  const cli = pinnedCliEvidence(shellActivity(row));
+  if (cli) {
+    flags.push({
+      label: 'PINNED CLI NOT USED',
+      detail: describePinnedCliEvidence(cli),
+    });
   }
 
   return flags;

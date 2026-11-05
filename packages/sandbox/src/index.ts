@@ -5,6 +5,7 @@ export type {
 } from './docker-sandbox.js';
 export {
   ensureSandboxImage,
+  sandboxImageTag,
   SANDBOX_DOCKERFILE_PATH,
   // Exported for provenance: the CLI pin is part of what a published row was
   // measured under, and a bump changes the product under test. See #60.
@@ -31,4 +32,9 @@ export type {
   AgentEnvironment,
   AgentEnvironmentOptions,
 } from './agent-environment.js';
+export {
+  assertPinnedToolchain,
+  toolchainProblem,
+  TOOLCHAIN_PROBES,
+} from './toolchain-check.js';
 export type { SandboxCommandResult } from './types.js';
