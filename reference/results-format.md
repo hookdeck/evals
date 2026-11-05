@@ -26,6 +26,14 @@ attempt a retry superseded. `export-results.ts` deliberately does not copy any
 of those through. Anything not listed below is unavailable to the UI, whatever a
 raw result file happens to contain.
 
+**A cell that errors writes no row at all**, by design: a dead agent process is
+not an answer. What its earlier attempts left goes to
+`.eval-errored/<experiment>/<eval>.json` instead, outside the tree the exporter
+reads, with `errored: true`, the error, `priorAttempts` and the attempt that was
+running when it errored. In CI it is uploaded as a separate
+`errored-attempts-<experiment>__<eval>` artifact, which the publish job never
+downloads.
+
 ## The row
 
 | Field | Type | Notes |

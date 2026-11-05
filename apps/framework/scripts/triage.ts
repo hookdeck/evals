@@ -1,6 +1,11 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { discoverEvals, EVALS_ROOT } from '../lib/discovery.js';
+import {
+  describeErroredEvidence,
+  ERRORED_RUNS_DIRNAME,
+  type ErroredEvidence,
+} from '../harness/errored-cell.js';
 
 /**
  * Which cells of a run you have to read, and why.
@@ -29,6 +34,42 @@ import { discoverEvals, EVALS_ROOT } from '../lib/discovery.js';
  */
 
 const RUNS_DIR = join(EVALS_ROOT, '.eval-runs');
+/**
+ * Cells that errored and so have no row in `RUNS_DIR` at all. A pass rate
+ * cannot show them, and neither could this script until #97: an errored cell
+ * was simply absent. In CI they arrive as `errored-attempts-*` artifacts,
+ * separate from `raw-results-*`; download them into this directory to see them
+ * here.
+ */
+const ERRORED_DIR = join(EVALS_ROOT, ERRORED_RUNS_DIRNAME);
+
+/** Every errored cell's evidence on disk, by experiment directory. */
+function readErroredEvidence(): Array<{
+  path: string;
+  evidence: ErroredEvidence;
+}> {
+  if (!existsSync(ERRORED_DIR)) return [];
+  const out: Array<{ path: string; evidence: ErroredEvidence }> = [];
+  for (const dir of readdirSync(ERRORED_DIR)) {
+    let files: string[] = [];
+    try {
+      files = readdirSync(join(ERRORED_DIR, dir)).filter((f) =>
+        f.endsWith('.json')
+      );
+    } catch {
+      continue;
+    }
+    for (const file of files) {
+      out.push({
+        path: `${ERRORED_RUNS_DIRNAME}/${dir}/${file}`,
+        evidence: JSON.parse(
+          readFileSync(join(ERRORED_DIR, dir, file), 'utf8')
+        ) as ErroredEvidence,
+      });
+    }
+  }
+  return out;
+}
 
 interface Check {
   name?: string;
@@ -229,7 +270,29 @@ function main() {
     if (env.length > 0) needs.set(ev.id, env);
   }
 
-  if (!existsSync(RUNS_DIR)) throw new Error(`no ${RUNS_DIR}`);
+  // First, because these are the cells the scoreboard cannot show at all.
+  const erroredCells = readErroredEvidence();
+  if (erroredCells.length > 0) {
+    console.log(
+      `${erroredCells.length} cell(s) errored and have no result. ` +
+        'Not agent failures, and not on the board; what their earlier attempts ' +
+        'left is kept here.\n'
+    );
+    for (const { path, evidence } of erroredCells) {
+      console.log(`  ${evidence.eval} x ${evidence.experiment}`);
+      console.log(`      ERRORED: ${describeErroredEvidence(evidence)}`);
+      console.log(
+        `      → ${path} (priorAttempts, erroredAttempt: agentReport, transcript)\n`
+      );
+    }
+  }
+
+  if (!existsSync(RUNS_DIR)) {
+    // An all-errored run leaves evidence and no results; that is a result of
+    // this script, not a reason to throw.
+    if (erroredCells.length > 0) return;
+    throw new Error(`no ${RUNS_DIR}`);
+  }
 
   const rows: Array<{ row: Row; flags: Flag[] }> = [];
   for (const dir of readdirSync(RUNS_DIR)) {
