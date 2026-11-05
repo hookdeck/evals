@@ -1329,6 +1329,19 @@ echoed its project key into a transcript on the first real run. Raw results are
 gitignored and the export carries no transcripts today, but the guard is there
 for when per-run drill-down is added.
 
+**Redacting what the harness injected is not redacting every credential.** The
+sandbox can create credentials of its own: `hookdeck ci` mints a CLI key and
+writes it to `~/.config/hookdeck/config.toml`, and an agent checking its setup
+reasonably `cat`s that file. No env var holds that key, and it has no prefix to
+match. So the harness reads the CLI's config files out of each sandbox before
+teardown and redacts their values by name (`harness/sandbox-credentials.ts`),
+and `redact.ts` also redacts any value assigned to a credential-marking name
+(`api_key = '…'`, `--webhook-secret …`). `check-artifacts` re-applies those
+passes before the raw artifacts are uploaded and fails the upload, not the
+cell, if anything is left. A new place the sandbox writes a credential needs
+adding to the discovery command; a new artifact writer needs to go through
+`serializeRedacted`.
+
 ## Attribution
 
 This repo is based on [supabase/evals](https://github.com/supabase/evals),

@@ -510,6 +510,23 @@ jobs:
           echo "::error::Could not cancel run ${{ github.run_id }} after three attempts. The provider-refusal marker stops publish-results, but the remaining cells will keep running and billing: cancel the run by hand."
           exit 1
 
+      - name: Check artifacts for credentials
+        # The two uploads below are downloadable by any GitHub account, so they
+        # are gated on this rather than trusting that every write path redacted.
+        # It re-applies the harness's redaction passes to every file about to be
+        # uploaded and fails if any would still remove something, printing the
+        # file and kind and never the value. A failure here fails the job and
+        # skips both uploads; it does not change the cell's score, which is
+        # already in the result file. `publish-results` treats the missing
+        # artifact like any other cell that uploaded nothing.
+        id: artifact-check
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          pnpm --filter @hookdeck-evals/framework check-artifacts -- \
+            ".eval-runs/${{ matrix.experiment }}" \
+            ".eval-errored/${{ matrix.experiment }}"
+
       - name: Upload raw results
         # Even when the cell failed or errored. The transcript of a failing cell
         # is the one somebody actually needs — `regression-alert` tells the
@@ -517,8 +534,9 @@ jobs:
         # kept, because this step is skipped by default when an earlier step
         # exits non-zero. That cost the transcript of the first real regression
         # failure, and had silently cost every errored cell's transcript before
-        # that: the 21 September run wrote 75 artifacts for 76 jobs.
-        if: ${{ !cancelled() }}
+        # that: the 21 September run wrote 75 artifacts for 76 jobs. Never when
+        # the credential check above failed.
+        if: ${{ !cancelled() && steps.artifact-check.outcome == 'success' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: raw-results-${{ matrix.experiment }}__${{ matrix.eval_id }}
@@ -556,7 +574,8 @@ jobs:
         # `raw-results-*` file under `.eval-runs/<experiment>/` and break the
         # publish job's copy. The publish job never downloads this one, so
         # nothing in it can become a row. Absent for a cell that did not error.
-        if: ${{ !cancelled() }}
+        # Gated on the credential check like the upload above.
+        if: ${{ !cancelled() && steps.artifact-check.outcome == 'success' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: errored-attempts-${{ matrix.experiment }}__${{ matrix.eval_id }}
