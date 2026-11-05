@@ -57,6 +57,25 @@ describe('docsReach', () => {
     ).toBe('unobserved');
   });
 
+  it('counts a fetch that came back empty as none, not as read', () => {
+    // web_fetch records the url it asked for as its page whatever came back, so
+    // the page alone is not evidence that anything was read.
+    expect(
+      docsReach({
+        pages: [{ url: 'https://hookdeck.com/docs' }],
+        hasContent: true,
+        resultChars: 0,
+      })
+    ).toBe('none');
+  });
+
+  it('counts a link-only result with no links in it as none, not as hits', () => {
+    // A search_docs query that selects no `content` and matches nothing.
+    expect(docsReach({ pages: [], hasContent: false, resultChars: 41 })).toBe(
+      'none'
+    );
+  });
+
   it('treats a missing pages array as no pages rather than throwing', () => {
     expect(docsReach({ resultChars: 12 })).toBe('none');
   });

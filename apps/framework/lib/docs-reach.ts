@@ -25,6 +25,11 @@
  * The fields do different jobs and both are needed. `resultChars` separates "we
  * saw a result and it was empty" (`0`) from "there was no result to see"
  * (omitted). `hasContent` separates page text from a list of links.
+ *
+ * Order matters. An observed result that is empty, or that names no page, is
+ * `none` whatever `hasContent` says: a fetch that came back with nothing did not
+ * read anything because its url was a docs url, and a hit list with no hits is
+ * not a hit list.
  */
 export type DocsReach = 'read' | 'hits' | 'none' | 'unobserved';
 
@@ -36,8 +41,8 @@ export interface DocsReachCall {
 
 export function docsReach(call: DocsReachCall): DocsReach {
   if (call.resultChars === undefined) return 'unobserved';
-  if (call.hasContent === false) return 'hits';
-  return (call.pages ?? []).length > 0 ? 'read' : 'none';
+  if (call.resultChars === 0 || (call.pages ?? []).length === 0) return 'none';
+  return call.hasContent === false ? 'hits' : 'read';
 }
 
 /** One line of prose per bucket, for whatever is printing them. */
@@ -45,5 +50,5 @@ export const DOCS_REACH_MEANING: Record<DocsReach, string> = {
   read: 'page text reached the agent',
   hits: 'a list of links, no page text',
   none: 'a result we saw, carrying nothing',
-  unobserved: 'a hosted search whose hits never reach us',
+  unobserved: 'a hosted search or page open whose result never reaches us',
 };
