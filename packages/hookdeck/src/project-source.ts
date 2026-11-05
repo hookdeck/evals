@@ -84,7 +84,7 @@ export interface PristineSnapshot {
  * baseline cannot be poisoned by a run that died.
  *
  * **Empty, unlike the gateway project, and that is not a contradiction of
- * "pristine, not empty".** A new Event Gateway project ships with four issue
+ * "pristine, not empty".** A new Event Gateway project ships with default issue
  * triggers; an Outpost project ships with none, because the platform's project
  * creation sets up an Outpost project without the gateway defaults (read in the
  * Event Gateway implementation, not inferred from the API). Consistent with
@@ -581,15 +581,17 @@ export class FixedProjectSource implements ProjectSource {
   }
 
   /**
-   * Delete everything the snapshot does not list, in dependency order, and
-   * return what was deleted.
+   * Delete everything the snapshot does not list, in dependency order.
+   *
+   * `onDelete` is called after each deletion rather than once at the end, so a
+   * reset that fails partway still leaves a record of what it had already
+   * removed.
    */
   private async resetToPristine(
     client: HookdeckClient,
-    snapshot: PristineSnapshot
-  ): Promise<Array<{ kind: ResourceKind; resource: HookdeckResource }>> {
-    const deleted: Array<{ kind: ResourceKind; resource: HookdeckResource }> =
-      [];
+    snapshot: PristineSnapshot,
+    onDelete?: (kind: ResourceKind, resource: HookdeckResource) => void
+  ): Promise<void> {
     // Connections reference sources and destinations, so they go first.
     for (const kind of RESOURCE_KINDS) {
       const keep = new Set(snapshot.ids[kind] ?? []);
@@ -597,10 +599,9 @@ export class FixedProjectSource implements ProjectSource {
       for (const resource of existing) {
         if (keep.has(resource.id)) continue;
         await client.delete(kind, resource.id);
-        deleted.push({ kind, resource });
+        onDelete?.(kind, resource);
       }
     }
-    return deleted;
   }
 
   /**
@@ -610,13 +611,13 @@ export class FixedProjectSource implements ProjectSource {
    * Refuses when the Outpost key turns out to reach the gateway project after
    * all — two different keys for one project, say. The baseline here is "delete
    * everything", so pointing it at the gateway project would delete its default
-   * issue triggers. The test is whether
-   * anything this key can see is in the gateway project's own snapshot: two
-   * projects never share a resource id.
+   * issue triggers. The test is whether anything this key can see is in the
+   * gateway project's own snapshot: two projects never share a resource id.
    *
-   * Says what it deleted. Release normally leaves nothing for acquire to find,
-   * so a deletion at acquire means a run died before releasing or something
-   * outside the harness wrote to the project — both worth seeing in a log.
+   * Logs each deletion as it happens. Release normally leaves nothing for
+   * acquire to find, so a deletion at acquire means a run died before releasing
+   * or something outside the harness wrote to the project — both worth seeing
+   * in a log.
    */
   private async resetOutpostGateway(
     gatewaySnapshot: PristineSnapshot
@@ -640,20 +641,16 @@ export class FixedProjectSource implements ProjectSource {
       }
     }
 
-    const deleted = await this.resetToPristine(
+    await this.resetToPristine(
       client,
-      OUTPOST_GATEWAY_PRISTINE
+      OUTPOST_GATEWAY_PRISTINE,
+      (kind, resource) => {
+        console.warn(
+          `outpost project gateway reset: deleted ${kind} ${resource.id}` +
+            (resource.name ? ` (${resource.name})` : '')
+        );
+      }
     );
-    if (deleted.length > 0) {
-      console.warn(
-        `outpost project gateway reset: deleted ${deleted
-          .map(
-            ({ kind, resource }) =>
-              `${kind} ${resource.id}${resource.name ? ` (${resource.name})` : ''}`
-          )
-          .join(', ')}`
-      );
-    }
   }
 }
 

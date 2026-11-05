@@ -1144,8 +1144,8 @@ collide. Do not try to serialise via a GitHub Actions
 concurrency group: a group holds one running and one pending job and cancels the
 rest. Shard instead.
 
-**Outpost state is not reset between runs.** `FixedProjectSource` snapshots and
-restores the Hookdeck project, and Outpost has no snapshot to restore from.
+**Outpost tenants are only reset on release.** `FixedProjectSource` snapshots
+and restores the Hookdeck project, and Outpost has no snapshot to restore from.
 Tenants and destinations an Outpost run creates survive into the next one, so
 the second run of a scenario finds `acme` already there and may score a previous
 run's work. `FixedProjectSource` now deletes tenants that were not present when
@@ -1156,12 +1156,15 @@ run that dies before release still leaks and the next run inherits it.
 `OUTPOST_API_KEY` is an ordinary project key, so it works on `api.hookdeck.com`
 and the CLI too. A source, two connections, two destinations and two issue
 triggers were left there on 24 and 25 August and nothing removed them. On 5
-November an `outpost-005` attempt added a topic filter to one of those connections instead of changing the
-Outpost destination's topics. The filter carried into the cell's next two
-attempts, because nothing reset that side. `FixedProjectSource` now deletes every
-gateway resource in the Outpost project on acquire, before the seed, and again
-on release. It refuses if the Outpost key can see anything in the gateway
-project's snapshot, because that means both keys reach one project.
+November an `outpost-005` attempt added a body `$nin` filter to one of those
+connections instead of changing the Outpost destination's topics. The filter
+carried into the cell's next two attempts, because nothing reset that side.
+`FixedProjectSource` now deletes every gateway resource in the Outpost project
+on every acquire, for every scenario, before the seed, and again on release. It
+refuses if the Outpost key can see anything in the gateway project's snapshot,
+because that means both keys reach one project. So `OUTPOST_API_KEY` must
+belong to a dedicated project, and a gateway API error on that key now fails
+the acquire of every cell, Event Gateway scenarios included.
 
 So cleanup on release is not enough on its own, and `applyOutpostSeed` deletes
 each tenant it is about to create. That makes seeding idempotent without

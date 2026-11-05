@@ -535,6 +535,31 @@ describe('FixedProjectSource Outpost project gateway reset', () => {
     );
   });
 
+  it('keeps the record of what it deleted when the reset fails partway', async () => {
+    const api = fakeTwoProjects({
+      [GATEWAY_KEY]: {},
+      [OUTPOST_KEY]: { connections: ['web_leftover'], sources: ['src_stuck'] },
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string | URL, init?: RequestInit) => {
+        if (
+          init?.method === 'DELETE' &&
+          String(url).endsWith('/sources/src_stuck')
+        ) {
+          return new Response('boom', { status: 500 });
+        }
+        return api.fetchImpl(url, init);
+      })
+    );
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await expect(source().acquire()).rejects.toThrow(/500/);
+    expect(warn.mock.calls.flat().join('\n')).toContain(
+      'connections web_leftover'
+    );
+  });
+
   it('refuses to reset when the Outpost key reaches the gateway project', async () => {
     // Two keys, one project. The Outpost baseline is "delete everything", which
     // would take the gateway project's default issue triggers with it.

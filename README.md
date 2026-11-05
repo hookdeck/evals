@@ -224,7 +224,7 @@ Every run follows the same shape:
 Runs need a Docker daemon, and `HOOKDECK_API_KEY` for the project scoring runs
 against. See `.env.example`.
 
-**Reset is to pristine, not to empty.** A new Hookdeck project ships with four default
+**Reset is to pristine, not to empty.** A new Hookdeck project ships with default
 issue triggers. Deleting them would leave the project unlike any real customer's. The
 first acquire snapshots what the project contains and every reset deletes only what a
 run added.
@@ -245,9 +245,16 @@ is deliberately separate from `ctx.api`: Outpost inverts the gateway's model, in
 tenant is your customer, the tenant owns destinations, and events are published to
 topics rather than routed from sources.
 
-**Outpost state is not reset between runs yet.** The provisioner restores the Hookdeck
-project and does not touch Outpost, so tenants an Outpost run creates persist. See
-`AGENTS.md`.
+**`OUTPOST_API_KEY` must belong to a dedicated Outpost project, because every run
+wipes its Event Gateway side.** The key is an ordinary project key, so it also works on
+`api.hookdeck.com` and agents can create sources and connections there with it. When
+the key is set, every run of every scenario, not only the Outpost ones, deletes all
+Event Gateway resources in that project before the seed and again on release, including
+ones that existed before the run.
+
+**Outpost's own state is only partly reset.** A run deletes the tenants it created and
+restores operator event destinations and managed config on release. A run that dies
+before release can still leave a tenant behind. See `AGENTS.md`.
 
 ## Skills
 
