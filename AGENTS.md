@@ -51,38 +51,74 @@ hides which cells produced it. The one mechanism that is documented rather than
 inferred stands: a skill that lists example values is read as an exhaustive list,
 which once led a weak model to conclude a supported provider was unsupported.
 
-**The weak-model figure is −2 and was written here as −3 for eleven days.** Both
-−3 readings are from 13 August and no run since has reproduced them: eight of
-the nine later runs read −2 and one read 0. 13 August is also the credit-outage
-day described under costs below, so treat anything measured that day as suspect
-until its rows are checked against the outage window — the point of that
-paragraph is that a bad population is identified by its cause, and this figure
-was never re-derived after the cause was found. Recompute from `results/runs/`
-rather than quoting this paragraph:
+**Count executions, not snapshot files.** A snapshot republishes the cells a run
+did not re-measure (#60), so iterating `results/runs/*.json` counts one execution
+many times. The 17 August weak-pair cells sit in seven snapshot files and read −2
+in every one, which is where this section's "eight of the nine later runs read
+−2" came from. Keyed per execution, the six full-suite runs of the weak pair read:
+
+| executed | `+skills` | `-no-skills` | delta |
+|---|---|---|---|
+| 13 August | 10/15 | 13/15 | −3 |
+| 17 August | 9/15 | 11/15 | −2 |
+| 1 September | 14/19 | 15/19 | −1 |
+| 7 September | 16/19 | 15/19 | +1 |
+| 14 September | 18/19 | 14/19 | +4 |
+| 28 September | 18/19 | 14/19 | +4 |
+
+The two +4 rows are not one result counted twice. Six cells changed between
+them, two in the `+skills` arm and four in the baseline, and the totals happen to
+land on the same numbers.
+
+The −3 is from 13 August, the credit-outage day described under costs below, so
+treat it as suspect until its rows are checked against the outage window: a bad
+population is identified by its cause, not by what its rows look like.
+
+Recompute rather than quoting the table:
 
 ```bash
 python3 -c "
-import json,glob,os
+import json,glob
 from collections import defaultdict
+cells={}
 for f in sorted(glob.glob('results/runs/*.json')):
-    arms=defaultdict(lambda:[0,0])
     for r in json.load(open(f))['results']:
-        e=r['experiment']
-        if not e.startswith('codex-gpt-5.4-mini'): continue
-        arms['base' if e.endswith('-no-skills') else 'skills'][0] += 1 if r['passed'] else 0
-        arms['base' if e.endswith('-no-skills') else 'skills'][1] += 1
-    s,b=arms['skills'],arms['base']
-    if s[1] and b[1]: print(os.path.basename(f)[:16], f'{s[0]}/{s[1]}', f'{b[0]}/{b[1]}', f'{s[0]-b[0]:+d}')
+        run = r.get('runId') or (r.get('ranAt') or '')[:10]
+        cells[(run, r['eval'], r['experiment'])] = r
+arms=defaultdict(lambda: defaultdict(lambda: [0, 0]))
+for (run, _, exp), r in cells.items():
+    if not exp.startswith('codex-gpt-5.4-mini'): continue
+    a = 'base' if exp.endswith('-no-skills') else 'skills'
+    arms[run][a][0] += 1 if r['passed'] else 0
+    arms[run][a][1] += 1
+for run in sorted(arms, key=str):
+    s, b = arms[run]['skills'], arms[run]['base']
+    if s[1] and b[1]: print(f'{str(run):14} {s[0]}/{s[1]:<3} {b[0]}/{b[1]:<3} {s[0]-b[0]:+d}')
 "
 ```
 
-**Do not read the Outpost-only +2 as contradicting it.** Loop 2's corrected
-measurement was `+skills` 12/12 against `-no-skills` 10/12 — but that is five
-Outpost scenarios across all three models, not fifteen-plus scenarios on the
-weak model, and the two populations answer different questions. They were
-conflated once in conversation into a claim that the delta's *sign* had flipped,
-which no run supports. State the scenario set and the model with any skills
-delta, or it will be compared against a number measuring something else.
+Two things that output will not tell you. **The denominators are the filter:** a
+row reading `2/2` is a partial re-run of a couple of cells, not a suite delta.
+And **most August rows carry no `runId`**, so they fall back to their date and two
+executions on the same day merge. 13 August's cells carry no `runId`, and most
+carry a placeholder midnight timestamp rather than a real time, so everything run
+that day reads as one row and nothing in it says how many runs it was. That is another reason to read that day by cause rather than by row.
+
+**Only the weak pair is a clean comparison in `results/latest.json`.** That file
+is a merged snapshot. Its frontier `+skills` arms were executed on 28 September
+and their `-no-skills` twins on 1 September, so subtracting one from the other
+compares two instruments four weeks apart. That gives a number, but it is not a
+skills delta. Both weak arms ran in the same execution. Check `runId` per
+experiment before subtracting any pair.
+
+**State the scenario set and the model with any skills delta**, or it will be
+compared against a number measuring something else. Loop 2's corrected
+measurement was `+skills` 12/12 against `-no-skills` 10/12, but that is five
+Outpost scenarios across all three models rather than nineteen scenarios on the
+weak model, and the two populations answer different questions. They were once
+conflated into a claim that the weak model's sign had flipped. Three September
+executions now do read positive on their own, and that is still no reason to
+merge the two populations.
 
 **Product findings come from runs, not speculation.** Several concern
 `hookdeck listen`: it crashes without a TTY unless given `--output compact`; a
