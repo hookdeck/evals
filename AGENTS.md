@@ -49,8 +49,8 @@ a single number; it has a different sign at different capability levels.
 **Count executions, not snapshot files.** A snapshot republishes the cells a run
 did not re-measure (#60), so iterating `results/runs/*.json` counts one execution
 many times. The 17 August weak-pair cells sit in seven snapshot files and read −2
-in every one, which is where this section's long-standing "−2, run after run"
-came from. Keyed per execution, the six full-suite runs of the weak pair read:
+in every one, which is where this section's "eight of the nine later runs read
+−2" came from. Keyed per execution, the six full-suite runs of the weak pair read:
 
 | executed | `+skills` | `-no-skills` | delta |
 |---|---|---|---|
@@ -63,8 +63,7 @@ came from. Keyed per execution, the six full-suite runs of the weak pair read:
 
 The two +4 rows are not one result counted twice. Six cells changed between
 them, two in the `+skills` arm and four in the baseline, and the totals happen to
-land on the same numbers. Read a delta per row: a total hides which cells
-produced it.
+land on the same numbers.
 
 The −3 is from 13 August, the credit-outage day described under costs below, so
 treat it as suspect until its rows are checked against the outage window: a bad
@@ -96,8 +95,9 @@ for run in sorted(arms, key=str):
 Two things that output will not tell you. **The denominators are the filter:** a
 row reading `2/2` is a partial re-run of a couple of cells, not a suite delta.
 And **most August rows carry no `runId`**, so they fall back to their date and two
-executions on the same day merge. 13 August is a full run and a two-cell re-run
-read as one, which is another reason to read that day by cause rather than by row.
+executions on the same day merge. 13 August's cells carry no `runId`, and most
+carry a placeholder midnight timestamp rather than a real time, so everything run
+that day reads as one row and nothing in it says how many runs it was. That is another reason to read that day by cause rather than by row.
 
 **Only the weak pair is a clean comparison in `results/latest.json`.** That file
 is a merged snapshot. Its frontier `+skills` arms were executed on 28 September
