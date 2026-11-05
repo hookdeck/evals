@@ -87,8 +87,21 @@ const CAPABILITY_ENV: Record<string, string> = { outpost: 'OUTPOST_API_KEY' };
  * *provider* skill like `stripe-webhooks` is legitimate — documenting a third
  * party's signature format was never Hookdeck's job, and we ship those skills
  * for exactly this. Flagging every self-install buried the real case in noise.
+ *
+ * `inspect` is a Hookdeck product skill too, published from the same
+ * repository, so a baseline can reach it the same way it reaches the others.
+ * No experiment installs it.
  */
-const PRODUCT_SKILLS = new Set(['hookdeck', 'event-gateway', 'outpost']);
+const PRODUCT_SKILLS = new Set([
+  'hookdeck',
+  'event-gateway',
+  'outpost',
+  'inspect',
+  // `npx skills add hookdeck/agent-skills` with no `--skill` installs every
+  // skill in the repository, and `findSelfInstalledSkills` records it as the
+  // repo rather than guessing a name. It brings all of the above with it.
+  'hookdeck/agent-skills',
+]);
 
 /**
  * Phrases an agent uses when it is waiting for a person.

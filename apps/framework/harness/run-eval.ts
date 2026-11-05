@@ -63,7 +63,11 @@ import {
   loadExperiments,
   readSessionSeedArgs,
 } from '../lib/discovery.js';
-import { harnessFingerprint, scenarioFingerprint } from '../lib/provenance.js';
+import {
+  harnessFingerprint,
+  scenarioFingerprint,
+  skillsPin,
+} from '../lib/provenance.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..', '..', '..');
@@ -921,6 +925,7 @@ async function main() {
             provenance: {
               harness: harnessFingerprint(basePromptFor(ev.mode), ROOT),
               scenario: scenarioFingerprint(ev.dir),
+              skillsPin: skillsPin(ROOT),
             },
             ...ev.metadata,
             ...res,

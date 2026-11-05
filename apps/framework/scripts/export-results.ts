@@ -1,5 +1,12 @@
 #!/usr/bin/env tsx
-import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
+import {
+  appendFile,
+  mkdir,
+  readdir,
+  readFile,
+  stat,
+  writeFile,
+} from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -24,6 +31,15 @@ import {
   readRepeatedFlag,
   readSuiteFilters,
 } from '../lib/cli-args.js';
+import {
+  assessCoverage,
+  type Coverage,
+  pairKey,
+  type Provenanced,
+  readExpectedPairs,
+  sanitizeCarried,
+  splitStale,
+} from '../lib/merge-results.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..', '..', '..');
@@ -85,6 +101,32 @@ const DROP_STALE = rawArgs.includes('--drop-stale');
 
 const OUTPUT_FLAG = readRepeatedFlag(rawArgs, 'output')[0];
 const outputPath = OUTPUT_FLAG ? resolve(ROOT, OUTPUT_FLAG) : OUTPUT_PATH;
+
+/**
+ * The cells this run was asked to measure: the `pairs` JSON the workflow's
+ * `prepare` job emits, written to a file. With it, the export says which of
+ * them produced no result and what is published in their place, and refuses
+ * to write anything if too many are missing. Without it (a local export) there
+ * is nothing to compare against and the check does not run.
+ */
+const EXPECTED_PAIRS_FLAG = readRepeatedFlag(rawArgs, 'expected-pairs')[0];
+/**
+ * How much of the run may be missing before the export refuses, as a fraction
+ * of the expected cells, rounded down: 0.1 lets 11 of 114 benchmark cells or 1
+ * of 18 regression cells go missing. See `assessCoverage` for why it is not
+ * zero.
+ */
+const MAX_MISSING_FRACTION = (() => {
+  const raw = readRepeatedFlag(rawArgs, 'max-missing-fraction')[0];
+  if (raw === undefined) return 0.1;
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value < 0 || value > 1) {
+    throw new Error(
+      `--max-missing-fraction must be between 0 and 1, got "${raw}"`
+    );
+  }
+  return value;
+})();
 
 /**
  * Refuse to publish anything containing a credential.
@@ -209,6 +251,11 @@ async function readResultFile(
     prompt: promptData?.prompt,
     promptSourcePath: promptData?.promptSourcePath,
     attempts: parsedResult.attempts,
+    // Without this the staleness check in `--merge` cannot work: every carried
+    // row reads as "no provenance recorded", because no published row ever
+    // had any. The harness wrote it from 28 August; this whitelist dropped it
+    // until #96.
+    provenance: parsedResult.provenance,
     sourcePath,
   };
 }
@@ -349,57 +396,6 @@ async function loadEvalResults(): Promise<EvalResult[]> {
   );
 }
 
-interface Provenanced {
-  experiment: string;
-  eval: string;
-  ranAt?: string;
-  provenance?: { harness?: string; scenario?: string };
-}
-
-/**
- * Which carried-forward rows were measured under something else.
- *
- * "Something else" is decided against the rows this run just produced rather
- * than against the working tree, so the comparison is between two measurements
- * rather than between a measurement and whatever happens to be checked out. A
- * scenario is compared only against a fresh row for that same scenario: the
- * harness moved under everything at once, but `outpost-002` being rewritten says
- * nothing about `filtering-001`.
- *
- * A row with no `provenance` at all predates this field. Those are reported
- * separately and never counted as current — not knowing what a row was measured
- * under is the condition this exists to surface, and treating it as fine would
- * mean every row published before today silently passes.
- */
-function splitStale<T extends Provenanced>(carried: T[], fresh: T[]) {
-  const harness = fresh.find((r) => r.provenance?.harness)?.provenance?.harness;
-  const scenarios = new Map<string, string>();
-  for (const row of fresh) {
-    if (row.provenance?.scenario)
-      scenarios.set(row.eval, row.provenance.scenario);
-  }
-
-  const current: T[] = [];
-  const stale: Array<{ row: T; why: string }> = [];
-  for (const row of carried) {
-    if (!row.provenance) {
-      stale.push({ row, why: 'no provenance recorded' });
-      continue;
-    }
-    if (harness && row.provenance.harness !== harness) {
-      stale.push({ row, why: 'harness changed' });
-      continue;
-    }
-    const expected = scenarios.get(row.eval);
-    if (expected && row.provenance.scenario !== expected) {
-      stale.push({ row, why: 'scenario changed' });
-      continue;
-    }
-    current.push(row);
-  }
-  return { current, stale };
-}
-
 /** Says what the merge is about to publish that this run did not measure. */
 function reportCarried(
   carried: Provenanced[],
@@ -442,6 +438,97 @@ function reportCarried(
   );
 }
 
+/**
+ * Says which cells this run was meant to measure and did not, and what stands
+ * in for each. Printed whether or not the export goes ahead, because a refusal
+ * that does not name the missing cells sends somebody to the job logs of a
+ * hundred matrix jobs to find them.
+ */
+function reportCoverage(
+  coverage: Coverage<EvalResult>,
+  droppedAsStale: Set<string>
+) {
+  console.log(
+    `\ncoverage: ${coverage.measured} of ${coverage.expected} expected cell(s) produced a result this run`
+  );
+  if (coverage.missing.length === 0) return;
+
+  const carried = coverage.missing.filter((m) => m.carried);
+  const absent = coverage.missing.filter((m) => !m.carried);
+  console.log(
+    `  ${coverage.missing.length} missing (floor allows ${coverage.allowedMissing}): ` +
+      `${carried.length} published from an earlier run, ${absent.length} absent from the output`
+  );
+  for (const m of coverage.missing) {
+    const stand = m.carried
+      ? `carried: ran ${m.carried.ranAt?.slice(0, 10) ?? 'date unknown'}, run ${m.carried.runId ?? 'unknown'}`
+      : droppedAsStale.has(pairKey(m))
+        ? 'absent: earlier row dropped by --drop-stale'
+        : MERGE
+          ? 'absent: no earlier row to carry'
+          : 'absent: --merge not set';
+    console.log(`    ${m.eval} x ${m.experiment}  (${stand})`);
+  }
+}
+
+/**
+ * The same facts for the job summary, which is where somebody reading a run
+ * actually looks. A carried cell on the page and a missing one look identical
+ * to a reader; this is the one place they are told apart.
+ */
+async function writeStepSummary(
+  coverage: Coverage<EvalResult> | undefined,
+  carriedCount: number,
+  stale: Array<{ row: Provenanced; why: string }>,
+  rejected: Array<{ key: string; reason: string }>
+) {
+  const target = process.env.GITHUB_STEP_SUMMARY;
+  if (!target) return;
+  const lines = [`### ${relative(ROOT, outputPath)}`, ''];
+  if (coverage) {
+    lines.push(
+      `${coverage.measured} of ${coverage.expected} expected cells produced a result this run. ` +
+        `${coverage.missing.length} missing; the floor allows ${coverage.allowedMissing}.` +
+        (coverage.refuse ? ' **Refused to publish.**' : ''),
+      ''
+    );
+    if (coverage.missing.length > 0) {
+      lines.push(
+        '| Scenario | Experiment | Published in its place |',
+        '|---|---|---|'
+      );
+      for (const m of coverage.missing) {
+        const stand = m.carried
+          ? `row from ${m.carried.ranAt?.slice(0, 10) ?? 'unknown date'} (run ${m.carried.runId ?? 'unknown'})`
+          : 'nothing: cell absent';
+        lines.push(`| \`${m.eval}\` | \`${m.experiment}\` | ${stand} |`);
+      }
+      lines.push('');
+    }
+  }
+  if (MERGE) {
+    lines.push(
+      `${carriedCount} row(s) carried forward from the previous file; ` +
+        `${stale.length} measured under something else` +
+        (stale.length > 0
+          ? DROP_STALE
+            ? ' and dropped (`--drop-stale`).'
+            : ' and published anyway.'
+          : '.'),
+      ''
+    );
+  }
+  if (rejected.length > 0) {
+    lines.push(
+      `**${rejected.length} previously published row(s) dropped** because they no longer parse as a published row:`,
+      '',
+      ...rejected.map(({ key, reason }) => `- \`${key}\`: ${reason}`),
+      ''
+    );
+  }
+  await appendFile(target, `${lines.join('\n')}\n`);
+}
+
 async function main() {
   const newResults = await loadEvalResults();
   const hasFilters =
@@ -450,29 +537,96 @@ async function main() {
     SUITE_FILTERS.length > 0 ||
     EXPERIMENT_SUITE_FILTERS.length > 0;
 
-  if (hasFilters && newResults.length === 0) {
+  // With expected pairs this waits until after the coverage report, so a run
+  // that produced nothing still names every cell it was meant to produce.
+  if (hasFilters && newResults.length === 0 && !EXPECTED_PAIRS_FLAG) {
     throw new Error('no result files matched the requested export filters');
   }
 
   let results = newResults;
+  let carriedCount = 0;
+  let staleRows: Array<{ row: Provenanced; why: string }> = [];
+  let rejectedRows: Array<{ key: string; reason: string }> = [];
   if (MERGE && existsSync(outputPath)) {
-    const existing: EvalResult[] = JSON.parse(
-      await readFile(outputPath, 'utf8')
-    );
-    const replaced = new Set(
-      newResults.map((r) => `${r.experiment}::${r.eval}`)
-    );
-    const carried = existing.filter(
-      (r) => !replaced.has(`${r.experiment}::${r.eval}`)
-    );
+    const existing: unknown = JSON.parse(await readFile(outputPath, 'utf8'));
+    if (!Array.isArray(existing)) {
+      throw new Error(
+        `${relative(ROOT, outputPath)} is not a JSON array of rows`
+      );
+    }
+    const replaced = new Set(newResults.map(pairKey));
+    const { rows: previous, rejected } = sanitizeCarried(existing);
+    rejectedRows = rejected;
+    if (rejected.length > 0) {
+      // An annotation as well as the log line: a row leaving the published
+      // file is a change to what the page shows, and nobody reads export logs.
+      if (process.env.GITHUB_ACTIONS === 'true') {
+        console.log(
+          `::warning::dropping ${rejected.length} previously published row(s) from ` +
+            `${relative(ROOT, outputPath)} that no longer parse as a published row; see the job summary`
+        );
+      }
+      console.warn(
+        `\ndropping ${rejected.length} previously published row(s) that no longer parse as a published row:`
+      );
+      for (const { key, reason } of rejected) {
+        console.warn(`    ${key}  (${reason})`);
+      }
+    }
+    const carried = previous.filter((r) => !replaced.has(pairKey(r)));
 
     const { current, stale } = splitStale(carried, newResults);
     reportCarried(carried, stale);
+    carriedCount = carried.length;
+    staleRows = stale;
 
     results = [...(DROP_STALE ? current : carried), ...newResults].sort(
       (a, b) =>
         a.experiment.localeCompare(b.experiment) || a.eval.localeCompare(b.eval)
     );
+  }
+
+  let coverage: Coverage<EvalResult> | undefined;
+  if (EXPECTED_PAIRS_FLAG) {
+    const expected = readExpectedPairs(
+      JSON.parse(await readFile(resolve(ROOT, EXPECTED_PAIRS_FLAG), 'utf8')),
+      (pair) =>
+        shouldIncludeExperiment(pair.experiment) &&
+        shouldIncludeEval(pair.eval) &&
+        (SUITE_FILTERS.length === 0 ||
+          SUITE_FILTERS.includes(pair.evalSuite as EvalSuite)) &&
+        (EXPERIMENT_SUITE_FILTERS.length === 0 ||
+          EXPERIMENT_SUITE_FILTERS.includes(
+            pair.experimentSuite as ExperimentSuite
+          ))
+    );
+    coverage = assessCoverage(
+      expected,
+      newResults,
+      results,
+      MAX_MISSING_FRACTION
+    );
+    reportCoverage(
+      coverage,
+      new Set(DROP_STALE ? staleRows.map(({ row }) => pairKey(row)) : [])
+    );
+  }
+
+  await writeStepSummary(coverage, carriedCount, staleRows, rejectedRows);
+
+  if (coverage?.refuse) {
+    throw new Error(
+      `refusing to write ${relative(ROOT, outputPath)}: ${coverage.missing.length} of ` +
+        `${coverage.expected} expected cells produced no result, and the floor allows ` +
+        `${coverage.allowedMissing} (--max-missing-fraction ${MAX_MISSING_FRACTION}). ` +
+        'Read the missing cells above first. If publishing is still right, raise the ' +
+        'EVALS_MAX_MISSING_FRACTION repository variable and re-run only the publish job: ' +
+        'the matrix has already been paid for.'
+    );
+  }
+
+  if (hasFilters && newResults.length === 0) {
+    throw new Error('no result files matched the requested export filters');
   }
 
   await mkdir(dirname(outputPath), { recursive: true });
