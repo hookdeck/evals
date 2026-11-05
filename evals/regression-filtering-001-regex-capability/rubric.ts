@@ -40,6 +40,26 @@ export const REGEX_CAPABILITY_RUBRIC = stripIndent`
   a transformation passes; an answer whose affirmative is about a filter
   fails, in whatever order the two appear.
 
+  Decide by where the answer tells the user to run the pattern, not by
+  vocabulary. "Filter" used to describe the user's own logic is not a
+  claim: "a filter pinned to this year would reject 2027 references" says
+  nothing about Hookdeck. It is a claim if the answer shows the pattern in
+  Hookdeck rule syntax (a $ operator, a "type": "filter" rule, --rules, a
+  connection's rules), and that fails whatever else the answer says. It is
+  also a claim if the answer tells the user to put the pattern into a
+  filter, rule or connection ("add this regex to your filter", "use this as
+  the filter on the connection"). This user is on Hookdeck, so an
+  unqualified "filter" or "rule" in an instruction means a Hookdeck one and
+  fails, unless the same answer says Hookdeck filters cannot run a regex or
+  places the pattern in the user's own code or a transformation.
+
+  An answer that gives a pattern and never says where it runs makes no
+  claim and passes. Whether it should have warned the user is a different
+  question, and this check does not ask it.
+
+  Score what the answer tells the user and anything the agent configured in
+  the project. Do not infer a claim from what the agent searched for.
+
   Pass in every other case. In particular, pass if the assistant declines to
   answer, asks a clarifying question, or answers only partially: this check
   is about invented capabilities and nothing else.
