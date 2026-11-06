@@ -234,8 +234,9 @@ rewrites one a run changed, which a snapshot of ids cannot do.
 **Every reset turns issue trigger notifications off.** Those default triggers email every
 member of the organization, and scenarios fail deliveries, requests and transformations on
 purpose, so left alone they email the team about failures a run caused deliberately.
-Each acquire and release sets `channels: {}` on every issue trigger in the project. The
-triggers stay enabled and scoped as they were, so issues still open; nobody is told.
+Each acquire and release resets the project to the four default triggers, enabled and
+wildcard-scoped as a new project has them, but with `channels: {}`, so issues still open
+and nobody is told.
 Anything that creates or hands out a project calls `muteIssueTriggerNotifications`.
 
 **Scope scorer queries to `ctx.acquiredAt`.** Events and requests cannot be deleted

@@ -1163,8 +1163,8 @@ connections instead of changing the Outpost destination's topics. The filter
 carried into the cell's next two attempts, because nothing reset that side.
 `FixedProjectSource` now deletes every gateway resource in the Outpost project
 on every acquire, for every scenario, before the seed, and again on release. It
-refuses if the Outpost key can see anything in the gateway project's snapshot,
-because that means both keys reach one project. So `OUTPOST_API_KEY` must
+refuses if the Outpost key can see anything in the gateway project's snapshot
+or live state, because that means both keys reach one project. So `OUTPOST_API_KEY` must
 belong to a dedicated project, and a gateway API error on that key now fails
 the acquire of every cell, Event Gateway scenarios included.
 

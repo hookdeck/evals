@@ -124,7 +124,9 @@ export async function muteIssueTriggerNotifications(
  * **Except issue triggers, which are declared rather than captured.** See
  * `DEFAULT_ISSUE_TRIGGERS`. Their ids are still recorded here, because the
  * Outpost gateway reset uses every recorded id to tell the two projects apart,
- * but the gateway project's reset no longer reads them.
+ * but the gateway project's reset no longer reads them. So a new default
+ * *trigger* type is not protected without a code change: the reset deletes it
+ * and warns, naming `DEFAULT_ISSUE_TRIGGERS` as where to add it.
  */
 export interface PristineSnapshot {
   capturedAt: string;
@@ -242,17 +244,32 @@ export async function resetIssueTriggersToDefaults(
   const existing = await client.list('issue-triggers');
   const kept = new Map<string, HookdeckResource>();
   for (const declared of DEFAULT_ISSUE_TRIGGERS) {
+    // The API lists newest first, so this sort is load-bearing: without it the
+    // reset keeps the trigger a run just made and deletes the default.
     const oldest = existing
       .filter((t) => t.type === declared.type)
-      .sort((a, b) =>
-        String(a.created_at ?? '').localeCompare(String(b.created_at ?? ''))
-      )[0];
+      .sort((a, b) => {
+        const x = String(a.created_at ?? '');
+        const y = String(b.created_at ?? '');
+        return x < y ? -1 : x > y ? 1 : 0;
+      })[0];
     if (oldest) kept.set(declared.type, oldest);
   }
   const keepIds = new Set([...kept.values()].map((t) => t.id));
+  const declaredTypes = new Set(DEFAULT_ISSUE_TRIGGERS.map((d) => d.type));
 
   for (const trigger of existing) {
     if (keepIds.has(trigger.id)) continue;
+    if (!declaredTypes.has(String(trigger.type))) {
+      // Every run makes delivery triggers, and none makes another type, so an
+      // unknown type is most likely a default Hookdeck has started shipping.
+      // An id snapshot would have kept it; a declared list deletes it, so say
+      // so loudly rather than let it vanish as an ordinary leftover.
+      console.warn(
+        `issue triggers: deleting ${trigger.id}, of type ${String(trigger.type)}, which ` +
+          'DEFAULT_ISSUE_TRIGGERS does not declare. If new projects now ship with it, add it there.'
+      );
+    }
     await client.delete('issue-triggers', trigger.id);
     onChange?.({
       action: 'deleted',
@@ -909,8 +926,8 @@ export class FixedProjectSource implements ProjectSource {
       if (shared.length > 0) {
         console.warn(
           `outpost project gateway reset: skipped, because OUTPOST_API_KEY can see ${kind} ` +
-            `${shared.map((r) => r.id).join(', ')} from the gateway project's pristine ` +
-            'snapshot. The two keys appear to belong to one project, and resetting it ' +
+            `${shared.map((r) => r.id).join(', ')} from the gateway project's snapshot ` +
+            'or live state. The two keys appear to belong to one project, and resetting it ' +
             "to the Outpost baseline would delete that project's defaults."
         );
         return;

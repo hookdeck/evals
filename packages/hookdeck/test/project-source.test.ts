@@ -408,7 +408,12 @@ describe('FixedProjectSource Outpost project gateway reset', () => {
   const GATEWAY_KEY = 'gateway-key';
   const OUTPOST_KEY = 'outpost-key';
 
-  function fakeTwoProjects(projects: Record<string, Record<string, string[]>>) {
+  function fakeTwoProjects(
+    projects: Record<string, Record<string, string[]>>,
+    /** Keys that reach another key's project: two keys, one project. */
+    aliases: Record<string, string> = {}
+  ) {
+    let created = 0;
     const state = new Map<string, Map<string, Set<string>>>();
     for (const [key, kinds] of Object.entries(projects)) {
       const byKind = new Map<string, Set<string>>();
@@ -429,12 +434,20 @@ describe('FixedProjectSource Outpost project gateway reset', () => {
         }
         return new Response(JSON.stringify({ models: [] }), { status: 200 });
       }
-      const key = String(
+      const bearer = String(
         (init?.headers as Record<string, string> | undefined)?.Authorization
       ).replace(/^Bearer /, '');
+      const key = aliases[bearer] ?? bearer;
       const project = state.get(key) ?? new Map<string, Set<string>>();
       state.set(key, project);
       const [, kind, id] = u.pathname.replace(/^\/[^/]+/, '').split('/');
+      if (init?.method === 'POST') {
+        const newId = `${kind}_created_${created++}`;
+        const ids = project.get(kind) ?? new Set<string>();
+        project.set(kind, ids);
+        ids.add(newId);
+        return new Response(JSON.stringify({ id: newId }), { status: 200 });
+      }
       if ((init?.method ?? 'GET') === 'DELETE') {
         project.get(kind)?.delete(id);
         deleted.push({ key, kind, id });
@@ -582,6 +595,27 @@ describe('FixedProjectSource Outpost project gateway reset', () => {
     expect(warn.mock.calls.flat().join('\n')).toContain('skipped');
   });
 
+  it('still refuses when the only shared resources are triggers the reset just recreated', async () => {
+    // Restored triggers get ids a persisted snapshot does not have, so a guard
+    // reading the snapshot alone would see nothing shared and delete them.
+    const snapshotPath = tempSnapshotPath();
+    writeFileSync(
+      snapshotPath,
+      JSON.stringify({ capturedAt: '2026-08-07T00:00:00.000Z', ids: {} })
+    );
+    const api = fakeTwoProjects(
+      { [GATEWAY_KEY]: {} },
+      { [OUTPOST_KEY]: GATEWAY_KEY }
+    );
+    vi.stubGlobal('fetch', api.fetchImpl);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await source(snapshotPath).acquire();
+
+    expect(warn.mock.calls.flat().join('\n')).toContain('skipped');
+    expect(api.ids(GATEWAY_KEY, 'issue-triggers')).toHaveLength(4);
+  });
+
   it('does nothing extra when both keys are the same', async () => {
     const api = fakeTwoProjects({
       [GATEWAY_KEY]: { sources: ['src_gateway'] },
@@ -596,7 +630,9 @@ describe('FixedProjectSource Outpost project gateway reset', () => {
     const lease = await s.acquire();
     await s.release(lease);
 
-    expect(api.deleted).toEqual([]);
+    // Issue triggers are reset to declared defaults on every lease, which this
+    // fake cannot type; that has its own suite below.
+    expect(api.deleted.filter((d) => d.kind !== 'issue-triggers')).toEqual([]);
     expect(api.ids(GATEWAY_KEY, 'sources')).toEqual(['src_gateway']);
   });
 
@@ -844,6 +880,43 @@ describe('FixedProjectSource issue triggers', () => {
 
     expect(api.writes).toEqual([{ method: 'DELETE', id: 'it_agent' }]);
     expect(api.byType('delivery')).toHaveLength(1);
+  });
+
+  it('keeps the oldest when the API lists newest first, as it does', async () => {
+    const { it_delivery, ...rest } = allPristine();
+    const api = fakeTriggers({
+      it_agent: {
+        ...pristine('delivery', '2026-11-06T09:00:00.000Z'),
+        channels: { email: {} },
+      },
+      it_delivery,
+      ...rest,
+    });
+    vi.stubGlobal('fetch', api.fetchImpl);
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await source().acquire();
+
+    expect(api.state.has('it_delivery')).toBe(true);
+    expect(api.state.has('it_agent')).toBe(false);
+  });
+
+  it('warns when it deletes a trigger type it does not declare', async () => {
+    // Most likely a default Hookdeck has started shipping, which an id
+    // snapshot would have kept.
+    const api = fakeTriggers({
+      ...allPristine(),
+      it_future: { type: 'something_new', channels: {}, created_at: 'x' },
+    });
+    vi.stubGlobal('fetch', api.fetchImpl);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await source().acquire();
+
+    expect(api.state.has('it_future')).toBe(false);
+    expect(warn.mock.calls.flat().join('\n')).toContain(
+      'of type something_new, which DEFAULT_ISSUE_TRIGGERS does not declare'
+    );
   });
 
   it('deletes a leftover even when a fresh snapshot recorded it as pristine', async () => {
