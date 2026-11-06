@@ -1163,8 +1163,8 @@ connections instead of changing the Outpost destination's topics. The filter
 carried into the cell's next two attempts, because nothing reset that side.
 `FixedProjectSource` now deletes every gateway resource in the Outpost project
 on every acquire, for every scenario, before the seed, and again on release. It
-refuses if the Outpost key can see anything in the gateway project's snapshot,
-because that means both keys reach one project. So `OUTPOST_API_KEY` must
+refuses if the Outpost key can see anything in the gateway project's snapshot
+or live state, because that means both keys reach one project. So `OUTPOST_API_KEY` must
 belong to a dedicated project, and a gateway API error on that key now fails
 the acquire of every cell, Event Gateway scenarios included.
 
@@ -1274,28 +1274,39 @@ queue URL and leaves `credentials` empty.
 default issue triggers. The first acquire snapshots what the project contains,
 and every reset deletes only what a run added.
 
+**Except issue triggers, which are declared, not captured.** A new project gets
+exactly four — delivery, transformation, backpressure, request — and
+`DEFAULT_ISSUE_TRIGGERS` lists them by content, read from the Event Gateway
+implementation. Every reset keeps the oldest trigger of each type and rewrites it
+to that content, creates any that are missing, and deletes every other trigger.
+
+A captured snapshot of ids failed on these both ways round, and both happened to
+the delivery default that `alerting-001` is built around (#28, #117). A run
+rewrote it on 7 August before the snapshot was taken, so the rewrite was kept as
+pristine; it was deleted by hand on 19 August as an orphan, and an id-based reset
+never recreates anything, so the scenario then ran with no delivery trigger at
+all. In CI it is worse, because each fresh checkout takes a new snapshot and so
+adopts whatever the last job left.
+
 **Those defaults email the whole team, so reset mutes them.** Each default
 trigger carries an `email` channel, and the email channel has no recipients of
 its own: it goes to every member of the organization who has not turned alerts
 off, whenever the project's notification methods include email. Scenarios fail deliveries,
 requests and transformations on purpose, so from at least 21 August every run
 emailed the people on `evals-ci` about failures we had caused, and it surfaced
-on 6 November only because they said so. `muteIssueTriggerNotifications` now sets
-`channels: {}` on every issue trigger, on acquire and on release, and leaves
-each one enabled and scoped as it was.
+on 6 November only because they said so. The declared defaults carry
+`channels: {}`, and `muteIssueTriggerNotifications` sets the same on every
+trigger after each reset, which matters on release, where the reset is best
+effort and can stop partway.
 
-Three things to know before touching it:
+What to know before touching it:
 
-- **Every trigger, not only the snapshot's.** In CI each fresh checkout takes
-  its own snapshot, so a trigger leaked by a run that died before release can be
-  recorded as pristine and is then never deleted. Muting is the one part of
-  reset that still reaches it.
 - **It changes what `alerting-001` starts from.** No scorer reads issues, and
-  the agent's own work is never muted before it is scored: acquire mutes before
-  the agent runs, release mutes after scoring. But the agent now finds every
-  existing trigger at `channels: {}`, which is the silent state that scenario
-  fails an agent for leaving. A default delivery trigger can no longer be passed
-  by confirming it, and an agent copying its neighbours' shape fails the channel
+  the agent's own work is never reset before it is scored: acquire resets before
+  the agent runs, release after scoring. But the agent now finds an enabled,
+  wildcard delivery trigger at `channels: {}` — configured and silent, which is
+  the failure that scenario exists to catch. It cannot be passed by confirming
+  the trigger, and an agent copying its neighbours' shape fails the channel
   check. That is an instrument change, so results either side of it are not
   comparable for that scenario, and the next release notes say so.
 - **The cleaner switch is out of reach.** Email is only sent when the project's
@@ -1309,6 +1320,9 @@ Three things to know before touching it:
   must call `muteIssueTriggerNotifications` before the first run, and the
   `ProjectSource` interface says so. If anyone creates an eval project by hand,
   mute it the same way, or the first run emails the team.
+- **A failed trigger reset fails the acquire**, like the rest of the reset.
+  Nothing has been paid for yet, and `alerting-001` started without its default
+  would score as though it were valid.
 
 The Outpost project's gateway side is reset to empty, and that follows the same
 rule: pristine there *is* empty. Platform project creation gives an Outpost project no issue

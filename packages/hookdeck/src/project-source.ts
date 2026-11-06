@@ -75,11 +75,12 @@ export interface ProjectSource {
  * copying its neighbours' shape fails the channel check. Results either side of
  * this change are not comparable for that scenario.
  *
- * Every trigger, not only the snapshot's. In CI the snapshot is taken by each
- * fresh checkout, so a trigger leaked by a run that died before release can be
- * recorded as pristine and then never deleted; muting it is the only reset that
- * still reaches it. Every channel, not only email: a Slack or PagerDuty channel
- * on an eval project would page a person for a failure we caused on purpose.
+ * `FixedProjectSource` gets this for free from `resetIssueTriggersToDefaults`,
+ * which leaves only the declared defaults and declares them muted, and still
+ * calls this afterwards: on release that reset is best effort, and this is the
+ * part worth having when it stops partway. Every trigger and every channel, not
+ * only email: a Slack or PagerDuty channel on an eval project would page a
+ * person for a failure we caused on purpose.
  *
  * Returns the ids it changed, so a caller can log them.
  */
@@ -119,6 +120,13 @@ export async function muteIssueTriggerNotifications(
  *
  * Recording IDs rather than a count means any future default resource type is
  * protected without a code change.
+ *
+ * **Except issue triggers, which are declared rather than captured.** See
+ * `DEFAULT_ISSUE_TRIGGERS`. Their ids are still recorded here, because the
+ * Outpost gateway reset uses every recorded id to tell the two projects apart,
+ * but the gateway project's reset no longer reads them. So a new default
+ * *trigger* type is not protected without a code change: the reset deletes it
+ * and warns, naming `DEFAULT_ISSUE_TRIGGERS` as where to add it.
  */
 export interface PristineSnapshot {
   capturedAt: string;
@@ -164,6 +172,161 @@ export const OUTPOST_GATEWAY_PRISTINE: PristineSnapshot = {
   capturedAt: 'declared',
   ids: {},
 };
+
+/**
+ * The issue triggers a new Event Gateway project ships with, by content.
+ *
+ * Read in the Event Gateway implementation, not inferred from the API: project
+ * creation adds exactly these four, in one transaction, with `channels: { email:
+ * {} }` and no name. Here they carry `channels: {}` instead, for the reason
+ * `muteIssueTriggerNotifications` gives.
+ *
+ * **Declared rather than captured, because a captured snapshot of triggers
+ * failed both ways round** (#28, #117). It records ids and only deletes, so:
+ *
+ * - a leftover present when a snapshot is taken is adopted as pristine, and in
+ *   CI every job is a fresh checkout that takes a fresh snapshot;
+ * - a default a run rewrote keeps its id, so it is kept, rewritten;
+ * - a default a run deleted is never recreated.
+ *
+ * All three happened to the delivery default, which `alerting-001` is built
+ * around. An early run rewrote it on 7 August into a trigger scoped to a
+ * connection that was later deleted; it was deleted by hand on 19 August as an
+ * orphan; and from then on the scenario ran with no delivery trigger at all.
+ */
+export const DEFAULT_ISSUE_TRIGGERS: ReadonlyArray<{
+  type: string;
+  configs: Record<string, unknown>;
+}> = [
+  {
+    type: 'delivery',
+    configs: { strategy: 'first_attempt', connections: '*' },
+  },
+  {
+    type: 'transformation',
+    configs: { log_level: 'warn', transformations: '*' },
+  },
+  {
+    type: 'backpressure',
+    configs: { delay: 1000 * 60 * 10, destinations: '*' },
+  },
+  {
+    type: 'request',
+    configs: {
+      rejection_causes: '*',
+      excluded_rejection_causes: ['NO_CONNECTION', 'UNSUPPORTED_HTTP_METHOD'],
+      sources: '*',
+    },
+  },
+];
+
+export type IssueTriggerChange =
+  | { action: 'deleted'; id: string; type: string }
+  | { action: 'restored'; id: string; type: string }
+  | { action: 'created'; id: string; type: string };
+
+/**
+ * Make the project's issue triggers exactly `DEFAULT_ISSUE_TRIGGERS`.
+ *
+ * One trigger is kept per default type, the oldest of that type, since that is
+ * the one project creation made; it is rewritten in place if a run changed its
+ * configs, channels, name or enabled state. A type with no trigger gets one.
+ * Everything else is deleted, whoever created it.
+ *
+ * Extras are deleted before anything is restored, so a name a leftover holds
+ * can never collide with the write that follows. Reports each change through
+ * `onChange` as it happens, so a reset that fails partway still leaves a record.
+ */
+export async function resetIssueTriggersToDefaults(
+  client: HookdeckClient,
+  onChange?: (change: IssueTriggerChange) => void
+): Promise<void> {
+  const existing = await client.list('issue-triggers');
+  const kept = new Map<string, HookdeckResource>();
+  for (const declared of DEFAULT_ISSUE_TRIGGERS) {
+    // The API lists newest first, so this sort is load-bearing: without it the
+    // reset keeps the trigger a run just made and deletes the default.
+    const oldest = existing
+      .filter((t) => t.type === declared.type)
+      .sort((a, b) => {
+        const x = String(a.created_at ?? '');
+        const y = String(b.created_at ?? '');
+        return x < y ? -1 : x > y ? 1 : 0;
+      })[0];
+    if (oldest) kept.set(declared.type, oldest);
+  }
+  const keepIds = new Set([...kept.values()].map((t) => t.id));
+  const declaredTypes = new Set(DEFAULT_ISSUE_TRIGGERS.map((d) => d.type));
+
+  for (const trigger of existing) {
+    if (keepIds.has(trigger.id)) continue;
+    if (!declaredTypes.has(String(trigger.type))) {
+      // Every run makes delivery triggers, and none makes another type, so an
+      // unknown type is most likely a default Hookdeck has started shipping.
+      // An id snapshot would have kept it; a declared list deletes it, so say
+      // so loudly rather than let it vanish as an ordinary leftover.
+      console.warn(
+        `issue triggers: deleting ${trigger.id}, of type ${String(trigger.type)}, which ` +
+          'DEFAULT_ISSUE_TRIGGERS does not declare. If new projects now ship with it, add it there.'
+      );
+    }
+    await client.delete('issue-triggers', trigger.id);
+    onChange?.({
+      action: 'deleted',
+      id: trigger.id,
+      type: String(trigger.type),
+    });
+  }
+
+  for (const declared of DEFAULT_ISSUE_TRIGGERS) {
+    const current = kept.get(declared.type);
+    if (!current) {
+      const created = await client.request<HookdeckResource>(
+        'POST',
+        '/issue-triggers',
+        { type: declared.type, configs: declared.configs, channels: {} }
+      );
+      onChange?.({ action: 'created', id: created.id, type: declared.type });
+      continue;
+    }
+    if (matchesDeclared(current, declared.configs)) continue;
+    await client.request('PUT', `/issue-triggers/${current.id}`, {
+      configs: declared.configs,
+      channels: {},
+      disabled_at: null,
+      name: null,
+    });
+    onChange?.({ action: 'restored', id: current.id, type: declared.type });
+  }
+}
+
+function matchesDeclared(
+  trigger: HookdeckResource,
+  configs: Record<string, unknown>
+): boolean {
+  const channels = trigger.channels;
+  return (
+    canonicalJson(trigger.configs) === canonicalJson(configs) &&
+    !!channels &&
+    typeof channels === 'object' &&
+    Object.keys(channels).length === 0 &&
+    !trigger.disabled_at &&
+    !trigger.name
+  );
+}
+
+/** JSON with object keys sorted, so key order the API returns cannot differ. */
+function canonicalJson(value: unknown): string {
+  return JSON.stringify(value, (_key, v) =>
+    v && typeof v === 'object' && !Array.isArray(v)
+      ? Object.fromEntries(
+          Object.entries(v as Record<string, unknown>).sort(([a], [b]) =>
+            a.localeCompare(b)
+          )
+        )
+      : v
+  );
+}
 
 export interface FixedProjectSourceOptions {
   apiKey: string;
@@ -271,7 +434,7 @@ export class FixedProjectSource implements ProjectSource {
 
   async acquire(): Promise<LeasedProject> {
     const snapshot = await this.loadOrCaptureSnapshot();
-    await this.resetToPristine(this.client, snapshot);
+    await this.resetGatewayProject(snapshot, 'acquire');
     await this.muteNotifications('acquire');
     // Before the seed, not only on release: a run that dies before release
     // must not hand its gateway resources in the Outpost project to the next
@@ -301,7 +464,7 @@ export class FixedProjectSource implements ProjectSource {
     let snapshot: PristineSnapshot | undefined;
     try {
       snapshot = await this.loadOrCaptureSnapshot();
-      await this.resetToPristine(this.client, snapshot);
+      await this.resetGatewayProject(snapshot, 'release');
     } catch {
       // Swallowed deliberately: a failed release must not fail the run, and
       // the next acquire will clean up regardless.
@@ -685,10 +848,12 @@ export class FixedProjectSource implements ProjectSource {
   private async resetToPristine(
     client: HookdeckClient,
     snapshot: PristineSnapshot,
-    onDelete?: (kind: ResourceKind, resource: HookdeckResource) => void
+    onDelete?: (kind: ResourceKind, resource: HookdeckResource) => void,
+    skip: readonly ResourceKind[] = []
   ): Promise<void> {
     // Connections reference sources and destinations, so they go first.
     for (const kind of RESOURCE_KINDS) {
+      if (skip.includes(kind)) continue;
       const keep = new Set(snapshot.ids[kind] ?? []);
       const existing: HookdeckResource[] = await client.list(kind);
       for (const resource of existing) {
@@ -697,6 +862,32 @@ export class FixedProjectSource implements ProjectSource {
         onDelete?.(kind, resource);
       }
     }
+  }
+
+  /**
+   * Reset the gateway project: everything but issue triggers to the snapshot,
+   * then issue triggers to `DEFAULT_ISSUE_TRIGGERS`.
+   *
+   * Triggers last, after the connections and transformations they may be scoped
+   * to are gone. Logs trigger changes on acquire only: release routinely undoes
+   * what the agent just did, which is the point of it, while a change found at
+   * acquire means a run died before releasing or something outside the harness
+   * changed the project.
+   */
+  private async resetGatewayProject(
+    snapshot: PristineSnapshot,
+    when: 'acquire' | 'release'
+  ): Promise<void> {
+    await this.resetToPristine(this.client, snapshot, undefined, [
+      'issue-triggers',
+    ]);
+    await resetIssueTriggersToDefaults(this.client, (change) => {
+      if (when !== 'acquire') return;
+      console.warn(
+        `issue triggers: ${change.action} ${change.type} trigger ${change.id} ` +
+          'to match the defaults a new project ships with'
+      );
+    });
   }
 
   /**
@@ -720,7 +911,14 @@ export class FixedProjectSource implements ProjectSource {
     const client = this.outpostGatewayClient;
     if (!client) return;
 
+    // The snapshot's ids plus what the gateway key can see now. Issue triggers
+    // are recreated by the gateway reset, so their ids drift away from a
+    // persisted snapshot, and a guard built on the snapshot alone would weaken
+    // every time a default was restored.
     const gatewayIds = new Set(Object.values(gatewaySnapshot.ids).flat());
+    for (const kind of RESOURCE_KINDS) {
+      for (const r of await this.client.list(kind)) gatewayIds.add(r.id);
+    }
     for (const kind of RESOURCE_KINDS) {
       const shared = (await client.list(kind)).filter((r) =>
         gatewayIds.has(r.id)
@@ -728,8 +926,8 @@ export class FixedProjectSource implements ProjectSource {
       if (shared.length > 0) {
         console.warn(
           `outpost project gateway reset: skipped, because OUTPOST_API_KEY can see ${kind} ` +
-            `${shared.map((r) => r.id).join(', ')} from the gateway project's pristine ` +
-            'snapshot. The two keys appear to belong to one project, and resetting it ' +
+            `${shared.map((r) => r.id).join(', ')} from the gateway project's snapshot ` +
+            'or live state. The two keys appear to belong to one project, and resetting it ' +
             "to the Outpost baseline would delete that project's defaults."
         );
         return;
