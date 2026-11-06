@@ -15,6 +15,7 @@
     "compare-snapshots": "node --import tsx/esm scripts/compare-snapshots.ts",
     "report-results": "node --import tsx/esm scripts/report-results.ts",
     "triage": "node --import tsx/esm scripts/triage.ts",
+    "check-artifacts": "node --env-file-if-exists=../../.env --import tsx/esm scripts/check-artifacts.ts",
     "scenario-criteria": "node --import tsx/esm scripts/scenario-criteria.ts"
   },
   "dependencies": {

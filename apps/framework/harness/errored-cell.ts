@@ -49,7 +49,7 @@ import {
 import { dirname, join, relative, sep } from 'node:path';
 import type { AttemptRecord } from './attempts.js';
 import { describeError } from './describe-error.js';
-import { serializeRedacted, type SecretValue } from './redact.js';
+import { type SecretValue, secretValues, serializeRedacted } from './redact.js';
 import type { DocsResult, SkillResult, TranscriptPart } from './types.js';
 
 /**
@@ -100,16 +100,56 @@ export interface ErroredAttemptRecord {
  * the cell is done, including through the session and sandbox teardown that
  * runs after the loop body. A teardown that throws then still has it.
  *
- * Mutate it only through the two functions below, which `runOne` calls and
- * the tests exercise directly.
+ * Mutate it only through the functions below, which `runOne` calls and the
+ * tests exercise directly.
  */
 export interface AttemptLoopState {
   priorAttempts: AttemptRecord[];
   current?: ErroredAttemptRecord;
+  /**
+   * Credentials the sandboxes created that the harness did not inject, read
+   * out of each attempt's container before it was torn down. Every artifact
+   * this cell writes is redacted with them, the result and the errored-cell
+   * evidence alike. See `sandbox-credentials.ts`.
+   */
+  discoveredSecrets?: SecretValue[];
 }
 
 export function newAttemptLoopState(): AttemptLoopState {
-  return { priorAttempts: [] };
+  return { priorAttempts: [], discoveredSecrets: [] };
+}
+
+/**
+ * Add credentials found in an attempt's sandbox. Called before the attempt's
+ * guards and scorer, so a cell that throws afterwards is still redacted with
+ * them.
+ *
+ * Each distinct value gets its own numbered name, in the order the cell found
+ * them, so two keys minted by two attempts (or two `hookdeck ci` runs) stay
+ * distinguishable in the transcript: `<redacted:hookdeck-cli-config:api_key-1>`
+ * and `…-2`. A value already found keeps the name it was given.
+ */
+export function credentialsDiscovered(
+  loop: AttemptLoopState,
+  secrets: SecretValue[]
+): void {
+  const known = loop.discoveredSecrets ?? [];
+  const seen = new Set(known.map((s) => s.value));
+  const added: SecretValue[] = [];
+  for (const { name, value } of secrets) {
+    if (seen.has(value)) continue;
+    seen.add(value);
+    added.push({ name: `${name}-${known.length + added.length + 1}`, value });
+  }
+  loop.discoveredSecrets = [...known, ...added];
+}
+
+/** The secrets an artifact from this cell is redacted with. */
+export function cellSecrets(
+  loop: AttemptLoopState,
+  base: SecretValue[] = secretValues()
+): SecretValue[] {
+  return [...base, ...(loop.discoveredSecrets ?? [])];
 }
 
 /**
@@ -209,7 +249,13 @@ export function writeErroredEvidence(
   }
   const out = erroredEvidencePath(root, input.experiment, input.evalId);
   mkdirSync(dirname(out), { recursive: true });
-  writeFileSync(out, serializeRedacted(buildErroredEvidence(input), secrets));
+  writeFileSync(
+    out,
+    serializeRedacted(
+      buildErroredEvidence(input),
+      cellSecrets(input.state, secrets)
+    )
+  );
   return out;
 }
 

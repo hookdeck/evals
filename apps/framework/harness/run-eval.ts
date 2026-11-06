@@ -51,9 +51,12 @@ import {
   type AttemptRecord,
 } from './attempts.js';
 import { describeError } from './describe-error.js';
+import { discoverSandboxCredentials } from './sandbox-credentials.js';
 import {
   attemptRan,
+  cellSecrets,
   clearErroredEvidence,
+  credentialsDiscovered,
   newAttemptLoopState,
   settleAttempt,
   writeErroredEvidence,
@@ -539,6 +542,16 @@ async function runOne(
     lastAgentReport = run.agentReport;
     lastStoppedReason = run.stoppedReason;
     lastUsage = run.usage;
+    // Before anything below can throw, and while the container still exists:
+    // the agent may have minted a credential the harness never held (`hookdeck
+    // ci` writes its own key to the CLI config) and printed it. Every artifact
+    // this cell writes is redacted with what is found. See
+    // `sandbox-credentials.ts`.
+    if (cliSandbox)
+      credentialsDiscovered(
+        loop,
+        await discoverSandboxCredentials(cliSandbox.sandbox)
+      );
     // The attempt in flight. If anything below throws — either guard, the
     // scorer, the rehydrate — this is what the caller keeps of it.
     attemptRan(loop, {
@@ -893,44 +906,48 @@ async function main() {
         const experimentDisplay = getExperimentDisplayMetadata(config);
         // Redacted, not raw. Agents run `env` while exploring and the dump
         // lands in the transcript below; these artifacts are downloadable by
-        // any GitHub account on a public repository. See `redact.ts`.
+        // any GitHub account on a public repository. See `redact.ts`. Includes
+        // what the sandboxes minted, which no env var here holds.
         writeFileSync(
           out,
-          serializeRedacted({
-            experiment: name,
-            experimentSuite: SELECTED_EXPERIMENT_SUITE ?? config.suite?.[0],
-            experimentDisplay,
-            eval: ev.id,
-            // When this run finished. Recorded per run rather than per
-            // refresh, because the published grid is not one snapshot: the
-            // a dispatched run covers only the experiments it asked for,
-            // and a targeted re-run replaces some pairs and leaves the rest,
-            // so two cells side by side can be a month apart. Without this
-            // the page can only describe the schedule, which is not the same
-            // question as how old a number is.
-            ranAt: new Date().toISOString(),
-            // Which workflow run produced this row. Undefined locally, which
-            // is correct: a local run is not a published one.
-            //
-            // Per row rather than per snapshot. A snapshot's header names one
-            // run, but `--merge` means a published file carries rows from
-            // several, so the header attributes all of them to the newest and
-            // counting rows across snapshots double-counts. Neither can answer
-            // "how many runs are on record", and neither lets a reader trace a
-            // single number back to the job that produced it, which the page
-            // claims they can.
-            runId: process.env.GITHUB_RUN_ID,
-            // What this row was measured under, so `--merge` can tell a
-            // carried-forward row that is still current from one that is not.
-            // See `lib/provenance.ts` and #60.
-            provenance: {
-              harness: harnessFingerprint(basePromptFor(ev.mode), ROOT),
-              scenario: scenarioFingerprint(ev.dir),
-              skillsPin: skillsPin(ROOT),
+          serializeRedacted(
+            {
+              experiment: name,
+              experimentSuite: SELECTED_EXPERIMENT_SUITE ?? config.suite?.[0],
+              experimentDisplay,
+              eval: ev.id,
+              // When this run finished. Recorded per run rather than per
+              // refresh, because the published grid is not one snapshot: the
+              // a dispatched run covers only the experiments it asked for,
+              // and a targeted re-run replaces some pairs and leaves the rest,
+              // so two cells side by side can be a month apart. Without this
+              // the page can only describe the schedule, which is not the same
+              // question as how old a number is.
+              ranAt: new Date().toISOString(),
+              // Which workflow run produced this row. Undefined locally, which
+              // is correct: a local run is not a published one.
+              //
+              // Per row rather than per snapshot. A snapshot's header names one
+              // run, but `--merge` means a published file carries rows from
+              // several, so the header attributes all of them to the newest and
+              // counting rows across snapshots double-counts. Neither can answer
+              // "how many runs are on record", and neither lets a reader trace a
+              // single number back to the job that produced it, which the page
+              // claims they can.
+              runId: process.env.GITHUB_RUN_ID,
+              // What this row was measured under, so `--merge` can tell a
+              // carried-forward row that is still current from one that is not.
+              // See `lib/provenance.ts` and #60.
+              provenance: {
+                harness: harnessFingerprint(basePromptFor(ev.mode), ROOT),
+                scenario: scenarioFingerprint(ev.dir),
+                skillsPin: skillsPin(ROOT),
+              },
+              ...ev.metadata,
+              ...res,
             },
-            ...ev.metadata,
-            ...res,
-          })
+            cellSecrets(loop)
+          )
         );
         const elapsed = Math.round((Date.now() - start) / 1000);
         console.log(
