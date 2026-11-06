@@ -90,46 +90,31 @@
           "event-gateway"
         ],
         "loaded": [
-          "hookdeck",
           "event-gateway"
         ]
       },
       "docs": {
         "calls": [
           {
-            "source": "web_fetch",
-            "query": "Explain how to create an issue trigger for delivery issues via the REST API: the endpoint, HTTP method, required fields (type, mode/config for consecutive failure thresholds), and how to configure notification channels (email, Slack, webhook). Include a full example JSON payload for a delivery issue trigger scoped to a specific connection or destination, with a Slack or webhook notification channel.",
-            "hasContent": true,
-            "pages": [
-              {
-                "url": "https://hookdeck.com/docs/issue-triggers.md"
-              }
-            ],
-            "resultChars": 1322,
-            "httpError": null
-          },
-          {
-            "source": "web_fetch",
-            "query": "Give the full REST API reference for issue-triggers: list all endpoints (create/upsert, list, get, update, delete), full request schema including all fields under type=delivery config (strategy options, connections field, any threshold/count/consecutive failure window settings), and the full schema for the channels object covering email, slack, webhook, and any other supported notification channel types with example field names.",
-            "hasContent": true,
+            "source": "shell_fetch",
+            "query": "curl -s https://hookdeck.com/docs/api/issue-triggers.md | head -200",
             "pages": [
               {
                 "url": "https://hookdeck.com/docs/api/issue-triggers.md"
               }
             ],
-            "resultChars": 215,
-            "httpError": 404
+            "resultChars": 22755,
+            "httpError": null
           },
           {
-            "source": "web_fetch",
-            "query": "Explain precisely the difference between the 'first_attempt' and 'final_attempt' strategy options for a delivery issue trigger. Does 'first_attempt' open/update an issue as soon as any single delivery attempt fails (even if a later retry succeeds), while 'final_attempt' only counts it once all retries for that event are exhausted? Also explain how issues track 'consecutive' failures - is it per-event retries, or across multiple distinct events to the same destination/connection?",
-            "hasContent": true,
+            "source": "shell_fetch",
+            "query": "curl -s https://hookdeck.com/docs/issue-triggers.md | sed -n '1,250p'",
             "pages": [
               {
-                "url": "https://hookdeck.com/docs/issue-triggers"
+                "url": "https://hookdeck.com/docs/issue-triggers.md"
               }
             ],
-            "resultChars": 1219,
+            "resultChars": 9257,
             "httpError": null
           }
         ]
@@ -1483,38 +1468,14 @@
         "calls": [
           {
             "source": "web_fetch",
-            "query": "Explain how issue triggers and notification channels work, especially for delivery issues (failures). What are the available strategies (e.g. first_attempt, max_attempts) and channel types (email, slack, webhook)? What does the API schema for creating/updating an issue trigger with channels look like?",
-            "hasContent": true,
-            "pages": [
-              {
-                "url": "https://hookdeck.com/docs/issue-notifications"
-              }
-            ],
-            "resultChars": 215,
-            "httpError": 404
-          },
-          {
-            "source": "web_fetch",
-            "query": "Show the API reference for issue triggers - creating, updating, fields like type, configs, strategy, channels. What channel types are supported (email, slack, webhook, pagerduty)?",
+            "query": "Describe the Issue Trigger types available in Hookdeck's API, especially a \"delivery\" type that fires when deliveries to a destination keep failing. Include the full request body shape for creating an issue trigger of that type (configs fields like destinations, max_retries, status codes, etc.) and the channels options (email, webhook, slack, opsgenie, pagerduty etc.)",
             "hasContent": true,
             "pages": [
               {
                 "url": "https://hookdeck.com/docs/api#issue-triggers"
               }
             ],
-            "resultChars": 506,
-            "httpError": null
-          },
-          {
-            "source": "web_fetch",
-            "query": "Show everything about issue triggers: how to create/update them via API, the \"type\": \"delivery\" trigger, configs.strategy options (e.g. first_attempt, max_attempts, interval), connections filter, and channels - what channel types exist (email, slack, webhook, pagerduty) and what fields each requires.",
-            "hasContent": true,
-            "pages": [
-              {
-                "url": "https://hookdeck.com/docs/api/configure.md"
-              }
-            ],
-            "resultChars": 2238,
+            "resultChars": 1105,
             "httpError": null
           }
         ]
@@ -3542,7 +3503,7 @@
           "notes": "expected no event for LEGACY-99002, found 0"
         }
       ],
-      "attempts": 1,
+      "attempts": 2,
       "skills": {
         "available": [
           "hookdeck",
@@ -3601,7 +3562,7 @@
           "passed": true
         }
       ],
-      "attempts": 3,
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -3924,7 +3885,7 @@
           "passed": true
         }
       ],
-      "attempts": 3,
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -4604,7 +4565,7 @@
           "notes": "expected a 4xx, got 401"
         }
       ],
-      "attempts": 2,
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -4974,7 +4935,7 @@
           "notes": "expected no event for LEGACY-99002, found 0"
         }
       ],
-      "attempts": 1,
+      "attempts": 2,
       "skills": {
         "available": [],
         "loaded": []
@@ -5322,7 +5283,7 @@
           "notes": "no tenants: nothing was set up for the customer to subscribe with"
         }
       ],
-      "attempts": 1,
+      "attempts": 3,
       "skills": {
         "available": [],
         "loaded": []
@@ -5770,7 +5731,7 @@
           "passed": true
         }
       ],
-      "attempts": 3,
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -5972,7 +5933,7 @@
           "passed": true
         }
       ],
-      "attempts": 1,
+      "attempts": 2,
       "skills": {
         "available": [],
         "loaded": []
@@ -6034,7 +5995,7 @@
           "notes": "expected a 4xx, got 403"
         }
       ],
-      "attempts": 1,
+      "attempts": 3,
       "skills": {
         "available": [],
         "loaded": []
@@ -6212,7 +6173,6 @@
           "event-gateway"
         ],
         "loaded": [
-          "hookdeck",
           "event-gateway"
         ]
       },
@@ -6687,7 +6647,7 @@
           "passed": true
         }
       ],
-      "attempts": 1,
+      "attempts": 2,
       "skills": {
         "available": [
           "hookdeck",
@@ -8609,7 +8569,7 @@
           "notes": "expected a 4xx, got 401"
         }
       ],
-      "attempts": 1,
+      "attempts": 2,
       "skills": {
         "available": [],
         "loaded": []
