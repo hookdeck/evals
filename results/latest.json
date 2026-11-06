@@ -84,31 +84,46 @@
           "event-gateway"
         ],
         "loaded": [
+          "hookdeck",
           "event-gateway"
         ]
       },
       "docs": {
         "calls": [
           {
-            "source": "shell_fetch",
-            "query": "curl -s https://hookdeck.com/docs/api/issue-triggers.md | head -200",
-            "pages": [
-              {
-                "url": "https://hookdeck.com/docs/api/issue-triggers.md"
-              }
-            ],
-            "resultChars": 22755,
-            "httpError": null
-          },
-          {
-            "source": "shell_fetch",
-            "query": "curl -s https://hookdeck.com/docs/issue-triggers.md | sed -n '1,250p'",
+            "source": "web_fetch",
+            "query": "Explain how to create an issue trigger for delivery issues via the REST API: the endpoint, HTTP method, required fields (type, mode/config for consecutive failure thresholds), and how to configure notification channels (email, Slack, webhook). Include a full example JSON payload for a delivery issue trigger scoped to a specific connection or destination, with a Slack or webhook notification channel.",
+            "hasContent": true,
             "pages": [
               {
                 "url": "https://hookdeck.com/docs/issue-triggers.md"
               }
             ],
-            "resultChars": 9257,
+            "resultChars": 1322,
+            "httpError": null
+          },
+          {
+            "source": "web_fetch",
+            "query": "Give the full REST API reference for issue-triggers: list all endpoints (create/upsert, list, get, update, delete), full request schema including all fields under type=delivery config (strategy options, connections field, any threshold/count/consecutive failure window settings), and the full schema for the channels object covering email, slack, webhook, and any other supported notification channel types with example field names.",
+            "hasContent": true,
+            "pages": [
+              {
+                "url": "https://hookdeck.com/docs/api/issue-triggers.md"
+              }
+            ],
+            "resultChars": 215,
+            "httpError": 404
+          },
+          {
+            "source": "web_fetch",
+            "query": "Explain precisely the difference between the 'first_attempt' and 'final_attempt' strategy options for a delivery issue trigger. Does 'first_attempt' open/update an issue as soon as any single delivery attempt fails (even if a later retry succeeds), while 'final_attempt' only counts it once all retries for that event are exhausted? Also explain how issues track 'consecutive' failures - is it per-event retries, or across multiple distinct events to the same destination/connection?",
+            "hasContent": true,
+            "pages": [
+              {
+                "url": "https://hookdeck.com/docs/issue-triggers"
+              }
+            ],
+            "resultChars": 1219,
             "httpError": null
           }
         ]
@@ -1491,14 +1506,38 @@
         "calls": [
           {
             "source": "web_fetch",
-            "query": "Describe the Issue Trigger types available in Hookdeck's API, especially a \"delivery\" type that fires when deliveries to a destination keep failing. Include the full request body shape for creating an issue trigger of that type (configs fields like destinations, max_retries, status codes, etc.) and the channels options (email, webhook, slack, opsgenie, pagerduty etc.)",
+            "query": "Explain how issue triggers and notification channels work, especially for delivery issues (failures). What are the available strategies (e.g. first_attempt, max_attempts) and channel types (email, slack, webhook)? What does the API schema for creating/updating an issue trigger with channels look like?",
+            "hasContent": true,
+            "pages": [
+              {
+                "url": "https://hookdeck.com/docs/issue-notifications"
+              }
+            ],
+            "resultChars": 215,
+            "httpError": 404
+          },
+          {
+            "source": "web_fetch",
+            "query": "Show the API reference for issue triggers - creating, updating, fields like type, configs, strategy, channels. What channel types are supported (email, slack, webhook, pagerduty)?",
             "hasContent": true,
             "pages": [
               {
                 "url": "https://hookdeck.com/docs/api#issue-triggers"
               }
             ],
-            "resultChars": 1105,
+            "resultChars": 506,
+            "httpError": null
+          },
+          {
+            "source": "web_fetch",
+            "query": "Show everything about issue triggers: how to create/update them via API, the \"type\": \"delivery\" trigger, configs.strategy options (e.g. first_attempt, max_attempts, interval), connections filter, and channels - what channel types exist (email, slack, webhook, pagerduty) and what fields each requires.",
+            "hasContent": true,
+            "pages": [
+              {
+                "url": "https://hookdeck.com/docs/api/configure.md"
+              }
+            ],
+            "resultChars": 2238,
             "httpError": null
           }
         ]
@@ -3649,6 +3688,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -3708,6 +3748,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -3768,6 +3809,7 @@
           "notes": "works out at 60 per minute against a quota of 60"
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -3829,6 +3871,7 @@
           "notes": "expected no event for LEGACY-99002, found 0"
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -3888,6 +3931,7 @@
           "passed": true
         }
       ],
+      "attempts": 3,
       "skills": {
         "available": [
           "hookdeck",
@@ -3949,6 +3993,7 @@
           "judgeNotes": "The assistant attributes the cause to an observed destination URL returning HTTP 422 and a misconfigured analytics destination, which the rubric explicitly allows as a correct reading of project configuration. It does not assert rate limiting, Hookdeck loss/drop, payload size limits, paused/disabled connections, or nonexistent features."
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -4010,6 +4055,7 @@
           "judgeNotes": "The assistant did not claim nothing was wrong; it identified a filter causing orders to be ignored and described remediation."
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -4069,6 +4115,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -4128,6 +4175,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -4211,6 +4259,7 @@
           "passed": true
         }
       ],
+      "attempts": 3,
       "skills": {
         "available": [
           "hookdeck",
@@ -4276,6 +4325,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -4521,6 +4571,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -4586,6 +4637,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -4642,6 +4694,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -4696,6 +4749,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -4755,6 +4809,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -4823,6 +4878,7 @@
           "notes": "expected a 4xx, got 401"
         }
       ],
+      "attempts": 3,
       "skills": {
         "available": [
           "hookdeck",
@@ -4891,6 +4947,7 @@
           "notes": "expected a 4xx, got 401"
         }
       ],
+      "attempts": 2,
       "skills": {
         "available": [
           "hookdeck",
@@ -5077,6 +5134,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -5151,6 +5209,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -5205,6 +5264,7 @@
           "notes": "works out at 60 per minute against a quota of 60"
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -5261,6 +5321,7 @@
           "notes": "expected no event for LEGACY-99002, found 0"
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -5350,6 +5411,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -5435,6 +5497,7 @@
           "judgeNotes": "No invented forbidden cause was asserted. The stated cause was derived from Hookdeck destination configuration and delivery responses."
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -5490,6 +5553,7 @@
           "judgeNotes": "The assistant did not claim everything was working or that all orders were delivered. It identified missing orders as ignored due to a filter, which is not the prohibited conclusion."
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -5563,6 +5627,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -5609,6 +5674,7 @@
           "notes": "no tenants: nothing was set up for the customer to subscribe with"
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -5662,6 +5728,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -5765,6 +5832,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -5908,6 +5976,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -6057,6 +6126,7 @@
           "passed": true
         }
       ],
+      "attempts": 3,
       "skills": {
         "available": [],
         "loaded": []
@@ -6157,6 +6227,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -6206,6 +6277,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -6259,6 +6331,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -6321,6 +6394,7 @@
           "notes": "expected a 4xx, got 403"
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -6394,6 +6468,7 @@
           "notes": "expected a 4xx, got 401"
         }
       ],
+      "attempts": 2,
       "skills": {
         "available": [],
         "loaded": []
@@ -6498,6 +6573,7 @@
           "event-gateway"
         ],
         "loaded": [
+          "hookdeck",
           "event-gateway"
         ]
       },
@@ -6546,6 +6622,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -6604,6 +6681,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -6663,6 +6741,7 @@
           "notes": "works out at 60 per minute against a quota of 60"
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -6724,6 +6803,7 @@
           "notes": "expected no event for LEGACY-99002, found 0"
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -6788,6 +6868,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -6854,6 +6935,7 @@
           "judgeNotes": "No invented prohibited cause was asserted. The stated cause is based on observed destination URL/422 responses and configuration."
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -6914,6 +6996,7 @@
           "judgeNotes": "The assistant does not claim everything is working or that all orders were delivered. It correctly reports missing orders were ignored/filtered, so it passes this check."
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -6973,6 +7056,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -7031,6 +7115,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -7101,6 +7186,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -7176,6 +7262,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -7247,6 +7334,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -7314,6 +7402,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -7370,6 +7459,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -7424,6 +7514,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -7482,6 +7573,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -7550,6 +7642,7 @@
           "notes": "expected a 4xx, got 401"
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [
           "hookdeck",
@@ -7621,6 +7714,7 @@
           "notes": "expected a 4xx, got 401"
         }
       ],
+      "attempts": 3,
       "skills": {
         "available": [
           "hookdeck",
@@ -7782,6 +7876,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -7859,6 +7954,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -7924,6 +8020,7 @@
           "notes": "works out at 60 per minute against a quota of 60"
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -7980,6 +8077,7 @@
           "notes": "expected no event for LEGACY-99002, found 0"
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -8044,6 +8142,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -8110,6 +8209,7 @@
           "judgeNotes": "The assistant’s stated cause is based on observable Hookdeck configuration: the analytics destination URL includes `status=422`, causing mock endpoint rejection. It does not assert throttling, dropped/lost deliveries, payload size limits, paused/disabled connections, or nonexistent Hookdeck features as fact."
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -8165,6 +8265,7 @@
           "judgeNotes": "The assistant did not claim everything was working or that all orders were delivered. It identified missing orders as ignored, so it passes this check."
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -8218,6 +8319,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -8271,6 +8373,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -8340,6 +8443,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -8412,6 +8516,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -8488,6 +8593,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -8597,6 +8703,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -8657,6 +8764,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -8706,6 +8814,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -8765,6 +8874,7 @@
           "passed": true
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -8827,6 +8937,7 @@
           "notes": "expected a 4xx, got 401"
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
@@ -8895,6 +9006,7 @@
           "notes": "expected a 4xx, got 401"
         }
       ],
+      "attempts": 1,
       "skills": {
         "available": [],
         "loaded": []
