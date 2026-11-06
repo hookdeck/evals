@@ -1289,9 +1289,12 @@ all. In CI it is worse, because each fresh checkout takes a new snapshot and so
 adopts whatever the last job left.
 
 **Those defaults email the whole team, so reset mutes them.** Each default
-trigger carries an `email` channel, and the email channel has no recipients of
-its own: it goes to every member of the organization who has not turned alerts
-off, whenever the project's notification methods include email. Scenarios fail deliveries,
+trigger carries `email: {}`, which names no recipients, and an email channel
+without `member_emails` goes to every member of the organization who has not
+turned alerts off, whenever the project's notification methods include email.
+`member_emails` can narrow it, and an empty list sends to nobody, but that is a
+recipient list a scorer has to read rather than an absent channel (see the
+`alerting-001` scorer). Scenarios fail deliveries,
 requests and transformations on purpose, so from at least 21 August every run
 emailed the people on `evals-ci` about failures we had caused, and it surfaced
 on 6 November only because they said so. The declared defaults carry
