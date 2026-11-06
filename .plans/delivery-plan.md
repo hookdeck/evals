@@ -50,7 +50,10 @@ one place.
 Loop 1 closed with **no measurable improvement**: the CLI defect was real and shipped in
 2.5.0, but a control run showed the four failures used to justify it were variance. See
 `LOOPS.md`. That is the most useful thing this project has produced so far, because it
-invalidates every single-attempt conclusion drawn before 14 August.
+invalidates every single-attempt conclusion drawn before 14 August. The date is when it
+was learned, not when single attempts stopped: every scheduled matrix up to 28 September
+also ran at `runs=1`, and the first full matrix at three attempts was dispatched on
+5 November.
 
 What Phase 4 exposed, in order of how much it changes the work:
 
@@ -239,8 +242,12 @@ The plan asserted an invariant that "the eval project contains nothing permanent
 is false, and it matters.
 
 A new Hookdeck project ships with **four default issue triggers** (`delivery`,
-`request`, `transformation`, `backpressure`), all wildcard-scoped, created in the same
-millisecond as the project. Verified on `evals-ci`.
+`request`, `transformation`, `backpressure`), all wildcard-scoped. On `evals-ci` only
+three of them could be checked against the project's creation timestamp: the delivery
+default had already been rewritten by a run before the pristine snapshot was taken, and
+was deleted by hand on 19 August (#117). Their content is read from the Event Gateway
+implementation rather than from `evals-ci`, and since #118 the reset declares all four by
+content and restores them, muted, on every acquire and release.
 
 Wipe-to-empty would delete them, with two consequences:
 
@@ -335,13 +342,21 @@ file plus a config line, and being a rewrite of the runtime.
    land in a public results file.
 
 **Wipe to pristine, not to empty.** A new Hookdeck project is not empty: it ships with
-four default issue triggers (verified on `evals-ci`, see Spike results). Deleting them
-changes what BM4 tests and drifts the project irreversibly away from what a real user
-has. So: snapshot the project's resource IDs on first acquire, persist the snapshot,
-and on every subsequent acquire delete only what is not in it. That still self-heals
-after a crashed run, because the snapshot is the reference point rather than a per-run
-timestamp. Treat "pristine" as whatever exists before the harness first touches the
-project, so any future default resource type is protected without a code change.
+four default issue triggers (see Spike results). Deleting them changes what BM4 tests
+and drifts the project irreversibly away from what a real user has. So: snapshot the
+project's resource IDs on first acquire, persist the snapshot, and on every subsequent
+acquire delete only what is not in it. That still self-heals after a crashed run,
+because the snapshot is the reference point rather than a per-run timestamp. Treat
+"pristine" as whatever exists before the harness first touches the project, so any
+future default resource type is protected without a code change.
+
+**Issue triggers are the exception, since #118.** An id snapshot can only delete, so it
+never recreated the delivery default after it was deleted, and never noticed that a run
+had rewritten it (#117). The four defaults are now declared by content
+(`DEFAULT_ISSUE_TRIGGERS`), and every reset rewrites the oldest trigger of each type to
+that content, creates any type that is missing and deletes the rest. A new default
+trigger type is therefore not protected without a code change: the reset deletes it and
+warns.
 
 `created_at` is present on all five resource types, so the scoped release-time cleanup
 is implementable. The list endpoints take `id, name, disabled, disabled_at, order_by,
