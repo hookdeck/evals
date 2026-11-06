@@ -9,7 +9,10 @@ export type {
   HookdeckResource,
   HookdeckClientOptions,
 } from './client.js';
-export { FixedProjectSource } from './project-source.js';
+export {
+  FixedProjectSource,
+  muteIssueTriggerNotifications,
+} from './project-source.js';
 export type {
   ProjectSource,
   LeasedProject,
