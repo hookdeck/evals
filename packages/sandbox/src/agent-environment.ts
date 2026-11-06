@@ -23,6 +23,7 @@ import type { SkillSource } from '@hookdeck-evals/core';
 import { DockerSandbox } from './docker-sandbox.js';
 import { ensureSandboxImage } from './image.js';
 import { installSkills, type SkillEntry } from './skills.js';
+import { assertPinnedToolchain } from './toolchain-check.js';
 
 export interface AgentEnvironmentOptions {
   /** Host directory whose contents seed the workspace. */
@@ -55,6 +56,10 @@ export async function createAgentEnvironment(
   // internet. Upstream used host networking only for the local stack.
   const sandbox = await DockerSandbox.create({ image });
   try {
+    // Before anything is seeded or installed, and before credentials are in
+    // the environment: a sandbox whose shells cannot run the pinned CLI must
+    // error the cell rather than be scored. See `toolchain-check.ts`.
+    await assertPinnedToolchain(sandbox);
     if (options.localDir) {
       const seeded = expandSeedPlaceholders(
         options.localDir,

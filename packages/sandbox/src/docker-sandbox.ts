@@ -57,6 +57,12 @@ export const SANDBOX_CONTAINER_LABEL = 'supabase-evals-sandbox';
  */
 const CLIENT_TIMEOUT_HEADROOM_MS = 20_000;
 
+/**
+ * PATH for commands the harness runs. Covers a non-login shell only: a login
+ * shell (`bash -lc`, which Codex uses for most commands) re-reads
+ * /etc/profile and replaces it, which is why the image also puts the npm
+ * prefix back from /etc/profile.d. See the Dockerfile and `toolchain-check.ts`.
+ */
 const SANDBOX_PATH = [
   '/home/node/.npm-global/bin',
   '/usr/local/sbin',

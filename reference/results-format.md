@@ -73,8 +73,14 @@ with a warning rather than published as a failure.
 `low` | `medium` | `high` | `max`.
 
 `provenance`: what the row was measured under. `harness` covers what every
-scenario shares — the base prompt, the sandbox CLI pin, the skills CLI and the
-skills submodule pin — and `scenario` covers the scenario's own files. Two rows
+scenario shares — the base prompt, the sandbox CLI pin, the skills CLI, the
+skills submodule pin and the sandbox image definition (the Dockerfile) — and
+`scenario` covers the scenario's own files. The image definition joined in
+November 2026, so every row recorded before then has a different `harness`
+from every row after it. That is intended: the image change that came with it
+puts the pinned CLI on PATH for Codex's login shells (`bash -lc`), where in
+earlier runs it was `command not found`. Whether it does so in practice is for
+the first run on the new image to confirm. Two rows
 with the same `scenario` and different `harness` measured the same task under a
 different instrument. Opaque: compare for equality, do not parse. `skillsPin`
 is the skills submodule commit the row ran against, in the clear, possibly with a

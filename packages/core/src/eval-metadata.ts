@@ -490,7 +490,8 @@ const evalResultShape = {
   runId: z.string().optional(),
   /**
    * What the row was measured under: a fingerprint of the harness every
-   * scenario shares (base prompt, CLI pin, skills pin) and one of the
+   * scenario shares (base prompt, CLI pin, skills pin, sandbox image
+   * definition) and one of the
    * scenario's own files. `export-results --merge` compares a carried row's
    * against the fresh rows' to say whether it is still current.
    *

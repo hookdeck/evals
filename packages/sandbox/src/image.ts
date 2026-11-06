@@ -8,6 +8,7 @@
  * retry helper, with no Supabase-specific logic to strip.
  */
 
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dockerCli } from './docker-sandbox.js';
@@ -72,15 +73,47 @@ export const SANDBOX_DOCKERFILE_PATH = fileURLToPath(
   new URL('../Dockerfile', import.meta.url)
 );
 
+/**
+ * The tag a given Dockerfile builds to.
+ *
+ * The Dockerfile's own hash is part of it, not only the two pins. An image is
+ * reused whenever its tag exists, so a tag made of the pins alone meant an edit
+ * to the Dockerfile never reached a machine that had built the image before:
+ * the PATH fix for login shells would have been silently skipped on every
+ * machine with a cached image, and the toolchain check would then have refused
+ * every cell there.
+ */
+export function sandboxImageTag(dockerfile: string): string {
+  return (
+    `${SANDBOX_IMAGE_REPOSITORY}:` +
+    `skills-${SKILLS_CLI_VERSION}-hookdeck-${HOOKDECK_CLI_VERSION}-` +
+    sandboxImageDefinition(dockerfile)
+  );
+}
+
+/**
+ * A short hash of the image definition: the Dockerfile's bytes.
+ *
+ * Exported for provenance as well as the tag. The image is part of the
+ * instrument, and the case that made it so is the login-shell PATH: with the
+ * same pins, prompt and skills, Codex's login shells had no `hookdeck` on PATH
+ * before the Dockerfile changed, and the change is meant to give them the
+ * pinned one. A row's provenance has to tell those apart, and the pins alone
+ * cannot.
+ */
+export function sandboxImageDefinition(
+  dockerfile: string = readFileSync(SANDBOX_DOCKERFILE_PATH, 'utf8')
+): string {
+  return createHash('sha256').update(dockerfile).digest('hex').slice(0, 12);
+}
+
 /** Build (or reuse) the sandbox image and return its tag. */
 export async function ensureSandboxImage(): Promise<string> {
-  const tag =
-    `${SANDBOX_IMAGE_REPOSITORY}:` +
-    `skills-${SKILLS_CLI_VERSION}-hookdeck-${HOOKDECK_CLI_VERSION}`;
+  const dockerfile = readFileSync(SANDBOX_DOCKERFILE_PATH, 'utf8');
+  const tag = sandboxImageTag(dockerfile);
   const existing = await dockerCli(['image', 'inspect', tag]);
   if (existing.ok) return tag;
 
-  const dockerfile = readFileSync(SANDBOX_DOCKERFILE_PATH, 'utf8');
   await withTransientRetries(
     `build ${tag}`,
     () =>
