@@ -720,7 +720,6 @@ describe('FixedProjectSource issue trigger notifications', () => {
   it('leaves an already muted trigger alone', async () => {
     const { fetchImpl, puts } = fakeTriggers({
       it_quiet: { type: 'delivery', channels: {} },
-      it_null: { type: 'request', channels: null },
     });
     vi.stubGlobal('fetch', fetchImpl);
 
@@ -730,6 +729,52 @@ describe('FixedProjectSource issue trigger notifications', () => {
     }).acquire();
 
     expect(puts).toEqual([]);
+  });
+
+  it('mutes a trigger with null or missing channels, which still emails', async () => {
+    // The notification service emails the team when a trigger has no channels
+    // at all, so null is not the same as {}.
+    const { fetchImpl, puts } = fakeTriggers({
+      it_null: { type: 'request', channels: null },
+      it_missing: { type: 'backpressure' },
+    });
+    vi.stubGlobal('fetch', fetchImpl);
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await new FixedProjectSource({
+      apiKey: 'k',
+      snapshotPath: tempSnapshotPath(),
+    }).acquire();
+
+    expect(puts).toEqual([
+      { id: 'it_null', body: { channels: {} } },
+      { id: 'it_missing', body: { channels: {} } },
+    ]);
+  });
+
+  it('still mutes on release when the reset throws', async () => {
+    const { fetchImpl, state, puts } = fakeTriggers({
+      it_default: { type: 'delivery', channels: {} },
+    });
+    vi.stubGlobal('fetch', fetchImpl);
+    const source = new FixedProjectSource({
+      apiKey: 'k',
+      snapshotPath: tempSnapshotPath(),
+    });
+    const lease = await source.acquire();
+    state.set('it_default', { type: 'delivery', channels: { email: {} } });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string | URL, init?: RequestInit) =>
+        new URL(String(url)).pathname.includes('/connections')
+          ? new Response('boom', { status: 500 })
+          : fetchImpl(url, init)
+      )
+    );
+
+    await source.release(lease);
+
+    expect(puts).toEqual([{ id: 'it_default', body: { channels: {} } }]);
   });
 
   it('mutes a trigger recorded in the snapshot that a run gave a channel', async () => {
@@ -758,7 +803,7 @@ describe('FixedProjectSource issue trigger notifications', () => {
     expect(puts).toEqual([{ id: 'it_leaked', body: { channels: {} } }]);
   });
 
-  it('mutes on release, after the agent-created trigger has been scored', async () => {
+  it('mutes a channel added during the lease on release', async () => {
     const { fetchImpl, state, puts } = fakeTriggers({
       it_default: { type: 'delivery', channels: {} },
     });

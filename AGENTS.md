@@ -1276,7 +1276,8 @@ and every reset deletes only what a run added.
 
 **Those defaults email the whole team, so reset mutes them.** Each default
 trigger carries an `email` channel, and the email channel has no recipients of
-its own: it goes to every member of the project. Scenarios fail deliveries,
+its own: it goes to every member of the organization who has not turned alerts
+off, whenever the project's notification methods include email. Scenarios fail deliveries,
 requests and transformations on purpose, so from at least 21 August every run
 emailed the people on `evals-ci` about failures we had caused, and it surfaced
 on 6 November only because they said so. `muteIssueTriggerNotifications` now sets
@@ -1289,11 +1290,21 @@ Three things to know before touching it:
   its own snapshot, so a trigger leaked by a run that died before release can be
   recorded as pristine and is then never deleted. Muting is the one part of
   reset that still reaches it.
-- **It cannot move a score.** No scorer reads issues. `alerting-001` reads
-  channels, but only on delivery triggers, and it scores the agent's end state
-  before release; the trigger the agent creates or repairs keeps its email
-  channel until then. A mute that fails warns rather than throws, because an
-  email is a nuisance and a failed run is lost spend.
+- **It changes what `alerting-001` starts from.** No scorer reads issues, and
+  the agent's own work is never muted before it is scored: acquire mutes before
+  the agent runs, release mutes after scoring. But the agent now finds every
+  existing trigger at `channels: {}`, which is the silent state that scenario
+  fails an agent for leaving. A default delivery trigger can no longer be passed
+  by confirming it, and an agent copying its neighbours' shape fails the channel
+  check. That is an instrument change, so results either side of it are not
+  comparable for that scenario, and the next release notes say so.
+- **The cleaner switch is out of reach.** Email is only sent when the project's
+  notification methods include it, and turning that off would leave the
+  triggers looking like a customer's. It is writable only with a dashboard
+  session, not a project API key, so the harness cannot set it on a project it
+  creates.
+- **A failed mute warns rather than throws**, because an email is a nuisance
+  and a failed run is lost spend.
 - **A new project starts noisy.** Anything that creates or hands out a project
   must call `muteIssueTriggerNotifications` before the first run, and the
   `ProjectSource` interface says so. If anyone creates an eval project by hand,

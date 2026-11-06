@@ -51,18 +51,29 @@ export interface ProjectSource {
  * Clear the notification channels on every issue trigger in the project.
  *
  * A new project's default issue triggers carry an `email` channel, and the email
- * channel has no recipients of its own: it goes to every member of the project.
+ * channel has no recipients of its own: it goes to every member of the
+ * organization who has not turned alerts off (admins, owners and project members
+ * only, if the project is private), whenever the project's notification methods
+ * include email. That project setting would be the cleaner switch, because it
+ * leaves the triggers looking like a customer's, but it is only writable with a
+ * dashboard session, not a project API key — so the triggers are the lever the
+ * harness can reach.
  * Scenarios fail deliveries, requests and transformations deliberately, so with
  * the defaults left alone every run emails the people on the eval project's
  * team. It had been happening since at least 21 August when it was raised, on
  * 6 November.
  *
- * The triggers are kept, enabled and scoped as they were, so issues still open
- * and the project still looks like a customer's. Only who is told changes.
- * `channels: {}` is the API's own "notify no one" — `alerting-001` fails an
- * agent for leaving a trigger in exactly that state — and it scores nothing
- * here: no scorer reads issues, and the one that reads channels reads only
- * delivery triggers the agent itself created or repaired.
+ * The triggers are kept, enabled and scoped as they were, so issues still open.
+ * Only who is told changes. `channels: {}` is the API's own "notify no one".
+ *
+ * **This changes what `alerting-001` starts from**, and is an instrument change
+ * rather than housekeeping. No scorer reads issues, and acquire mutes before the
+ * agent runs while release mutes after scoring, so no agent's own work is
+ * altered. But the agent now finds every existing trigger with `channels: {}` —
+ * exactly the silent state that scenario fails an agent for leaving — so a
+ * default delivery trigger can no longer be passed by confirming it, and an agent
+ * copying its neighbours' shape fails the channel check. Results either side of
+ * this change are not comparable for that scenario.
  *
  * Every trigger, not only the snapshot's. In CI the snapshot is taken by each
  * fresh checkout, so a trigger leaked by a run that died before release can be
@@ -77,8 +88,17 @@ export async function muteIssueTriggerNotifications(
 ): Promise<string[]> {
   const muted: string[] = [];
   for (const trigger of await client.list('issue-triggers')) {
+    // Skip only an empty object. A missing or null `channels` is not muted: the
+    // notification service falls through to emailing the team when a trigger
+    // has no channels at all.
     const channels = trigger.channels as Record<string, unknown> | null;
-    if (!channels || Object.keys(channels).length === 0) continue;
+    if (
+      channels &&
+      typeof channels === 'object' &&
+      Object.keys(channels).length === 0
+    ) {
+      continue;
+    }
     await client.request('PUT', `/issue-triggers/${trigger.id}`, {
       channels: {},
     });
