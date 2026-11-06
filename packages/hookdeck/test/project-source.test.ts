@@ -2,7 +2,13 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { FixedProjectSource, type PristineSnapshot } from '../src/index.js';
+import {
+  DEFAULT_ISSUE_TRIGGERS,
+  FixedProjectSource,
+  HookdeckClient,
+  muteIssueTriggerNotifications,
+  type PristineSnapshot,
+} from '../src/index.js';
 
 /**
  * A fake Hookdeck API. The provisioner only ever lists and deletes, so this
@@ -53,11 +59,11 @@ describe('FixedProjectSource', () => {
     expect(snapshot.capturedAt).toBeTruthy();
   });
 
-  it('preserves the default issue triggers a new project ships with', async () => {
-    // The whole reason reset is to pristine rather than to empty: deleting the
-    // defaults would change what BM4 tests and drift the project irreversibly.
+  it('preserves what the project held when the snapshot was taken', async () => {
+    // The whole reason reset is to pristine rather than to empty. Issue
+    // triggers are declared rather than snapshotted; see the describe below.
     const { fetchImpl, deleted } = fakeApi({
-      'issue-triggers': ['it_default_1', 'it_default_2'],
+      sources: ['src_1', 'src_2'],
     });
     vi.stubGlobal('fetch', fetchImpl);
     const snapshotPath = tempSnapshotPath();
@@ -69,32 +75,32 @@ describe('FixedProjectSource', () => {
     expect(deleted).toEqual([]);
   });
 
-  it('deletes what a previous run added, keeping the defaults', async () => {
+  it('deletes what a previous run added, keeping what was there before', async () => {
     const { fetchImpl, deleted, state } = fakeApi({
-      'issue-triggers': ['it_default'],
+      sources: ['src_before'],
     });
     vi.stubGlobal('fetch', fetchImpl);
     const snapshotPath = tempSnapshotPath();
     const source = new FixedProjectSource({ apiKey: 'k', snapshotPath });
 
     await source.acquire();
-    // a run leaves resources behind, including an extra trigger
-    state.set('sources', new Set(['src_leftover']));
-    state.get('issue-triggers')!.add('it_from_a_run');
+    // a run leaves resources behind
+    state.get('sources')!.add('src_leftover');
+    state.set('destinations', new Set(['des_leftover']));
 
     await source.acquire();
 
     expect(deleted).toEqual([
       { kind: 'sources', id: 'src_leftover' },
-      { kind: 'issue-triggers', id: 'it_from_a_run' },
+      { kind: 'destinations', id: 'des_leftover' },
     ]);
-    expect(state.get('issue-triggers')).toContain('it_default');
+    expect(state.get('sources')).toContain('src_before');
   });
 
   it('self-heals after a run that crashed without releasing', async () => {
     // Reset keys off the snapshot, not a per-run timestamp, so leftovers from a
     // crashed run are cleaned by the next acquire rather than accumulating.
-    const { fetchImpl, state } = fakeApi({ 'issue-triggers': ['it_default'] });
+    const { fetchImpl, state } = fakeApi();
     vi.stubGlobal('fetch', fetchImpl);
     const snapshotPath = tempSnapshotPath();
     const source = new FixedProjectSource({ apiKey: 'k', snapshotPath });
@@ -114,17 +120,17 @@ describe('FixedProjectSource', () => {
       snapshotPath,
       JSON.stringify({
         capturedAt: '2026-08-07T00:00:00.000Z',
-        ids: { 'issue-triggers': ['it_default'] },
+        ids: { sources: ['src_before'] },
       })
     );
     const { fetchImpl, deleted } = fakeApi({
-      'issue-triggers': ['it_default', 'it_added_later'],
+      sources: ['src_before', 'src_added_later'],
     });
     vi.stubGlobal('fetch', fetchImpl);
 
     await new FixedProjectSource({ apiKey: 'k', snapshotPath }).acquire();
 
-    expect(deleted).toEqual([{ kind: 'issue-triggers', id: 'it_added_later' }]);
+    expect(deleted).toEqual([{ kind: 'sources', id: 'src_added_later' }]);
   });
 
   it('returns a lease carrying acquiredAt, for scoping scorer queries', async () => {
@@ -470,7 +476,7 @@ describe('FixedProjectSource Outpost project gateway reset', () => {
     // from August, plus issue triggers, which an Outpost project does not ship
     // with. A fresh snapshot path is a fresh CI checkout.
     const api = fakeTwoProjects({
-      [GATEWAY_KEY]: { 'issue-triggers': ['it_default'] },
+      [GATEWAY_KEY]: { sources: ['src_gateway'] },
       [OUTPOST_KEY]: {
         connections: ['web_leftover'],
         sources: ['src_leftover'],
@@ -486,9 +492,9 @@ describe('FixedProjectSource Outpost project gateway reset', () => {
     expect(
       api.deleted.filter((d) => d.key === OUTPOST_KEY).map((d) => d.kind)
     ).toEqual(['connections', 'sources', 'destinations', 'issue-triggers']);
-    // The gateway project keeps its defaults: the Outpost baseline is empty,
+    // The gateway project keeps its resources: the Outpost baseline is empty,
     // the gateway one is not.
-    expect(api.ids(GATEWAY_KEY, 'issue-triggers')).toEqual(['it_default']);
+    expect(api.ids(GATEWAY_KEY, 'sources')).toEqual(['src_gateway']);
   });
 
   it('does not let a crashed attempt hand its edits to the next attempt', async () => {
@@ -564,8 +570,8 @@ describe('FixedProjectSource Outpost project gateway reset', () => {
     // Two keys, one project. The Outpost baseline is "delete everything", which
     // would take the gateway project's default issue triggers with it.
     const api = fakeTwoProjects({
-      [GATEWAY_KEY]: { 'issue-triggers': ['it_default'] },
-      [OUTPOST_KEY]: { 'issue-triggers': ['it_default', 'it_other'] },
+      [GATEWAY_KEY]: { sources: ['src_shared'] },
+      [OUTPOST_KEY]: { sources: ['src_shared', 'src_other'] },
     });
     vi.stubGlobal('fetch', api.fetchImpl);
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -578,7 +584,7 @@ describe('FixedProjectSource Outpost project gateway reset', () => {
 
   it('does nothing extra when both keys are the same', async () => {
     const api = fakeTwoProjects({
-      [GATEWAY_KEY]: { 'issue-triggers': ['it_default'] },
+      [GATEWAY_KEY]: { sources: ['src_gateway'] },
     });
     vi.stubGlobal('fetch', api.fetchImpl);
     const s = new FixedProjectSource({
@@ -591,7 +597,7 @@ describe('FixedProjectSource Outpost project gateway reset', () => {
     await s.release(lease);
 
     expect(api.deleted).toEqual([]);
-    expect(api.ids(GATEWAY_KEY, 'issue-triggers')).toEqual(['it_default']);
+    expect(api.ids(GATEWAY_KEY, 'sources')).toEqual(['src_gateway']);
   });
 
   it('touches no Outpost project when no Outpost key is configured', async () => {
@@ -661,16 +667,41 @@ describe('FixedProjectSource Outpost project gateway reset', () => {
 });
 
 /**
- * A new project's default issue triggers email every member, and scenarios fail
- * deliveries on purpose, so every run emailed the eval project's team. Reset has
- * to leave every trigger notifying no one, whoever created it.
+ * Issue triggers are reset to the four a new project ships with, by content,
+ * and muted. A captured snapshot failed both ways round on these: it adopted a
+ * rewritten default as pristine (#28) and never recreated a deleted one (#117).
+ * And a new project's defaults email every member while scenarios fail
+ * deliveries on purpose, so every run emailed the team.
  */
-describe('FixedProjectSource issue trigger notifications', () => {
+describe('FixedProjectSource issue triggers', () => {
   beforeEach(() => vi.restoreAllMocks());
 
-  function fakeTriggers(triggers: Record<string, Record<string, unknown>>) {
+  type Trigger = Record<string, unknown>;
+
+  const declared = (type: string) =>
+    DEFAULT_ISSUE_TRIGGERS.find((d) => d.type === type)!;
+
+  /** A trigger exactly as the reset leaves it. */
+  const pristine = (type: string, created_at = '2026-08-07T10:46:14.347Z') => ({
+    type,
+    configs: declared(type).configs,
+    channels: {},
+    disabled_at: null,
+    name: null,
+    created_at,
+  });
+
+  const allPristine = (): Record<string, Trigger> => ({
+    it_delivery: pristine('delivery'),
+    it_transformation: pristine('transformation'),
+    it_backpressure: pristine('backpressure'),
+    it_request: pristine('request'),
+  });
+
+  function fakeTriggers(triggers: Record<string, Trigger>) {
     const state = new Map(Object.entries(triggers));
-    const puts: Array<{ id: string; body: unknown }> = [];
+    const writes: Array<{ method: string; id?: string; body?: unknown }> = [];
+    let next = 0;
     const fetchImpl = vi.fn(async (url: string | URL, init?: RequestInit) => {
       const path = new URL(String(url)).pathname.replace(/^\/[^/]+/, '');
       const method = init?.method ?? 'GET';
@@ -678,173 +709,262 @@ describe('FixedProjectSource issue trigger notifications', () => {
       if (kind !== 'issue-triggers') {
         return new Response(JSON.stringify({ models: [] }), { status: 200 });
       }
+      const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+      if (method === 'POST') {
+        const newId = `it_new_${next++}`;
+        state.set(newId, { ...body, created_at: '2026-11-06T00:00:00.000Z' });
+        writes.push({ method, body });
+        return new Response(JSON.stringify({ id: newId, ...state.get(newId) }));
+      }
       if (method === 'PUT') {
-        const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
-        puts.push({ id, body });
         state.set(id, { ...state.get(id), ...body });
-        return new Response(JSON.stringify({ id, ...state.get(id) }), {
-          status: 200,
-        });
+        writes.push({ method, id, body });
+        return new Response(JSON.stringify({ id, ...state.get(id) }));
       }
       if (method === 'DELETE') {
         state.delete(id);
+        writes.push({ method, id });
         return new Response('', { status: 200 });
       }
       const models = [...state].map(([rid, t]) => ({ id: rid, ...t }));
       return new Response(JSON.stringify({ models }), { status: 200 });
     });
-    return { fetchImpl, state, puts };
+    const byType = (type: string) =>
+      [...state.values()].filter((t) => t.type === type);
+    return { fetchImpl, state, writes, byType };
   }
 
-  it('clears the email channel on the default triggers at acquire, and keeps them', async () => {
-    const { fetchImpl, state, puts } = fakeTriggers({
-      it_delivery: { type: 'delivery', channels: { email: {} } },
-      it_request: { type: 'request', channels: { email: {} } },
-    });
-    vi.stubGlobal('fetch', fetchImpl);
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  function source(snapshotPath = tempSnapshotPath()) {
+    return new FixedProjectSource({ apiKey: 'k', snapshotPath });
+  }
 
-    await new FixedProjectSource({
-      apiKey: 'k',
-      snapshotPath: tempSnapshotPath(),
-    }).acquire();
-
-    expect(puts).toEqual([
-      { id: 'it_delivery', body: { channels: {} } },
-      { id: 'it_request', body: { channels: {} } },
+  it('declares the four triggers project creation makes', () => {
+    expect(DEFAULT_ISSUE_TRIGGERS.map((d) => d.type).sort()).toEqual([
+      'backpressure',
+      'delivery',
+      'request',
+      'transformation',
     ]);
-    expect([...state.keys()]).toEqual(['it_delivery', 'it_request']);
-    expect(state.get('it_delivery')?.type).toBe('delivery');
+    expect(declared('delivery').configs).toEqual({
+      strategy: 'first_attempt',
+      connections: '*',
+    });
   });
 
-  it('leaves an already muted trigger alone', async () => {
-    const { fetchImpl, puts } = fakeTriggers({
-      it_quiet: { type: 'delivery', channels: {} },
-    });
-    vi.stubGlobal('fetch', fetchImpl);
+  it('writes nothing when the triggers already match the defaults', async () => {
+    const api = fakeTriggers(allPristine());
+    vi.stubGlobal('fetch', api.fetchImpl);
 
-    await new FixedProjectSource({
-      apiKey: 'k',
-      snapshotPath: tempSnapshotPath(),
-    }).acquire();
+    const s = source();
+    await s.release(await s.acquire());
 
-    expect(puts).toEqual([]);
+    expect(api.writes).toEqual([]);
   });
 
-  it('mutes a trigger with null or missing channels, which still emails', async () => {
-    // The notification service emails the team when a trigger has no channels
-    // at all, so null is not the same as {}.
-    const { fetchImpl, puts } = fakeTriggers({
-      it_null: { type: 'request', channels: null },
-      it_missing: { type: 'backpressure' },
-    });
-    vi.stubGlobal('fetch', fetchImpl);
+  it('recreates a default a run deleted, muted', async () => {
+    // The state evals-ci was in from 19 August: no delivery trigger at all.
+    const { it_delivery: _gone, ...rest } = allPristine();
+    const api = fakeTriggers(rest);
+    vi.stubGlobal('fetch', api.fetchImpl);
     vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    await new FixedProjectSource({
-      apiKey: 'k',
-      snapshotPath: tempSnapshotPath(),
-    }).acquire();
+    await source().acquire();
 
-    expect(puts).toEqual([
-      { id: 'it_null', body: { channels: {} } },
-      { id: 'it_missing', body: { channels: {} } },
+    expect(api.writes).toEqual([
+      {
+        method: 'POST',
+        body: {
+          type: 'delivery',
+          configs: declared('delivery').configs,
+          channels: {},
+        },
+      },
     ]);
   });
 
-  it('still mutes on release when the reset throws', async () => {
-    const { fetchImpl, state, puts } = fakeTriggers({
-      it_default: { type: 'delivery', channels: {} },
+  it('rewrites a default a run changed, in place', async () => {
+    // The state evals-ci was in from 7 August: the delivery default renamed,
+    // switched to final_attempt and scoped to one connection.
+    const api = fakeTriggers({
+      ...allPristine(),
+      it_delivery: {
+        ...pristine('delivery'),
+        name: 'fulfilment-delivery-failures',
+        configs: { strategy: 'final_attempt', connections: ['web_gone'] },
+        channels: { email: {} },
+      },
     });
-    vi.stubGlobal('fetch', fetchImpl);
-    const source = new FixedProjectSource({
-      apiKey: 'k',
-      snapshotPath: tempSnapshotPath(),
-    });
-    const lease = await source.acquire();
-    state.set('it_default', { type: 'delivery', channels: { email: {} } });
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (url: string | URL, init?: RequestInit) =>
-        new URL(String(url)).pathname.includes('/connections')
-          ? new Response('boom', { status: 500 })
-          : fetchImpl(url, init)
-      )
-    );
+    vi.stubGlobal('fetch', api.fetchImpl);
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    await source.release(lease);
+    await source().acquire();
 
-    expect(puts).toEqual([{ id: 'it_default', body: { channels: {} } }]);
+    expect(api.writes).toEqual([
+      {
+        method: 'PUT',
+        id: 'it_delivery',
+        body: {
+          configs: declared('delivery').configs,
+          channels: {},
+          disabled_at: null,
+          name: null,
+        },
+      },
+    ]);
   });
 
-  it('mutes a trigger recorded in the snapshot that a run gave a channel', async () => {
-    // In CI each checkout captures its own snapshot, so a trigger leaked by a
-    // run that died is recorded as pristine and never deleted. Muting is the
-    // only part of reset that still reaches it.
+  it('re-enables a default a run disabled', async () => {
+    const api = fakeTriggers({
+      ...allPristine(),
+      it_request: {
+        ...pristine('request'),
+        disabled_at: '2026-11-06T00:00:00Z',
+      },
+    });
+    vi.stubGlobal('fetch', api.fetchImpl);
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await source().acquire();
+
+    expect(api.state.get('it_request')?.disabled_at).toBeNull();
+  });
+
+  it('deletes a trigger a run added, keeping the oldest of its type', async () => {
+    const api = fakeTriggers({
+      ...allPristine(),
+      it_agent: {
+        ...pristine('delivery', '2026-11-06T09:00:00.000Z'),
+        channels: { email: {} },
+      },
+    });
+    vi.stubGlobal('fetch', api.fetchImpl);
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await source().acquire();
+
+    expect(api.writes).toEqual([{ method: 'DELETE', id: 'it_agent' }]);
+    expect(api.byType('delivery')).toHaveLength(1);
+  });
+
+  it('deletes a leftover even when a fresh snapshot recorded it as pristine', async () => {
+    // In CI every job captures its own snapshot, so a leftover is in it.
     const snapshotPath = tempSnapshotPath();
     writeFileSync(
       snapshotPath,
       JSON.stringify({
         capturedAt: '2026-11-06T00:00:00.000Z',
-        ids: { 'issue-triggers': ['it_leaked'] },
+        ids: {
+          'issue-triggers': [...Object.keys(allPristine()), 'it_leaked'],
+        },
       })
     );
-    const { fetchImpl, puts } = fakeTriggers({
+    const api = fakeTriggers({
+      ...allPristine(),
       it_leaked: {
-        type: 'delivery',
+        ...pristine('delivery', '2026-08-20T00:00:00.000Z'),
         channels: { email: {}, slack: { channel_name: '#ops' } },
       },
     });
-    vi.stubGlobal('fetch', fetchImpl);
+    vi.stubGlobal('fetch', api.fetchImpl);
     vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    await new FixedProjectSource({ apiKey: 'k', snapshotPath }).acquire();
+    await source(snapshotPath).acquire();
 
-    expect(puts).toEqual([{ id: 'it_leaked', body: { channels: {} } }]);
+    expect(api.state.has('it_leaked')).toBe(false);
   });
 
-  it('mutes a channel added during the lease on release', async () => {
-    const { fetchImpl, state, puts } = fakeTriggers({
-      it_default: { type: 'delivery', channels: {} },
+  it('mutes the defaults, including null or missing channels, which still email', async () => {
+    const api = fakeTriggers({
+      it_delivery: { ...pristine('delivery'), channels: { email: {} } },
+      it_transformation: { ...pristine('transformation'), channels: null },
+      it_backpressure: (({ channels: _c, ...t }) => t)(
+        pristine('backpressure')
+      ),
+      it_request: pristine('request'),
     });
-    vi.stubGlobal('fetch', fetchImpl);
-    const source = new FixedProjectSource({
-      apiKey: 'k',
-      snapshotPath: tempSnapshotPath(),
-    });
-    const lease = await source.acquire();
-    // an agent repairs the default and gives it email, which alerting-001 scores
-    state.set('it_default', { type: 'delivery', channels: { email: {} } });
+    vi.stubGlobal('fetch', api.fetchImpl);
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    await source.release(lease);
+    await source().acquire();
 
-    expect(puts).toEqual([{ id: 'it_default', body: { channels: {} } }]);
+    for (const id of ['it_delivery', 'it_transformation', 'it_backpressure']) {
+      expect(api.state.get(id)?.channels).toEqual({});
+    }
+    expect(api.writes.map((w) => w.id)).toEqual([
+      'it_delivery',
+      'it_transformation',
+      'it_backpressure',
+    ]);
   });
 
-  it('does not fail an acquire when muting fails', async () => {
-    const { fetchImpl } = fakeTriggers({
-      it_default: { type: 'delivery', channels: { email: {} } },
+  it('restores on release what the agent did to a default, after it was scored', async () => {
+    // alerting-001: the agent gives the muted delivery default a channel.
+    const api = fakeTriggers(allPristine());
+    vi.stubGlobal('fetch', api.fetchImpl);
+    const s = source();
+    const lease = await s.acquire();
+    api.state.set('it_delivery', {
+      ...pristine('delivery'),
+      channels: { email: {} },
+    });
+
+    await s.release(lease);
+
+    expect(api.state.get('it_delivery')?.channels).toEqual({});
+  });
+
+  it('still mutes on release when the reset throws', async () => {
+    const api = fakeTriggers(allPristine());
+    vi.stubGlobal('fetch', api.fetchImpl);
+    const s = source();
+    const lease = await s.acquire();
+    api.state.set('it_delivery', {
+      ...pristine('delivery'),
+      channels: { email: {} },
     });
     vi.stubGlobal(
       'fetch',
       vi.fn(async (url: string | URL, init?: RequestInit) =>
-        init?.method === 'PUT'
+        new URL(String(url)).pathname.includes('/connections')
           ? new Response('boom', { status: 500 })
-          : fetchImpl(url, init)
+          : api.fetchImpl(url, init)
       )
     );
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    await expect(
-      new FixedProjectSource({
-        apiKey: 'k',
-        snapshotPath: tempSnapshotPath(),
-      }).acquire()
-    ).resolves.toBeDefined();
-    expect(warn).toHaveBeenCalledWith(
-      expect.stringContaining(
-        'could not clear notification channels on acquire'
+    await s.release(lease);
+
+    expect(api.state.get('it_delivery')?.channels).toEqual({});
+  });
+
+  it('fails the acquire when the triggers cannot be reset', async () => {
+    // Before the agent runs nothing has been paid for, and alerting-001 started
+    // without its default would score as though it were valid.
+    const { it_delivery: _gone, ...rest } = allPristine();
+    const api = fakeTriggers(rest);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string | URL, init?: RequestInit) =>
+        init?.method === 'POST'
+          ? new Response('boom', { status: 500 })
+          : api.fetchImpl(url, init)
       )
     );
+
+    await expect(source().acquire()).rejects.toThrow(/500/);
+  });
+
+  it('muteIssueTriggerNotifications skips only an empty object', async () => {
+    const api = fakeTriggers({
+      it_quiet: pristine('delivery'),
+      it_null: { ...pristine('request'), channels: null },
+      it_loud: { ...pristine('backpressure'), channels: { email: {} } },
+    });
+    vi.stubGlobal('fetch', api.fetchImpl);
+
+    const muted = await muteIssueTriggerNotifications(
+      new HookdeckClient({ apiKey: 'k' })
+    );
+
+    expect(muted).toEqual(['it_null', 'it_loud']);
   });
 });

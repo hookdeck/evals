@@ -10,10 +10,13 @@ export type {
   HookdeckClientOptions,
 } from './client.js';
 export {
+  DEFAULT_ISSUE_TRIGGERS,
   FixedProjectSource,
   muteIssueTriggerNotifications,
+  resetIssueTriggersToDefaults,
 } from './project-source.js';
 export type {
+  IssueTriggerChange,
   ProjectSource,
   LeasedProject,
   PristineSnapshot,

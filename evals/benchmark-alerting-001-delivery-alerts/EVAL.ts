@@ -25,6 +25,15 @@ import type {
  * a no-op on an empty object, so nothing is ever sent. The console's own create form defaults to `email: {selected:
  * true}` for exactly this reason.
  *
+ * The agent starts from the delivery trigger a new project ships with, enabled
+ * and wildcard-scoped, but with `channels: {}`: the harness mutes every trigger
+ * so runs do not email the eval project's team (#116), and declares the defaults
+ * so a run cannot delete or rewrite this one for the next (#117). So the
+ * starting state is the third failure above, an alert that is configured and
+ * silent, and an agent that confirms the existing trigger without giving it a
+ * channel fails. Results from before 6 November started from a rewritten
+ * trigger (to 19 August) or from none at all, and are not comparable.
+ *
  * Scored on configuration rather than by causing a real alert, which is a
  * compromise worth naming. The honest test is to break the destination, send
  * traffic, and wait for an issue to appear, but that depends on the retry cycle
