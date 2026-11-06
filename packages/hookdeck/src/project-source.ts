@@ -50,11 +50,12 @@ export interface ProjectSource {
 /**
  * Clear the notification channels on every issue trigger in the project.
  *
- * A new project's default issue triggers carry an `email` channel, and the email
- * channel has no recipients of its own: it goes to every member of the
- * organization who has not turned alerts off (admins, owners and project members
- * only, if the project is private), whenever the project's notification methods
- * include email. That project setting would be the cleaner switch, because it
+ * A new project's default issue triggers carry `email: {}`, which names no
+ * recipients, and an email channel without `member_emails` goes to every member
+ * of the organization who has not turned alerts off (admins, owners and project
+ * members only, if the project is private), whenever the project's notification
+ * methods include email. `member_emails: []` would also notify nobody, but
+ * `channels: {}` is the unambiguous form. The project setting would be the cleaner switch, because it
  * leaves the triggers looking like a customer's, but it is only writable with a
  * dashboard session, not a project API key — so the triggers are the lever the
  * harness can reach.
