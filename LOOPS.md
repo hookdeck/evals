@@ -275,39 +275,43 @@ attempts, which only matters for `outpost-003`. After is Claude Code from
 5 November and Codex from
 [run 42220222687](https://github.com/hookdeck/evals/actions/runs/42220222687) on
 6 November, both `--runs 3`. Codex comes from the second run because its login shells
-could not find the pinned CLI in the first (#114).
+could not find the pinned CLI in the first (#114). Claude Code's figures include that
+run's Outpost cells, which the published snapshot replaced with run 42256415982's.
 
-Counted per attempt, superseded attempts included: of the attempts that called the
-`hookdeck` CLI for anything other than help or a version, how many made `hookdeck ci`
-the first such call.
+Counted per attempt, every attempt included, superseded ones too. The denominator is the
+attempts that invoked the `hookdeck` CLI at least once; the numerator is those whose
+first invocation other than help or a version was `hookdeck ci`.
 
 | Arm | 28 September | 5–6 November |
 |---|---|---|
-| `claude-code-sonnet-5` | 0/17 | 14/18 |
-| `codex-gpt-5.6` | 0/14 | 17/18 |
-| `codex-gpt-5.4-mini` | 0/16 | 17/21 |
-| `-no-skills`, same order | –, –, 0/4 | 0/18, 0/20, 0/26 |
+| `claude-code-sonnet-5` | 0/19 | 14/18 |
+| `codex-gpt-5.6` | 0/15 | 17/18 |
+| `codex-gpt-5.4-mini` | 0/18 | 16/22 |
+| skills arms together | 0/52 | 47/58 |
+| `-no-skills`, same order | –, –, 0/19 | 0/20, 0/20, 0/25 |
 
-The counts depend on what is parsed as a CLI call and move by one or two with it. The
-direction does not.
+The baselines together read 0/65 on 5–6 November. The counts depend on what is parsed as
+a CLI call and move by one or two with it. The direction does not.
 
 ### What it bought
 
 **The order changed, and that is the measured effect.** In the skills arms, attempts
 that hit the CLI's "You aren't authenticated yet" error went from 17 of 19 to 4 of 20
-for Claude Code, 10 of 19 to 0 of 22 for `codex-gpt-5.6`, and 9 of 19 to 4 of 22 for
+for Claude Code, 9 of 19 to 0 of 22 for `codex-gpt-5.6`, and 4 of 19 to 3 of 22 for
 `codex-gpt-5.4-mini`.
 
 **Giving up was already rare, because the error names the fix.** CLI 2.5.0's message
 for an unauthenticated call without a terminal lists `hookdeck ci --api-key` as the
-first way out. On 28 September, before the skill said anything, Claude Code hit that
-error in 17 attempts and ran `hookdeck ci` after it in all 17. The ten Codex attempts
-that hit it and never ran `hookdeck ci` carried on with the API key directly, and nine
-of the ten still passed.
+first way out. On 28 September, before the skill said anything, every skills-arm
+attempt that hit that error went on to invoke `hookdeck ci`: all 17 for Claude Code,
+9 for `codex-gpt-5.6` and 4 for `codex-gpt-5.4-mini`. On 5–6 November nine attempts hit
+it and never ran `hookdeck ci` afterwards: 5 of 17 for `claude-code-sonnet-5-no-skills`,
+3 of 16 for `codex-gpt-5.6-no-skills`, 0 of 15 for `codex-gpt-5.4-mini-no-skills` and
+1 of 3 for `codex-gpt-5.4-mini`. Every one of those cells passed.
 
 **That is the confound, and the baselines show it.** On 5 and 6 November the
 `-no-skills` arms never ran `hookdeck ci` first, and still ran it after the error in
-13 of 18 Claude Code attempts, 13 of 16 for `codex-gpt-5.6` and 25 of 25 for
+12 of 17 Claude Code attempts, 13 of 16 for `codex-gpt-5.6` and 15 of 15 for
 `codex-gpt-5.4-mini`. An agent without the skill learns the command from the CLI. The
 skill moves it ahead of the first failed call; it is not what makes the call possible.
 
