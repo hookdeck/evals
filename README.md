@@ -229,6 +229,13 @@ issue triggers. Deleting them would leave the project unlike any real customer's
 first acquire snapshots what the project contains and every reset deletes only what a
 run added.
 
+**Every reset turns issue trigger notifications off.** Those default triggers email every
+member of the organization, and scenarios fail deliveries, requests and transformations on
+purpose, so left alone they email the team about failures a run caused deliberately.
+Each acquire and release sets `channels: {}` on every issue trigger in the project. The
+triggers stay enabled and scoped as they were, so issues still open; nobody is told.
+Anything that creates or hands out a project calls `muteIssueTriggerNotifications`.
+
 **Scope scorer queries to `ctx.acquiredAt`.** Events and requests cannot be deleted
 through the API, so a shared project accumulates history, and a scorer that just asks
 "did an event arrive?" will eventually say yes because of an earlier run.

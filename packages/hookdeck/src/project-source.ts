@@ -36,10 +36,75 @@ export interface LeasedProject {
   client: HookdeckClient;
 }
 
+/**
+ * Implementations MUST call `muteIssueTriggerNotifications` on every project
+ * they hand out, including one they have just created: a new project ships with
+ * issue triggers that email every member, and runs set them off on purpose.
+ */
 export interface ProjectSource {
   readonly id: string;
   acquire(): Promise<LeasedProject>;
   release(project: LeasedProject): Promise<void>;
+}
+
+/**
+ * Clear the notification channels on every issue trigger in the project.
+ *
+ * A new project's default issue triggers carry an `email` channel, and the email
+ * channel has no recipients of its own: it goes to every member of the
+ * organization who has not turned alerts off (admins, owners and project members
+ * only, if the project is private), whenever the project's notification methods
+ * include email. That project setting would be the cleaner switch, because it
+ * leaves the triggers looking like a customer's, but it is only writable with a
+ * dashboard session, not a project API key — so the triggers are the lever the
+ * harness can reach.
+ * Scenarios fail deliveries, requests and transformations deliberately, so with
+ * the defaults left alone every run emails the people on the eval project's
+ * team. It had been happening since at least 21 August when it was raised, on
+ * 6 November.
+ *
+ * The triggers are kept, enabled and scoped as they were, so issues still open.
+ * Only who is told changes. `channels: {}` is the API's own "notify no one".
+ *
+ * **This changes what `alerting-001` starts from**, and is an instrument change
+ * rather than housekeeping. No scorer reads issues, and acquire mutes before the
+ * agent runs while release mutes after scoring, so no agent's own work is
+ * altered. But the agent now finds every existing trigger with `channels: {}` —
+ * exactly the silent state that scenario fails an agent for leaving — so a
+ * default delivery trigger can no longer be passed by confirming it, and an agent
+ * copying its neighbours' shape fails the channel check. Results either side of
+ * this change are not comparable for that scenario.
+ *
+ * Every trigger, not only the snapshot's. In CI the snapshot is taken by each
+ * fresh checkout, so a trigger leaked by a run that died before release can be
+ * recorded as pristine and then never deleted; muting it is the only reset that
+ * still reaches it. Every channel, not only email: a Slack or PagerDuty channel
+ * on an eval project would page a person for a failure we caused on purpose.
+ *
+ * Returns the ids it changed, so a caller can log them.
+ */
+export async function muteIssueTriggerNotifications(
+  client: HookdeckClient
+): Promise<string[]> {
+  const muted: string[] = [];
+  for (const trigger of await client.list('issue-triggers')) {
+    // Skip only an empty object. A missing or null `channels` is not muted: the
+    // notification service falls through to emailing the team when a trigger
+    // has no channels at all.
+    const channels = trigger.channels as Record<string, unknown> | null;
+    if (
+      channels &&
+      typeof channels === 'object' &&
+      Object.keys(channels).length === 0
+    ) {
+      continue;
+    }
+    await client.request('PUT', `/issue-triggers/${trigger.id}`, {
+      channels: {},
+    });
+    muted.push(trigger.id);
+  }
+  return muted;
 }
 
 /**
@@ -207,6 +272,7 @@ export class FixedProjectSource implements ProjectSource {
   async acquire(): Promise<LeasedProject> {
     const snapshot = await this.loadOrCaptureSnapshot();
     await this.resetToPristine(this.client, snapshot);
+    await this.muteNotifications('acquire');
     // Before the seed, not only on release: a run that dies before release
     // must not hand its gateway resources in the Outpost project to the next
     // one, and in CI the next one is usually a different job. Throws, like the
@@ -240,6 +306,7 @@ export class FixedProjectSource implements ProjectSource {
       // Swallowed deliberately: a failed release must not fail the run, and
       // the next acquire will clean up regardless.
     }
+    await this.muteNotifications('release');
     if (snapshot) {
       try {
         await this.resetOutpostGateway(snapshot);
@@ -253,6 +320,34 @@ export class FixedProjectSource implements ProjectSource {
     await this.releaseOutpostTenants();
     await this.restoreOperatorEventDestinations();
     await this.restoreOutpostConfig();
+  }
+
+  /**
+   * See `muteIssueTriggerNotifications`. On acquire and on release: acquire is
+   * the guarantee, so a trigger a dead run left behind is muted before the next
+   * scenario's seeded failures can fire it, and release keeps the project quiet
+   * between runs.
+   *
+   * Warns rather than throws, unlike the reset beside it. A trigger left
+   * notifying sends someone an email; it does not make a result wrong, and
+   * failing a run over it would trade a nuisance for lost spend. The Outpost
+   * project needs no call: its gateway side is reset to empty, triggers included.
+   */
+  private async muteNotifications(when: 'acquire' | 'release'): Promise<void> {
+    try {
+      const muted = await muteIssueTriggerNotifications(this.client);
+      if (when === 'acquire' && muted.length > 0) {
+        console.warn(
+          `issue triggers: cleared notification channels on ${muted.join(', ')}, ` +
+            'which would have emailed the project team about failures runs cause on purpose'
+        );
+      }
+    } catch (error) {
+      console.warn(
+        `issue triggers: could not clear notification channels on ${when}, so this ` +
+          `project may email its team about failures runs cause on purpose (${(error as Error).message})`
+      );
+    }
   }
 
   /**
