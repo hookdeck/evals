@@ -142,7 +142,9 @@ Three consequences, all more useful than the improvement would have been:
 
 1. **Single-attempt results are not evidence.** Every conclusion drawn from a
    single-attempt run before 14 August is suspect, including the skills delta in #2
-   and the Codex concentration in #4.
+   and the Codex concentration in #4. The scheduled matrices went on running at
+   `runs=1` until 28 September, the last before the benchmark came off the schedule,
+   so the same applies to every September delta.
 2. **The published page presents single attempts as settled results.** Every
    published snapshot so far came from `runs=1`, on a page comparing named
    vendors. #14.
@@ -229,3 +231,156 @@ Three consequences:
 
 **Status: closed. The instrument was wrong, the correction is measured, and the
 corrected delta is small enough that it should not be published as a headline.**
+
+---
+
+## Loop 3: the skill never said how to authenticate the CLI without a terminal
+
+**Status:** closed. Agents with the skill now authenticate first instead of after an
+error. No score moved that this can be credited with.
+
+### What the benchmark found
+
+This is the skill half of Loop 1, held back so the two changes stayed separately
+attributable. The `event-gateway` skill never mentioned `hookdeck ci`, the command that
+authenticates the CLI from `HOOKDECK_API_KEY` without a browser. The transcript that
+raised it was the weak model in Loop 1 deciding its API key had been rejected and
+leaving `hookdeck listen` documented rather than set up. Loop 1 then showed that
+particular failure was variance, so the skill change needed a measurement of its own.
+
+The question in #27 was whether documenting `hookdeck ci` stops agents giving up on CLI
+authentication.
+
+### The change
+
+[agent-skills#27](https://github.com/hookdeck/agent-skills/pull/27), merged 19 August,
+adds an "Authenticating without a browser" section to the `event-gateway` skill: run
+`hookdeck ci`, then `hookdeck whoami`. It reached no run until #102 moved the skills pin
+from `6ea10a4` to `84e59f4` on 5 November.
+
+The same pin move carried two other upstream changes:
+[agent-skills#28](https://github.com/hookdeck/agent-skills/pull/28), which is Loop 4,
+and [agent-skills#29](https://github.com/hookdeck/agent-skills/pull/29), on rule order
+and API versions. Neither touches CLI authentication, and the `hookdeck` router skill
+is byte-identical across the move.
+
+### Before and after
+
+Before is 28 September,
+[run 36386178039](https://github.com/hookdeck/evals/actions/runs/36386178039): scheduled,
+`runs=1`, old pin. Only the weak model's `-no-skills` twin ran that day; the other two
+were carried from 1 September. September's raw results also keep no superseded
+attempts, which only matters for `outpost-003`. After is Claude Code from
+[run 42044644850](https://github.com/hookdeck/evals/actions/runs/42044644850) on
+5 November and Codex from
+[run 42220222687](https://github.com/hookdeck/evals/actions/runs/42220222687) on
+6 November, both `--runs 3`. Codex comes from the second run because its login shells
+could not find the pinned CLI in the first (#114). Claude Code's figures include that
+run's Outpost cells, which the published snapshot replaced with run 42256415982's.
+
+Counted per attempt, every attempt included, superseded ones too. The denominator is the
+attempts that invoked the `hookdeck` CLI at least once; the numerator is those whose
+first invocation other than help or a version was `hookdeck ci`.
+
+| Arm | 28 September | 5–6 November |
+|---|---|---|
+| `claude-code-sonnet-5` | 0/19 | 14/18 |
+| `codex-gpt-5.6` | 0/15 | 17/18 |
+| `codex-gpt-5.4-mini` | 0/18 | 16/22 |
+| skills arms together | 0/52 | 47/58 |
+| `-no-skills`, same order | –, –, 0/19 | 0/20, 0/20, 0/25 |
+
+The baselines together read 0/65 on 5–6 November. The counts depend on what is parsed as
+a CLI call and move by one or two with it. The direction does not.
+
+### What it bought
+
+**The order changed, and that is the measured effect.** In the skills arms, attempts
+that hit the CLI's "You aren't authenticated yet" error went from 17 of 19 to 4 of 20
+for Claude Code, 9 of 19 to 0 of 22 for `codex-gpt-5.6`, and 4 of 19 to 3 of 22 for
+`codex-gpt-5.4-mini`.
+
+**Giving up was already rare, because the error names the fix.** CLI 2.5.0's message
+for an unauthenticated call without a terminal lists `hookdeck ci --api-key` as the
+first way out. On 28 September, before the skill said anything, every skills-arm
+attempt that hit that error went on to invoke `hookdeck ci`: all 17 for Claude Code,
+9 for `codex-gpt-5.6` and 4 for `codex-gpt-5.4-mini`. On 5–6 November nine attempts hit
+it and never ran `hookdeck ci` afterwards: 5 of 17 for `claude-code-sonnet-5-no-skills`,
+3 of 16 for `codex-gpt-5.6-no-skills`, 0 of 15 for `codex-gpt-5.4-mini-no-skills` and
+1 of 3 for `codex-gpt-5.4-mini`. Every one of those cells passed.
+
+**That is the confound, and the baselines show it.** On 5 and 6 November the
+`-no-skills` arms never ran `hookdeck ci` first, and still ran it after the error in
+12 of 17 Claude Code attempts, 13 of 16 for `codex-gpt-5.6` and 15 of 15 for
+`codex-gpt-5.4-mini`. An agent without the skill learns the command from the CLI. The
+skill moves it ahead of the first failed call; it is not what makes the call possible.
+
+**No score is attributable to it.** `localdev-001` passed in every skills arm before and
+after. `verification-001` went from fail to pass for `codex-gpt-5.6`, but the before is
+one attempt and the after is best of three, and this is the scenario Loop 1 found
+unstable (#14). On 5–6 November it needed a second or third attempt in four of its six
+cells.
+
+**No guest sessions.** None of the transcripts from these two runs shows the CLI
+working in a guest account, which is the failure Loop 1 started from. That is CLI
+2.5.0, not the skill: the baselines had no skill and no guest session either.
+
+### What this loop actually found
+
+A skill change can be correct, visible in every transcript, and invisible on the
+scoreboard. Agents read it and did what it said, and the product had already closed
+most of the gap by putting the command in its error message. The two fixes overlap, and
+the CLI's reaches every agent, with or without skills.
+
+**Status: closed. The skill changed the order agents authenticate in. It bought no
+score this benchmark can measure, because the CLI's error message was already teaching
+the same command.**
+
+---
+
+## Loop 4: the Outpost skill never named the key's project
+
+**Status:** inconclusive. The re-run happened and cannot answer the question.
+
+### What the benchmark found
+
+On 21 August, Claude Code with the `outpost` skill loaded probed the Outpost API with
+the wrong project's key, got a `404`, decided Outpost was not provisioned, and built a
+workaround on `api.hookdeck.com`. The skill never said the key has to belong to an
+Outpost project (#40).
+
+That run is the one Loop 2 found confounded: the harness had not yet told agents the
+Outpost project existed. So the finding never had a clean before-state.
+
+### The change
+
+[agent-skills#28](https://github.com/hookdeck/agent-skills/pull/28), merged 1 October,
+adds an "API base URL and credentials" section to the `outpost` skill: the base URL, a
+project API key for an Outpost project, and a `404` read as the wrong project rather
+than as Outpost being absent. It reached the benchmark with Loop 3's pin move.
+
+### Why the re-run says nothing
+
+**There was almost no headroom.** On 28 September the final attempt of every
+skills-arm cell on all five Outpost scenarios already used `OUTPOST_API_KEY`, five of
+five in each arm. That was after Loop 2's fix named the project in the prompt.
+
+**The transcript signal is now unreadable by search.** The check was whether an agent
+says Outpost is "not provisioned". The new skill section contains that phrase, so a
+search for it matches transcripts that only read the skill.
+
+**The one cell that moved failed in exactly the way the change addresses.**
+`outpost-002` on `codex-gpt-5.4-mini` read fail, pass, pass, pass across the four
+September runs, failed all three attempts on 5 November, and passed on 6 November. On
+5 November none of the three attempts used `OUTPOST_API_KEY` or called the Outpost API.
+Each worked in the Event Gateway project with `HOOKDECK_API_KEY`, built a replacement
+connection there, replayed old gateway requests through it and reported the customer
+recovered. Two of the three had read `skills/outpost/SKILL.md`, new section included. On
+6 November the same cell used the Outpost key and passed first time.
+
+So the weak model can read the guidance and still build on the wrong product, and the
+same cell in the next run can use the right key and pass. One cell, split one to one
+across two runs, is not a measurement in either direction.
+
+**Status: inconclusive. The change had almost nothing to move, and the one cell it
+could move went both ways. The 5 November transcripts are the evidence worth keeping.**

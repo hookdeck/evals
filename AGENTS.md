@@ -32,17 +32,27 @@ for e in sorted(m): print(e, sum(1 for v in m[e].values() if v), '/', len(m[e]))
 `['hookdeck', 'event-gateway']`, `-no-skills` twins of each, and
 `codex-gpt-5.4-mini` in both arms as a deliberately weaker model.
 
-**What the numbers say.** Nine of nineteen scenarios discriminate, which is a
-healthy benchmark rather than a flat one. The frontier agents pass nearly
-everything; the weak model is where most failures live, which is the floor
-working as intended.
+**What the numbers say.** The 6 November snapshot is best of three attempts, and
+at that threshold one scenario of nineteen has a failing cell: `outpost-001`, for
+`codex-gpt-5.4-mini-no-skills`. Counted from the raw artifacts, twelve of its 114
+cells failed at least one attempt, across six scenarios, and seven of the twelve
+are the weak model. The 28 September snapshot, single attempts, had nine
+scenarios with a failing cell. Best of three and one attempt are different
+thresholds, so do not read the drop as agents getting better: a cell that fails
+once and passes on retry is variance until its transcript says otherwise. The
+frontier agents pass everything at best of three; the weak model is where most
+failed attempts live, which is the floor working as intended.
 
-The skills axis has not settled, and this paragraph has been rewritten three times
+The skills axis has not settled, and this paragraph has been rewritten four times
 in the direction of less confidence. It once said the weak model was **two worse**
-with skills than without; on 28 September that model reads **four better** (18/19
-against 14/19), and across the four September runs the delta has read -1, +1, +4
-and +4. #2 was closed on 22 September with its premise withdrawn: the -3 that
-started it is from the credit-outage day and no run since reproduced it.
+with skills than without; on 28 September that model read **four better** (18/19
+against 14/19). Across the four September runs the delta read -1, +1, +4 and +4,
+and on 5 and 6 November it read −1 and +1. Neither November reading is comparable
+with September: both are best of three, and both were measured at the new skills
+pin (`84e59f4`, #102). Nor is the 5 November reading clean on its own, because
+Codex's login shells could not find the pinned CLI in that run (#114). #2 was
+closed on 22 September with its premise withdrawn: the -3 that started it is from
+the credit-outage day and no run since reproduced it.
 
 What survives is the warning rather than the number. **Do not report the skills
 delta as a single figure**, do not report a sign as replicated until it has
@@ -55,7 +65,7 @@ which once led a weak model to conclude a supported provider was unsupported.
 did not re-measure (#60), so iterating `results/runs/*.json` counts one execution
 many times. The 17 August weak-pair cells sit in seven snapshot files and read −2
 in every one, which is where this section's "eight of the nine later runs read
-−2" came from. Keyed per execution, the six full-suite runs of the weak pair read:
+−2" came from. Keyed per execution, the eight full-suite runs of the weak pair read:
 
 | executed | `+skills` | `-no-skills` | delta |
 |---|---|---|---|
@@ -65,6 +75,14 @@ in every one, which is where this section's "eight of the nine later runs read
 | 7 September | 16/19 | 15/19 | +1 |
 | 14 September | 18/19 | 14/19 | +4 |
 | 28 September | 18/19 | 14/19 | +4 |
+| 5 November | 17/19 | 18/19 | −1 |
+| 6 November | 19/19 | 18/19 | +1 |
+
+The first six rows are single attempts. Every one of those runs was dispatched or
+scheduled at `runs=1`, and only `outpost-003`, which sets `min_attempts: 3`, ever
+took a second attempt in them. The two November rows are `--runs 3` with stop on
+pass. So the table changes instrument between its sixth and seventh rows, and
+the November rows are best of three.
 
 The two +4 rows are not one result counted twice. Six cells changed between
 them, two in the `+skills` arm and four in the baseline, and the totals happen to
@@ -104,12 +122,16 @@ executions on the same day merge. 13 August's cells carry no `runId`, and most
 carry a placeholder midnight timestamp rather than a real time, so everything run
 that day reads as one row and nothing in it says how many runs it was. That is another reason to read that day by cause rather than by row.
 
-**Only the weak pair is a clean comparison in `results/latest.json`.** That file
-is a merged snapshot. Its frontier `+skills` arms were executed on 28 September
-and their `-no-skills` twins on 1 September, so subtracting one from the other
-compares two instruments four weeks apart. That gives a number, but it is not a
-skills delta. Both weak arms ran in the same execution. Check `runId` per
-experiment before subtracting any pair.
+**Every pair in `results/latest.json` now shares an execution, and the file
+still spans three.** It is a merged snapshot. Claude Code's Event Gateway cells
+are from 5 November (run 42044644850), its Outpost cells from 6 November
+(42256415982), and every Codex cell from 6 November (42220222687), under two
+harness fingerprints. Each `+skills` arm and its `-no-skills` twin carry the same
+`runId`, so a pair's delta compares one instrument with itself; a comparison
+across models crosses runs. Until 5 November that was not true of the frontier
+pairs: their `+skills` arms were executed on 28 September and their twins on
+1 September, four weeks apart, and subtracting them gave a number that was not a
+skills delta. Check `runId` per experiment before subtracting any pair.
 
 **State the scenario set and the model with any skills delta**, or it will be
 compared against a number measuring something else. Loop 2's corrected
@@ -121,11 +143,19 @@ executions now do read positive on their own, and that is still no reason to
 merge the two populations.
 
 **Product findings come from runs, not speculation.** Several concern
-`hookdeck listen`: it crashes without a TTY unless given `--output compact`; a
-CLI destination with no connected session has its requests ignored with cause
-`CLI_DISCONNECTED` rather than queued, so nothing retries; and it falls back to
-an unauthenticated guest Console session even with `HOOKDECK_API_KEY` set, which
-let a weaker model report success while bypassing the project entirely. The plan
+`hookdeck listen`. On CLI 2.3.1 it crashed without a TTY unless given
+`--output compact`, and it fell back to an unauthenticated guest Console session
+even with `HOOKDECK_API_KEY` set, which let a weaker model report success while
+bypassing the project entirely. CLI 2.5.0, the sandbox pin since 14 August, was
+released to fix both (hookdeck-cli#333 and #334). What a run has shown since is
+narrower than "fixed": on 5 November (run 42044644850) Claude Code started
+`hookdeck listen` under `nohup` with no `--output` flag, and the CLI printed
+"Non-interactive mode detected", created its source and printed its listening
+banner instead of crashing. Nothing in that transcript then sent it an event,
+and none of the transcripts behind the 6 November snapshot shows a guest
+session. The scorers still pass `--output compact`, which costs nothing.
+Separately, a CLI destination with no connected session has its requests ignored
+with cause `CLI_DISCONNECTED` rather than queued, so nothing retries. The plan
 has the detail.
 
 **The repository is public**, as of 13 August. Results are published to
@@ -166,6 +196,13 @@ arithmetic, and conflating the two is how the judge came to be reported at
 twenty-eight times its real cost. Re-measure rather than re-scale if a decision
 turns on it.
 
+**Claude Code was re-measured on 5 November**, in run 42044644850: nineteen
+scenarios, both arms, `--runs 3`. Its own `total_cost_usd` came to $35.46 across
+38 cells, $18.65 for `+skills` and $16.81 for `-no-skills`, which is below the
+scaled $25 a pass. Read it as a floor. A raw result keeps only its final
+attempt's `usage`, and two of those cells took a second attempt that is not
+counted. Codex reports tokens and no cost, so its rows above stay as measured.
+
 Weekly frontier plus weak pair was roughly $185 a month, and everything weekly
 would have been $279 against a $200 budget. Both are historical: the benchmark
 came off the schedule on 1 October 2026, so the recurring cost is now one
@@ -176,14 +213,20 @@ first pass.** `STOP_ON_PASS` is the default, so a retry is only paid for on a ce
 that failed. At the current pass rates the expected attempts per cell at
 `--runs 3` is **1.11**, not 3 — and it is unevenly distributed, 1.06 for the
 frontier arms against 1.25 for the weak model, which is also where the signal is.
+The first full matrix at `--runs 3`, on 5 November (run 42044644850), measured
+it: 128 attempts for 114 cells, 1.12 a cell, with 1.05 for the frontier arms and
+1.26 for the weak model.
 
 The true multiplier is somewhat higher, because the attempts that repeat are by
 construction the failed ones and a failing cell tends to run to the timeout. It
 is `1 + 0.114k` where `k` is what a failed attempt costs relative to a typical
-one — 1.11× at k=1, 1.34× at k=3. **`k` is not known**: only 4 of 114 published
-rows carry `usage.costUsd` and all four passed, so there is no failed-cell cost
-data to derive it from. See #6. Budget a three-attempt matrix at $90–$110 and
-treat anything more precise as a residual rather than a measurement.
+one — 1.11× at k=1, 1.34× at k=3. **`k` is not known.** When this was written,
+4 of 114 published rows carried `usage.costUsd` and all four passed. Published
+rows now carry no `usage` at all, and a raw result records only its final
+attempt's, so a superseded failed attempt is never costed. A Claude Code cell
+that failed every attempt would record one, and none did on 5 November. See #6.
+Budget a three-attempt matrix at $90–$110 and treat anything more precise as a
+residual rather than a measurement.
 
 **Failed runs cost the same as successful ones.** On 13 August the OpenAI credit
 balance reached zero mid-run; thirty-seven Codex jobs then started, failed and
