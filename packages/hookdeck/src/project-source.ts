@@ -301,7 +301,12 @@ export async function resetIssueTriggersToDefaults(
   }
 }
 
-function matchesDeclared(
+/**
+ * Whether a trigger is one of the declared defaults, as the reset leaves it.
+ * Exported for `preflight`, which asserts the project is already in that state
+ * rather than putting it there.
+ */
+export function matchesDeclared(
   trigger: HookdeckResource,
   configs: Record<string, unknown>
 ): boolean {

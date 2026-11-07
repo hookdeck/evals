@@ -86,7 +86,11 @@ export type {
   RunnerExecResult,
   AgentDefinition,
 } from './agents/types.js';
-export { createParser, supportedParsers } from './agents/registry.js';
+export {
+  createParser,
+  registeredAgentPins,
+  supportedParsers,
+} from './agents/registry.js';
 export { adaptTranscript } from './parsers/adapt.js';
 export type { AdaptedTranscript } from './parsers/adapt.js';
 export type { AgentTranscriptParser } from './parsers/types.js';

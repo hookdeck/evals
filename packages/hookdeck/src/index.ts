@@ -12,9 +12,12 @@ export type {
 export {
   DEFAULT_ISSUE_TRIGGERS,
   FixedProjectSource,
+  OUTPOST_GATEWAY_PRISTINE,
+  matchesDeclared as issueTriggerMatchesDeclared,
   muteIssueTriggerNotifications,
   resetIssueTriggersToDefaults,
 } from './project-source.js';
+export type { OperatorEventDestination } from './project-source.js';
 export type {
   IssueTriggerChange,
   ProjectSource,

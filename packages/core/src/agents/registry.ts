@@ -38,3 +38,25 @@ export function createParser(agent: AgentHarnessId): AgentTranscriptParser {
   }
   return definition.parser;
 }
+
+/**
+ * What each registered agent installs and which key it reads, without the
+ * runner's behaviour. For `preflight`, which compares the pins against npm and
+ * the keys against the repository's secrets, and should read both from the
+ * objects a run uses rather than from a copy that drifts.
+ */
+export function registeredAgentPins(): Array<{
+  id: AgentHarnessId;
+  displayName: string;
+  cliPackage: string;
+  defaultCliVersion: string;
+  apiKeyEnvVar: string;
+}> {
+  return AGENTS.map(({ runner }) => ({
+    id: runner.id,
+    displayName: runner.displayName,
+    cliPackage: runner.cliPackage,
+    defaultCliVersion: runner.defaultCliVersion,
+    apiKeyEnvVar: runner.apiKeyEnvVar,
+  }));
+}

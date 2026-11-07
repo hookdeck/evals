@@ -333,6 +333,38 @@ gh workflow disable eval-refresh.yml   # stops the cron and dispatch
 gh workflow enable eval-refresh.yml    # both again
 ```
 
+### Before dispatching a matrix
+
+Run the preflight, with the same inputs the dispatch will take, from a checkout of `main`:
+
+```bash
+pnpm preflight --suite benchmark --experiment-suite benchmark,no-skills --runs 3
+pnpm preflight --help     # every flag, and the check ids --skip takes
+```
+
+Every defect v0.5.0 found was discoverable before the run that found it (#131), and
+a matrix costs about $100 and six hours. The preflight takes minutes. It is read-only
+apart from one real completion per provider, the same request the workflow's own
+preflight makes.
+
+- **Assertions fail the script.** Do not dispatch on a non-zero exit. Spend needs
+  `--confirm-balance` (or a `y` on a terminal) because no provider exposes a balance
+  to a project key. Open `harness` issues need `--accept-harness <numbers>`, so each
+  one is accepted for the run by name.
+- **Decisions never fail it.** A pin behind `latest`, a skills pin behind `main`, a
+  model with a newer sibling, a changed base prompt: each prints the current and the
+  latest, and the release notes record what was chosen.
+- **A moved instrument needs a canary.** When the image definition, a CLI pin or a
+  model differs from the newest published rows, it prints the two-cell
+  `gh workflow run` command with `EVALS_PUBLISH=false`. Verify the finished run with
+  `--canary-run <id>` before the matrix.
+- **`--skip <id>` is an escape hatch, not a pass.** The report prints skipped checks
+  as a banner. Name them in the release notes.
+
+It reads `.env` for the provider and project keys, so it checks your keys, not the
+repository secrets. It checks those by name only, and the workflow checks their
+liveness before its matrix.
+
 ## What to work on next
 
 **GitHub Issues is the source of truth for work, and #24 is the order to do it
