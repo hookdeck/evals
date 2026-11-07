@@ -37,7 +37,31 @@ export function compareSemver(a: string, b: string): number {
   if (x.prerelease === y.prerelease) return 0;
   if (x.prerelease === undefined) return 1;
   if (y.prerelease === undefined) return -1;
-  return x.prerelease < y.prerelease ? -1 : 1;
+  return comparePrerelease(x.prerelease, y.prerelease);
+}
+
+/**
+ * Semver's prerelease order: dot-separated identifiers, numeric ones compared
+ * as numbers and sorting before alphanumeric ones, and a shorter list first
+ * when one is a prefix of the other. So `rc.2` < `rc.10`.
+ */
+function comparePrerelease(a: string, b: string): number {
+  const x = a.split('.');
+  const y = b.split('.');
+  for (let i = 0; i < Math.max(x.length, y.length); i++) {
+    const p = x[i];
+    const q = y[i];
+    if (p === undefined) return -1;
+    if (q === undefined) return 1;
+    if (p === q) continue;
+    const pn = /^\d+$/.test(p);
+    const qn = /^\d+$/.test(q);
+    if (pn && qn) return Number(p) < Number(q) ? -1 : 1;
+    if (pn) return -1;
+    if (qn) return 1;
+    return p < q ? -1 : 1;
+  }
+  return 0;
 }
 
 /**

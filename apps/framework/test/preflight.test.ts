@@ -7,10 +7,13 @@ import { CHECKS, parsePreflightArgs } from '../lib/preflight/args.js';
 import {
   canaryPlan,
   diffInstrument,
+  modelsFromRows,
+  newestRunPerAgent,
   readPin,
 } from '../lib/preflight/canary.js';
 import {
   changedSkills,
+  checkLink,
   collectLinks,
   extractDocsUrls,
   fetchableUrl,
@@ -26,6 +29,7 @@ import {
   exitCodeFor,
   formatReport,
   maskSecrets,
+  maskUrlPath,
   type CheckResult,
 } from '../lib/preflight/report.js';
 import {
@@ -71,6 +75,13 @@ describe('semver', () => {
     expect(compareSemver('1.0.0-rc.1', '1.0.0')).toBe(-1);
     expect(compareSemver('1.0.0', '1.0.0')).toBe(0);
     expect(() => compareSemver('x', '1.0.0')).toThrow(/not a version/);
+  });
+
+  it('orders prerelease identifiers as semver does', () => {
+    expect(compareSemver('1.0.0-rc.2', '1.0.0-rc.10')).toBe(-1);
+    expect(compareSemver('1.0.0-alpha', '1.0.0-alpha.1')).toBe(-1);
+    expect(compareSemver('1.0.0-1', '1.0.0-alpha')).toBe(-1);
+    expect(compareSemver('1.0.0-beta', '1.0.0-alpha.9')).toBe(1);
   });
 
   it('names the largest component that moved', () => {
@@ -271,6 +282,76 @@ describe('links', () => {
     ]);
   });
 
+  const respond = (
+    status: number,
+    over: { redirected?: boolean; url?: string; retryAfter?: string } = {}
+  ) =>
+    ({
+      status,
+      redirected: over.redirected ?? false,
+      url: over.url ?? '',
+      headers: new Headers(
+        over.retryAfter ? { 'retry-after': over.retryAfter } : {}
+      ),
+      body: null,
+    }) as unknown as Response;
+
+  it('reports where a redirect ended', async () => {
+    const result = await checkLink(
+      async () =>
+        respond(200, {
+          redirected: true,
+          url: 'https://hookdeck.com/docs/api/configure.md',
+        }),
+      'https://hookdeck.com/docs/api/sources.md'
+    );
+    expect(result).toEqual({
+      url: 'https://hookdeck.com/docs/api/sources.md',
+      status: 200,
+      finalUrl: 'https://hookdeck.com/docs/api/configure.md',
+    });
+  });
+
+  it('does not report a trailing-slash redirect as a moved page', async () => {
+    const result = await checkLink(
+      async () =>
+        respond(200, { redirected: true, url: 'https://hookdeck.com/docs' }),
+      'https://hookdeck.com/docs/'
+    );
+    expect(result.finalUrl).toBeUndefined();
+  });
+
+  it('backs off once on a 429, honouring Retry-After, then reports what it got', async () => {
+    const answers = [respond(429, { retryAfter: '2' }), respond(200)];
+    const sleeps: number[] = [];
+    const result = await checkLink(
+      async () => answers.shift() as Response,
+      'https://hookdeck.com/docs/a.md',
+      async (ms) => {
+        sleeps.push(ms);
+      }
+    );
+    expect(result.status).toBe(200);
+    expect(sleeps).toEqual([2000]);
+
+    const limited = await checkLink(
+      async () => respond(429),
+      'https://hookdeck.com/docs/a.md',
+      async () => undefined
+    );
+    expect(limited.status).toBe(429);
+  });
+
+  it('retries a dropped connection once and reports 0 if it stays down', async () => {
+    let calls = 0;
+    const result = await checkLink(async () => {
+      calls += 1;
+      throw new Error('ECONNRESET');
+    }, 'https://hookdeck.com/docs/a.md');
+    expect(calls).toBe(2);
+    expect(result.status).toBe(0);
+  });
+
   it('maps changed paths to the skills they belong to', () => {
     expect(
       changedSkills([
@@ -318,40 +399,125 @@ describe('models', () => {
 });
 
 describe('canary', () => {
-  const base = {
+  const agent = {
     imageDefinition: 'aaa',
     hookdeckCli: '2.5.0',
-    agentClis: { codex: '0.138.0' },
+    skillsCli: '1.5.11',
+    agentCli: '0.138.0',
+  };
+  const base = {
+    byAgent: { codex: agent },
     models: { 'codex-gpt-5.6': 'gpt-5.6' },
   };
 
   it('needs nothing when the instrument matches', () => {
-    expect(diffInstrument(base, base)).toEqual([]);
+    expect(
+      diffInstrument(
+        { ...base, byAgent: { codex: { ...agent, source: 'run 1 at abc' } } },
+        base
+      )
+    ).toEqual([]);
   });
 
-  it('names each moved part, and counts an unknown published value as moved', () => {
+  it('names each moved part per agent, and counts an unknown published value as moved', () => {
     const changes = diffInstrument(
-      { ...base, imageDefinition: undefined },
       {
-        ...base,
-        hookdeckCli: '3.1.0',
+        byAgent: {
+          codex: {
+            ...agent,
+            imageDefinition: undefined,
+            source: 'run 1 at abc',
+          },
+        },
+        models: base.models,
+      },
+      {
+        byAgent: {
+          codex: { ...agent, hookdeckCli: '3.1.0', skillsCli: '1.6.0' },
+        },
         models: { ...base.models, 'new-experiment': 'gpt-6' },
       }
     );
     expect(changes).toEqual([
       {
-        what: 'sandbox image definition',
+        what: 'sandbox image definition (codex cells, run 1 at abc)',
         published: 'unknown',
         current: 'aaa',
+        agent: 'codex',
       },
-      { what: 'Hookdeck CLI pin', published: '2.5.0', current: '3.1.0' },
+      {
+        what: 'Hookdeck CLI pin (codex cells, run 1 at abc)',
+        published: '2.5.0',
+        current: '3.1.0',
+        agent: 'codex',
+      },
+      {
+        what: 'skills CLI pin (codex cells, run 1 at abc)',
+        published: '1.5.11',
+        current: '1.6.0',
+        agent: 'codex',
+      },
       { what: 'new-experiment model', published: 'unknown', current: 'gpt-6' },
     ]);
+  });
+
+  it('treats an agent with no published cells as entirely unknown', () => {
+    const changes = diffInstrument(
+      { byAgent: {}, models: {} },
+      { byAgent: { codex: agent }, models: {} }
+    );
+    expect(changes.map((c) => c.published)).toEqual([
+      'unknown',
+      'unknown',
+      'unknown',
+      'unknown',
+    ]);
+    expect(changes[0]?.what).toContain('no published run');
+  });
+
+  it('picks, per agent, the newest run that has that agent’s rows', () => {
+    const agentOf = (e: string) =>
+      e.startsWith('claude') ? 'claude-code' : 'codex';
+    const rows = [
+      {
+        experiment: 'codex-gpt-5.6',
+        runId: 'older',
+        ranAt: '2026-11-05T10:00:00Z',
+      },
+      {
+        experiment: 'claude-code-sonnet-5',
+        runId: 'older',
+        ranAt: '2026-11-05T11:00:00Z',
+      },
+      // A Claude-only partial publish, newer than anything Codex ran in.
+      {
+        experiment: 'claude-code-sonnet-5',
+        runId: 'newest',
+        ranAt: '2026-11-06T17:00:00Z',
+      },
+    ];
+    expect(newestRunPerAgent(rows, agentOf)).toEqual({
+      'claude-code': 'newest',
+      codex: 'older',
+    });
+  });
+
+  it('takes each experiment’s model from its newest row', () => {
+    expect(
+      modelsFromRows([
+        { experiment: 'a', ranAt: '1', experimentDisplay: { modelId: 'old' } },
+        { experiment: 'a', ranAt: '2', experimentDisplay: { modelId: 'new' } },
+        { experiment: 'b', ranAt: '1' },
+      ])
+    ).toEqual({ a: 'new' });
   });
 
   it('reads pins out of the real sources', () => {
     expect(
       readPin(read('packages/sandbox/src/image.ts'), 'HOOKDECK_CLI_VERSION')
+    ).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(
+      readPin(read('packages/sandbox/src/skills.ts'), 'SKILLS_CLI_VERSION')
     ).toMatch(/^\d+\.\d+\.\d+$/);
     expect(
       readPin(
@@ -469,10 +635,11 @@ describe('arguments', () => {
     expect(() => parsePreflightArgs(['--runs', '0'])).toThrow(/positive/);
   });
 
-  it('numbers the checks as #131 does', () => {
+  it('numbers the checks as #131 does, with the skills CLI after the canary', () => {
     expect(CHECKS.map((c) => c.number)).toEqual(
-      Array.from({ length: 15 }, (_, i) => i + 1)
+      Array.from({ length: 16 }, (_, i) => i + 1)
     );
+    expect(CHECKS[15]?.id).toBe('skills-cli-pin');
   });
 });
 
@@ -537,6 +704,17 @@ describe('report', () => {
         'short',
       ])
     ).toBe('key **** and ****');
+  });
+
+  it('masks a delivery URL down to its host', () => {
+    expect(maskUrlPath('https://hkdk.events/hV1wGFnIHOex')).toBe(
+      'https://hkdk.events/****'
+    );
+    expect(maskUrlPath('https://example.com/?token=abc')).toBe(
+      'https://example.com/****'
+    );
+    expect(maskUrlPath('https://example.com/')).toBe('https://example.com/');
+    expect(maskUrlPath('not a url')).toBe('****');
   });
 });
 

@@ -87,3 +87,57 @@ export function changedSkills(paths: string[]): string[] {
   }
   return [...out].sort();
 }
+
+export interface LinkCheck {
+  url: string;
+  /** The final status, after redirects. 0 when nothing answered. */
+  status: number;
+  /** Where a redirect ended, when it did not end at `url`. */
+  finalUrl?: string;
+}
+
+/**
+ * Fetch a docs URL the way an agent would, following redirects.
+ *
+ * A redirect that ends in 200 still works for an agent, but the skill points
+ * at a moved page, so the caller reports the final URL. A 429 is the site
+ * asking us to slow down, not a dead link: wait and try once more before
+ * calling it a failure. A dropped connection gets one retry too.
+ */
+export async function checkLink(
+  fetchFn: typeof fetch,
+  url: string,
+  sleep: (ms: number) => Promise<void> = (ms) =>
+    new Promise((resolve) => setTimeout(resolve, ms))
+): Promise<LinkCheck> {
+  let last: LinkCheck = { url, status: 0 };
+  for (let attempt = 0; attempt < 2; attempt++) {
+    let res: Response;
+    try {
+      res = await fetchFn(url, {
+        redirect: 'follow',
+        signal: AbortSignal.timeout(20_000),
+      });
+    } catch {
+      continue;
+    }
+    await res.body?.cancel().catch(() => undefined);
+    // A trailing-slash redirect is the site's canonical form, not a moved page.
+    const bare = (u: string) => u.replace(/\/+$/, '');
+    const finalUrl =
+      res.redirected && res.url && bare(res.url) !== bare(url)
+        ? res.url
+        : undefined;
+    last = { url, status: res.status, ...(finalUrl ? { finalUrl } : {}) };
+    if (res.status !== 429) return last;
+    if (attempt === 0) {
+      const retryAfter = Number(res.headers.get('retry-after'));
+      await sleep(
+        Number.isFinite(retryAfter) && retryAfter > 0
+          ? Math.min(retryAfter, 30) * 1000
+          : 5_000
+      );
+    }
+  }
+  return last;
+}

@@ -3,7 +3,9 @@ import { DISPATCH_DEFAULTS, type DispatchInputs } from './matrix.js';
 
 /**
  * Every check, by the id `--skip` takes and its number in #131. The canary is
- * the requirement #131 attaches to checks 1, 2 and 4, numbered after them.
+ * the requirement #131 attaches to checks 1, 2 and 4, numbered after them. The
+ * skills CLI pin is a sixteenth decision #131 did not list: it is a build arg
+ * of the same image as the Hookdeck CLI, and nothing compared it either.
  */
 export const CHECKS = [
   { number: 1, id: 'hookdeck-cli-pin', title: 'Hookdeck CLI pin' },
@@ -21,6 +23,7 @@ export const CHECKS = [
   { number: 13, id: 'skill-links', title: 'Skill links resolve' },
   { number: 14, id: 'harness-issues', title: 'Open harness issues' },
   { number: 15, id: 'canary', title: 'Canary' },
+  { number: 16, id: 'skills-cli-pin', title: 'Skills CLI pin' },
 ] as const;
 
 export type CheckId = (typeof CHECKS)[number]['id'];
@@ -162,7 +165,8 @@ What the run intends:
                              (default ${DEFAULT_CANARY_EVAL})
 
 Output:
-  --json                     machine-readable report
+  --json                     machine-readable report; run as \`pnpm -s preflight --json\`
+                             so pnpm's banner stays out of the JSON
   --skip <list>              skip checks by id; printed loudly. Ids:
                              ${CHECKS.map((c) => c.id).join(', ')}
 

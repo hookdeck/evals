@@ -35,7 +35,12 @@ export type {
 } from './seed.js';
 export { hookdeckRuntime, hookdeckMcpServer } from './runtime.js';
 export type { HookdeckRuntimeOptions } from './runtime.js';
-export { collectEnvSecretValues, redactSecrets } from './redact.js';
+export {
+  collectEnvSecretValues,
+  redactArtifactDeep,
+  redactSecrets,
+  redactSecretsForArtifact,
+} from './redact.js';
 export { OutpostClient, OUTPOST_API_BASE } from './outpost-client.js';
 export type { OutpostClientOptions } from './outpost-client.js';
 export { setConnectionRules } from './solutions.js';

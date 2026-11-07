@@ -147,3 +147,21 @@ export function maskSecrets(text: string, secrets: string[]): string {
   }
   return out;
 }
+
+/**
+ * A delivery URL with its path masked: `https://hkdk.events/****`.
+ *
+ * A Hookdeck source URL is a bearer credential in all but name, since anyone
+ * holding it can post into that project, and `redact.ts` treats delivery URLs
+ * as secrets for the same reason. The host is kept so a reader can still tell
+ * a source from a mock endpoint. Anything that does not parse is masked whole.
+ */
+export function maskUrlPath(raw: string): string {
+  try {
+    const url = new URL(raw);
+    const hasPath = url.pathname !== '/' || url.search !== '';
+    return `${url.protocol}//${url.host}${hasPath ? '/****' : '/'}`;
+  } catch {
+    return '****';
+  }
+}

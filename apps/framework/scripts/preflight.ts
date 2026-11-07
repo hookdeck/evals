@@ -12,6 +12,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline/promises';
+import { pathToFileURL } from 'node:url';
 import { registeredAgentPins } from '@hookdeck-evals/core';
 import {
   DEFAULT_ISSUE_TRIGGERS,
@@ -19,15 +20,16 @@ import {
   OUTPOST_GATEWAY_PRISTINE,
   OutpostClient,
   RESOURCE_KINDS,
-  collectEnvSecretValues,
-  issueTriggerMatchesDeclared,
-  redactSecrets,
+  redactArtifactDeep,
+  redactSecretsForArtifact,
   type HookdeckResource,
   type OperatorEventDestination,
+  type ResourceKind,
 } from '@hookdeck-evals/hookdeck';
 import {
   HOOKDECK_CLI_VERSION,
   SANDBOX_SELF_CHECK_FAILED,
+  SKILLS_CLI_VERSION,
   sandboxImageDefinition,
 } from '@hookdeck-evals/sandbox';
 import { basePromptFor, extractBasePrompt } from '../lib/base-prompt.js';
@@ -53,16 +55,30 @@ import {
   CANARY_CRITERIA,
   canaryPlan,
   diffInstrument,
+  modelsFromRows,
+  newestRunPerAgent,
   readPin,
+  type AgentInstrument,
   type Instrument,
+  type PublishedRowLike,
 } from '../lib/preflight/canary.js';
-import { changedSkills, collectLinks } from '../lib/preflight/links.js';
+import {
+  classifyMissingSecrets,
+  evaluateChecksRun,
+  evaluateGatewayProject,
+  evaluateOutpostGateway,
+} from '../lib/preflight/evaluate.js';
+import {
+  changedSkills,
+  checkLink,
+  collectLinks,
+} from '../lib/preflight/links.js';
 import { planCells, type PlannedPair } from '../lib/preflight/matrix.js';
 import { modelStanding } from '../lib/preflight/models.js';
 import {
   exitCodeFor,
   formatReport,
-  maskSecrets,
+  maskUrlPath,
   type CheckResult,
   type CheckStatus,
 } from '../lib/preflight/report.js';
@@ -89,6 +105,7 @@ import {
  * ```bash
  * pnpm preflight                                   # the regression suite
  * pnpm preflight --suite benchmark --experiment-suite benchmark,no-skills --runs 3
+ * pnpm -s preflight --json                         # -s keeps pnpm's banner out of the JSON
  * pnpm preflight --help
  * ```
  *
@@ -100,17 +117,29 @@ import {
  * **Read-only**, against Hookdeck, Outpost, GitHub and both providers, with one
  * exception: one real completion per provider, the same request the workflow's
  * own preflight makes, because a models list answers 200 with a zero balance.
- * It never prints a secret value: the report is passed through the same
- * redaction the artifact export uses before it is written.
+ * It never prints a secret value: every string in the results is passed through
+ * the same redaction the artifact export uses before the report is built, and a
+ * delivery URL is printed with its path masked.
  *
- * Network and process calls go through `Deps`, so the logic in `lib/preflight/`
- * is tested without either.
+ * Every process, HTTP, DNS, Hookdeck and Outpost call goes through `Deps`, so
+ * the checks run in tests against fakes; `test/preflight-checks.test.ts` does.
  */
 
 interface ExecResult {
   code: number;
   stdout: string;
   stderr: string;
+}
+
+/** The slice of the Event Gateway API the checks read. */
+export interface GatewayReader {
+  list(kind: ResourceKind): Promise<HookdeckResource[]>;
+}
+
+/** The slice of the Outpost API the checks read. Only `GET` is ever sent. */
+export interface OutpostReader {
+  tenants(): Promise<Array<{ id: string }>>;
+  get<T>(path: string): Promise<T>;
 }
 
 export interface Deps {
@@ -123,6 +152,9 @@ export interface Deps {
   ): Promise<ExecResult>;
   fetch: typeof fetch;
   resolveHost(host: string): Promise<boolean>;
+  gateway(apiKey: string): GatewayReader;
+  outpost(apiKey: string): OutpostReader;
+  sleep(ms: number): Promise<void>;
 }
 
 const realDeps: Deps = {
@@ -159,6 +191,18 @@ const realDeps: Deps = {
       return false;
     }
   },
+  gateway: (apiKey) => {
+    const client = new HookdeckClient({ apiKey });
+    return { list: (kind) => client.list(kind) };
+  },
+  outpost: (apiKey) => {
+    const client = new OutpostClient({ apiKey });
+    return {
+      tenants: () => client.tenants(),
+      get: (path) => client.request('GET', path),
+    };
+  },
+  sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 };
 
 const DECISIONS = new Set<CheckId>([
@@ -167,6 +211,7 @@ const DECISIONS = new Set<CheckId>([
   'skills-pin',
   'model-ids',
   'base-prompt',
+  'skills-cli-pin',
 ]);
 
 function result(
@@ -189,7 +234,7 @@ function result(
 }
 
 /** Everything several checks read, gathered once. */
-interface Context {
+export interface Context {
   deps: Deps;
   args: PreflightArgs;
   repo: string;
@@ -212,7 +257,6 @@ interface Context {
   evalsRequiringOutpost: string[];
   latest?: {
     results: Array<Record<string, unknown>>;
-    composition?: { runs?: Array<{ runId: string; latest: string }> };
     runId?: string;
   };
   skills: { slug: string; pin?: string; names: string[]; dirs: string[] };
@@ -390,31 +434,60 @@ function gapStatus(current: string, latest: string): CheckStatus {
   return compareSemver(current, latest) < 0 ? 'decide' : 'pass';
 }
 
-// 1 ---------------------------------------------------------------------------
-
-async function checkHookdeckCli(ctx: Context): Promise<CheckResult> {
-  const latest = await npmLatest(ctx, 'hookdeck-cli');
-  const details = [
-    `pinned: ${HOOKDECK_CLI_VERSION} (packages/sandbox/src/image.ts)`,
-    `npm latest: ${latest}`,
-  ];
+/**
+ * A pin baked into the sandbox image, against npm `latest` and against what it
+ * was at the last release. Checks 1 and 16 differ only in which pin.
+ */
+async function imagePinDecision(
+  ctx: Context,
+  id: 'hookdeck-cli-pin' | 'skills-cli-pin',
+  pkg: string,
+  pinned: string,
+  constant: string,
+  file: string,
+  consequence: string
+): Promise<CheckResult> {
+  const latest = await npmLatest(ctx, pkg);
+  const details = [`pinned: ${pinned} (${file})`, `npm latest: ${latest}`];
   if (ctx.lastRelease) {
-    const source = await fileAt(
-      ctx,
-      ctx.lastRelease,
-      'packages/sandbox/src/image.ts'
-    );
-    const then = source && readPin(source, 'HOOKDECK_CLI_VERSION');
+    const source = await fileAt(ctx, ctx.lastRelease, file);
+    const then = source && readPin(source, constant);
     if (then) details.push(`pinned at ${ctx.lastRelease}: ${then}`);
   }
-  details.push(
+  details.push(consequence);
+  return result(
+    id,
+    gapStatus(pinned, latest),
+    describeVersionGap(pinned, latest),
+    details
+  );
+}
+
+// 1 ---------------------------------------------------------------------------
+
+function checkHookdeckCli(ctx: Context): Promise<CheckResult> {
+  return imagePinDecision(
+    ctx,
+    'hookdeck-cli-pin',
+    'hookdeck-cli',
+    HOOKDECK_CLI_VERSION,
+    'HOOKDECK_CLI_VERSION',
+    'packages/sandbox/src/image.ts',
     'a bump changes the product under test: results either side are not comparable'
   );
-  return result(
-    'hookdeck-cli-pin',
-    gapStatus(HOOKDECK_CLI_VERSION, latest),
-    describeVersionGap(HOOKDECK_CLI_VERSION, latest),
-    details
+}
+
+// 16 --------------------------------------------------------------------------
+
+function checkSkillsCli(ctx: Context): Promise<CheckResult> {
+  return imagePinDecision(
+    ctx,
+    'skills-cli-pin',
+    'skills',
+    SKILLS_CLI_VERSION,
+    'SKILLS_CLI_VERSION',
+    'packages/sandbox/src/skills.ts',
+    'a bump changes how skills are installed into the sandbox: skills arms either side are not comparable'
   );
 }
 
@@ -456,6 +529,10 @@ async function checkAgentClis(ctx: Context): Promise<CheckResult> {
 
 // 3 ---------------------------------------------------------------------------
 
+/** GitHub's compare API lists at most this many files and commits. */
+const COMPARE_FILE_CAP = 300;
+const COMPARE_COMMIT_CAP = 250;
+
 async function checkSkillsPin(ctx: Context): Promise<CheckResult> {
   const { slug, pin, names } = ctx.skills;
   if (!pin) {
@@ -476,18 +553,36 @@ async function checkSkillsPin(ctx: Context): Promise<CheckResult> {
     behind_by: number;
     files?: Array<{ filename: string }>;
   }>(ctx, ['api', `repos/${slug}/compare/${pin}...${main}`]);
-  const changed = changedSkills((compare.files ?? []).map((f) => f.filename));
+  const files = compare.files ?? [];
+  const changed = changedSkills(files.map((f) => f.filename));
   const pinnedChanged = changed.filter((s) => names.includes(s));
   const details = [
     `pinned: ${pin.slice(0, 7)}; main: ${main.slice(0, 7)}`,
     `skills changed between them: ${changed.length > 0 ? changed.join(', ') : 'none'}`,
     `of the skills this repo installs (${names.join(', ')}): ${pinnedChanged.length > 0 ? pinnedChanged.join(', ') : 'none changed'}`,
-    'a move alters what a skills arm reads and nothing a baseline arm sees',
   ];
+  if (
+    files.length >= COMPARE_FILE_CAP ||
+    compare.ahead_by >= COMPARE_COMMIT_CAP
+  ) {
+    details.push(
+      `the compare API lists at most ${COMPARE_FILE_CAP} files and ${COMPARE_COMMIT_CAP} commits, so the changed-skills list may be incomplete`
+    );
+  }
+  if (compare.behind_by > 0) {
+    details.push(
+      `the pin is not an ancestor of main: it carries ${compare.behind_by} commit${compare.behind_by === 1 ? '' : 's'} main does not, so moving it to main drops them`
+    );
+  }
+  details.push(
+    'a move alters what a skills arm reads and nothing a baseline arm sees'
+  );
   return result(
     'skills-pin',
     'decide',
-    `${compare.ahead_by} commit${compare.ahead_by === 1 ? '' : 's'} behind ${slug} main`,
+    compare.behind_by > 0
+      ? `diverged from ${slug} main: ${compare.ahead_by} behind, ${compare.behind_by} ahead`
+      : `${compare.ahead_by} commit${compare.ahead_by === 1 ? '' : 's'} behind ${slug} main`,
     details
   );
 }
@@ -766,7 +861,7 @@ async function checkSpend(ctx: Context): Promise<CheckResult> {
 
 // 8 ---------------------------------------------------------------------------
 
-async function checkSecrets(ctx: Context): Promise<CheckResult> {
+export async function checkSecrets(ctx: Context): Promise<CheckResult> {
   const wanted = workflowSecrets(ctx.workflow);
   const have = new Set(
     (
@@ -778,15 +873,12 @@ async function checkSecrets(ctx: Context): Promise<CheckResult> {
       ])
     ).map((s) => s.name)
   );
-  const missing = wanted.filter((s) => !have.has(s));
-  // A missing key for an agent no experiment uses is not a gap in this run:
-  // the workflow writes it into .env empty and nothing reads it.
-  const usedAgents = new Set(ctx.experiments.map((e) => e.agent));
-  const unneeded = missing.filter((name) => {
-    const agents = registeredAgentPins().filter((p) => p.apiKeyEnvVar === name);
-    return agents.length > 0 && agents.every((a) => !usedAgents.has(a.id));
-  });
-  const fatal = missing.filter((m) => !unneeded.includes(m));
+  const { fatal, unneeded } = classifyMissingSecrets(
+    wanted,
+    have,
+    registeredAgentPins(),
+    new Set(ctx.experiments.map((e) => e.agent))
+  );
   const details = [
     `the workflow reads: ${wanted.join(', ')}`,
     ...unneeded.map(
@@ -807,10 +899,11 @@ async function checkSecrets(ctx: Context): Promise<CheckResult> {
 
 // 9 ---------------------------------------------------------------------------
 
-async function checkMainGreen(ctx: Context): Promise<CheckResult> {
+export async function checkMainGreen(ctx: Context): Promise<CheckResult> {
   const sha = ctx.dispatchSha;
-  if (!sha)
+  if (!sha) {
     return result('main-green', 'fail', 'could not read main from GitHub');
+  }
 
   if (ctx.headSha === sha && !ctx.dirty) {
     // Checked out at exactly what a dispatch runs: run the same four commands
@@ -847,11 +940,11 @@ async function checkMainGreen(ctx: Context): Promise<CheckResult> {
 
   // Not checked out at main: the Checks workflow runs on pull requests only, so
   // read the run for the pull request that produced main.
+  const why = `HEAD ${ctx.headSha.slice(0, 7)}${ctx.dirty ? ' (dirty)' : ''} is not main ${sha.slice(0, 7)}`;
   const pulls = await ghJson<
     Array<{ number: number; merge_commit_sha: string; head: { sha: string } }>
   >(ctx, ['api', `repos/${ctx.repo}/commits/${sha}/pulls`]);
   const pr = pulls.find((p) => p.merge_commit_sha === sha);
-  const why = `HEAD ${ctx.headSha.slice(0, 7)}${ctx.dirty ? ' (dirty)' : ''} is not main ${sha.slice(0, 7)}`;
   if (!pr) {
     return result(
       'main-green',
@@ -866,6 +959,7 @@ async function checkMainGreen(ctx: Context): Promise<CheckResult> {
       conclusion: string;
       headSha: string;
       event: string;
+      createdAt: string;
     }>
   >(ctx, [
     'run',
@@ -875,9 +969,11 @@ async function checkMainGreen(ctx: Context): Promise<CheckResult> {
     '--commit',
     pr.head.sha,
     '--json',
-    'databaseId,conclusion,headSha,event',
+    'databaseId,conclusion,headSha,event,createdAt',
   ]);
-  const run = runs.find((r) => r.event === 'pull_request');
+  const run = runs
+    .filter((r) => r.event === 'pull_request')
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
   if (!run) {
     return result('main-green', 'fail', `no Checks run for #${pr.number}`, [
       why,
@@ -887,27 +983,37 @@ async function checkMainGreen(ctx: Context): Promise<CheckResult> {
     conclusion: string;
     jobs: Array<{ steps: Array<{ name: string; conclusion: string }> }>;
   }>(ctx, ['run', 'view', String(run.databaseId), '--json', 'conclusion,jobs']);
-  const steps = view.jobs.flatMap((j) => j.steps);
-  const wanted = [/format/i, /typecheck/i, /test/i, /build/i];
-  const missing = wanted.filter(
-    (re) => !steps.some((s) => re.test(s.name) && s.conclusion === 'success')
-  );
-  const details = [
+
+  // The base the pull request was merged onto is main's first parent.
+  const commit = await ghJson<{ parents: Array<{ sha: string }> }>(ctx, [
+    'api',
+    `repos/${ctx.repo}/commits/${sha}`,
+  ]);
+  const parent = commit.parents[0]?.sha;
+  let baseCommittedAt: string | undefined;
+  if (parent) {
+    const r = await ctx.deps.exec('gh', [
+      'api',
+      `repos/${ctx.repo}/commits/${parent}`,
+      '--jq',
+      '.commit.committer.date',
+    ]);
+    if (r.code === 0 && r.stdout.trim()) baseCommittedAt = r.stdout.trim();
+  }
+
+  const verdict = evaluateChecksRun({
+    mainSha: sha,
+    prNumber: pr.number,
+    runId: run.databaseId,
+    runCreatedAt: run.createdAt,
+    conclusion: view.conclusion,
+    steps: view.jobs.flatMap((j) => j.steps),
+    baseCommittedAt,
+  });
+  return result('main-green', verdict.status, verdict.summary, [
     why,
-    `read from the Checks run on #${pr.number} (run ${run.databaseId}), which tested the pull request merged into its base at the time`,
-    ...steps
-      .filter((s) => wanted.some((re) => re.test(s.name)))
-      .map((s) => `${s.name}: ${s.conclusion}`),
-  ];
-  const ok = view.conclusion === 'success' && missing.length === 0;
-  return result(
-    'main-green',
-    ok ? 'pass' : 'fail',
-    ok
-      ? `#${pr.number}'s Checks passed format, typecheck, tests and build`
-      : `#${pr.number}'s Checks did not pass every step (${view.conclusion})`,
-    details
-  );
+    ...verdict.details,
+  ]);
 }
 
 // 10 --------------------------------------------------------------------------
@@ -1012,7 +1118,15 @@ function describe(r: HookdeckResource): string {
   return `${r.id}${r.name ? ` (${r.name})` : ''}`;
 }
 
-async function checkProjects(ctx: Context): Promise<CheckResult> {
+async function readKinds(
+  reader: GatewayReader
+): Promise<Record<string, HookdeckResource[]>> {
+  const out: Record<string, HookdeckResource[]> = {};
+  for (const kind of RESOURCE_KINDS) out[kind] = await reader.list(kind);
+  return out;
+}
+
+export async function checkProjects(ctx: Context): Promise<CheckResult> {
   const fails: string[] = [];
   const warns: string[] = [];
   const details: string[] = [];
@@ -1022,42 +1136,10 @@ async function checkProjects(ctx: Context): Promise<CheckResult> {
   if (!env.HOOKDECK_API_KEY) {
     fails.push('HOOKDECK_API_KEY not set in .env: evals-ci not checked');
   } else {
-    const gateway = new HookdeckClient({ apiKey: env.HOOKDECK_API_KEY });
-    for (const kind of RESOURCE_KINDS) {
-      if (kind === 'issue-triggers') continue;
-      const rows = await gateway.list(kind);
-      if (rows.length > 0) {
-        fails.push(
-          `evals-ci holds ${rows.length} ${kind}: ${rows.map(describe).join(', ')}`
-        );
-      }
-    }
-    const triggers = await gateway.list('issue-triggers');
-    const declared = new Set(DEFAULT_ISSUE_TRIGGERS.map((d) => d.type));
-    for (const d of DEFAULT_ISSUE_TRIGGERS) {
-      const ofType = triggers.filter((t) => t.type === d.type);
-      if (ofType.length === 0)
-        fails.push(`evals-ci has no ${d.type} issue trigger`);
-      if (ofType.length > 1) {
-        fails.push(
-          `evals-ci has ${ofType.length} ${d.type} issue triggers: ${ofType.map(describe).join(', ')}`
-        );
-      }
-      for (const t of ofType) {
-        if (!issueTriggerMatchesDeclared(t, d.configs)) {
-          fails.push(
-            `evals-ci ${d.type} trigger ${t.id} differs from DEFAULT_ISSUE_TRIGGERS (configs, channels, name or enabled)`
-          );
-        }
-      }
-    }
-    for (const t of triggers.filter((t) => !declared.has(String(t.type)))) {
-      fails.push(
-        `evals-ci has an undeclared ${String(t.type)} issue trigger ${t.id}`
-      );
-    }
+    const resources = await readKinds(ctx.deps.gateway(env.HOOKDECK_API_KEY));
+    fails.push(...evaluateGatewayProject(resources));
     details.push(
-      `evals-ci: ${triggers.length} issue triggers against ${DEFAULT_ISSUE_TRIGGERS.length} declared`
+      `evals-ci: ${(resources['issue-triggers'] ?? []).length} issue triggers against ${DEFAULT_ISSUE_TRIGGERS.length} declared`
     );
   }
 
@@ -1072,24 +1154,15 @@ async function checkProjects(ctx: Context): Promise<CheckResult> {
       'OUTPOST_API_KEY is the evals-ci key: it must belong to a dedicated Outpost project (#111)'
     );
   } else {
-    // The Outpost project's Event Gateway side: declared empty.
-    const declaredKinds = Object.keys(OUTPOST_GATEWAY_PRISTINE.ids);
-    const og = new HookdeckClient({ apiKey: outpostKey });
-    let gatewayCount = 0;
-    for (const kind of RESOURCE_KINDS) {
-      const rows = await og.list(kind);
-      gatewayCount += rows.length;
-      if (rows.length > 0 && !declaredKinds.includes(kind)) {
-        fails.push(
-          `the Outpost project's gateway side holds ${rows.length} ${kind}: ${rows.map(describe).join(', ')}`
-        );
-      }
-    }
+    // The Outpost project's Event Gateway side, against its declared baseline.
+    const resources = await readKinds(ctx.deps.gateway(outpostKey));
+    fails.push(...evaluateOutpostGateway(resources, OUTPOST_GATEWAY_PRISTINE));
+    const count = Object.values(resources).reduce((n, r) => n + r.length, 0);
     details.push(
-      `Outpost project gateway side: ${gatewayCount} resources, declared empty`
+      `Outpost project gateway side: ${count} resources, declared empty`
     );
 
-    const outpost = new OutpostClient({ apiKey: outpostKey });
+    const outpost = ctx.deps.outpost(outpostKey);
     const tenants = await outpost.tenants();
     if (tenants.length > 0) {
       fails.push(
@@ -1110,28 +1183,41 @@ async function checkProjects(ctx: Context): Promise<CheckResult> {
         env.HOOKDECK_API_KEY,
         outpostKey,
       ]);
+      const label = `operator event destination ${d.id}`;
       details.push(
-        `operator event destination ${d.id} (${d.type}, ${(d.topics ?? []).join(', ')}): ${verdict.detail}`
+        `${label} (${d.type}, ${(d.topics ?? []).join(', ')}): ${verdict.detail}`
       );
-      if (verdict.status === 'fail')
-        fails.push(`operator event destination ${d.id}: ${verdict.detail}`);
-      if (verdict.status === 'warn')
-        warns.push(`operator event destination ${d.id}: ${verdict.detail}`);
-      const attempts = await outpost
-        .request<{ models?: Array<{ status?: string; time?: string }> }>(
-          'GET',
+      if (verdict.status === 'fail') fails.push(`${label}: ${verdict.detail}`);
+      if (verdict.status === 'warn') warns.push(`${label}: ${verdict.detail}`);
+
+      let attempts: Array<{ status?: string }> | undefined;
+      try {
+        const page = await outpost.get<{
+          models?: Array<{ status?: string }>;
+        }>(
           `/operator-events/attempts?destination_id=${encodeURIComponent(String(d.id))}&limit=20`
-        )
-        .catch(() => undefined);
-      const rows = attempts?.models ?? [];
-      const failed = rows.filter((a) => a.status && a.status !== 'success');
-      details.push(
-        `  last ${rows.length} attempts: ${rows.length - failed.length} succeeded, ${failed.length} did not`
-      );
-      if (failed.length > 0)
-        warns.push(
-          `operator event destination ${d.id}: ${failed.length} recent attempts did not succeed`
         );
+        attempts = page.models ?? [];
+      } catch (error) {
+        details.push(
+          `  could not read attempts: ${(error as Error).message.slice(0, 120)}`
+        );
+      }
+      if (attempts) {
+        const failed = attempts.filter(
+          (a) => a.status && a.status !== 'success'
+        );
+        details.push(
+          attempts.length === 0
+            ? '  no attempts on record'
+            : `  last ${attempts.length} attempts: ${attempts.length - failed.length} succeeded, ${failed.length} did not`
+        );
+        if (failed.length > 0) {
+          warns.push(
+            `${label}: ${failed.length} recent attempts did not succeed`
+          );
+        }
+      }
     }
   }
 
@@ -1149,12 +1235,12 @@ async function checkProjects(ctx: Context): Promise<CheckResult> {
 }
 
 async function operatorEventDestinations(
-  outpost: OutpostClient
+  outpost: OutpostReader
 ): Promise<OperatorEventDestination[]> {
   try {
-    const rows = await outpost.request<
+    const rows = await outpost.get<
       OperatorEventDestination[] | { models?: OperatorEventDestination[] }
-    >('GET', '/operator-events/destinations');
+    >('/operator-events/destinations');
     return Array.isArray(rows) ? rows : (rows.models ?? []);
   } catch (error) {
     // A project that has never had one answers 404 "tenant not found".
@@ -1168,7 +1254,8 @@ const HOOKDECK_SOURCE_HOSTS = new Set(['hkdk.events', 'events.hookdeck.com']);
 /**
  * Whether a destination's URL is somewhere that exists, without sending it
  * anything: a request to a Hookdeck source URL is ingested and recorded in
- * whichever project owns it, which is a write.
+ * whichever project owns it, which is a write. The URL is reported with its
+ * path masked, because a source URL lets anyone who holds it post events.
  */
 async function destinationTarget(
   ctx: Context,
@@ -1182,11 +1269,12 @@ async function destinationTarget(
       detail: `type ${d.type}: only webhook destinations are checked`,
     };
   }
+  const shown = maskUrlPath(raw);
   let url: URL;
   try {
     url = new URL(raw);
   } catch {
-    return { status: 'fail', detail: `URL does not parse: ${raw}` };
+    return { status: 'fail', detail: 'its URL does not parse' };
   }
   if (url.host === 'mock.hookdeck.com') {
     return {
@@ -1197,19 +1285,23 @@ async function destinationTarget(
   if (HOOKDECK_SOURCE_HOSTS.has(url.host)) {
     for (const key of keys) {
       if (!key) continue;
-      const sources = await new HookdeckClient({ apiKey: key }).list('sources');
+      const sources = await ctx.deps.gateway(key).list('sources');
       const owner = sources.find((s) => s.url === raw);
-      if (owner)
-        return { status: 'pass', detail: `Hookdeck source ${describe(owner)}` };
+      if (owner) {
+        return {
+          status: 'pass',
+          detail: `${shown} is Hookdeck source ${describe(owner)}`,
+        };
+      }
     }
     return {
       status: 'warn',
-      detail: `${raw} is a Hookdeck source in a project neither key can see; confirm it exists in the dashboard`,
+      detail: `${shown} is a Hookdeck source in a project neither key can see; confirm it exists in the dashboard`,
     };
   }
   return (await ctx.deps.resolveHost(url.hostname))
-    ? { status: 'pass', detail: `${url.host} resolves` }
-    : { status: 'fail', detail: `${url.host} does not resolve` };
+    ? { status: 'pass', detail: `${shown}: ${url.host} resolves` }
+    : { status: 'fail', detail: `${shown}: ${url.host} does not resolve` };
 }
 
 // 13 --------------------------------------------------------------------------
@@ -1267,8 +1359,9 @@ async function pinnedSkillFiles(
     const res = await ctx.deps.fetch(
       `https://raw.githubusercontent.com/${slug}/${pin}/${path}`
     );
-    if (!res.ok)
+    if (!res.ok) {
       throw new Error(`${path} at ${pin.slice(0, 7)}: HTTP ${res.status}`);
+    }
     files.push({ path, text: await res.text() });
   });
   return files;
@@ -1290,42 +1383,39 @@ async function pool<T>(
   );
 }
 
-async function linkStatus(ctx: Context, url: string): Promise<number> {
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const res = await ctx.deps.fetch(url, {
-        redirect: 'follow',
-        signal: AbortSignal.timeout(20_000),
-      });
-      await res.body?.cancel();
-      return res.status;
-    } catch {
-      // One retry for a dropped connection; a second failure is reported as 0.
-    }
-  }
-  return 0;
-}
-
 async function checkSkillLinks(ctx: Context): Promise<CheckResult> {
   const files = await pinnedSkillFiles(ctx);
   const links = collectLinks(files);
   const bad: Array<{ url: string; status: number; files: string[] }> = [];
+  const moved: Array<{ url: string; finalUrl: string; files: string[] }> = [];
   await pool(links, 6, async (link) => {
-    const status = await linkStatus(ctx, link.url);
-    if (status !== 200) bad.push({ ...link, status });
+    const checked = await checkLink(ctx.deps.fetch, link.url, ctx.deps.sleep);
+    if (checked.status !== 200) {
+      bad.push({ ...link, status: checked.status });
+    } else if (checked.finalUrl) {
+      moved.push({ ...link, finalUrl: checked.finalUrl });
+    }
   });
   bad.sort((a, b) => a.url.localeCompare(b.url));
+  moved.sort((a, b) => a.url.localeCompare(b.url));
+  const status: CheckStatus =
+    bad.length > 0 ? 'fail' : moved.length > 0 ? 'warn' : 'pass';
   return result(
     'skill-links',
-    bad.length > 0 ? 'fail' : 'pass',
+    status,
     bad.length > 0
       ? `${bad.length} of ${links.length} docs URLs in the pinned skills do not return 200`
-      : `all ${links.length} docs URLs in the pinned skills return 200`,
+      : moved.length > 0
+        ? `all ${links.length} docs URLs return 200, ${moved.length} only after a redirect`
+        : `all ${links.length} docs URLs in the pinned skills return 200`,
     [
       `skills ${ctx.skills.names.join(', ')} at ${ctx.skills.pin?.slice(0, 7)}, ${files.length} files`,
       ...bad.map(
         (b) =>
           `${b.status || 'no response'} ${b.url} (in ${b.files.join(', ')})`
+      ),
+      ...moved.map(
+        (m) => `redirected ${m.url} -> ${m.finalUrl} (in ${m.files.join(', ')})`
       ),
     ]
   );
@@ -1363,67 +1453,75 @@ async function checkHarnessIssues(ctx: Context): Promise<CheckResult> {
 
 // 15 --------------------------------------------------------------------------
 
-async function publishedInstrument(
-  ctx: Context
-): Promise<{ instrument: Instrument; source: string }> {
-  const runs = ctx.latest?.composition?.runs ?? [];
-  const newest = [...runs].sort((a, b) => b.latest.localeCompare(a.latest))[0];
-  const runId = newest?.runId ?? ctx.latest?.runId;
-  const models: Record<string, string | undefined> = {};
-  for (const row of ctx.latest?.results ?? []) {
-    const experiment = row.experiment as string | undefined;
-    const display = row.experimentDisplay as { modelId?: string } | undefined;
-    if (!experiment || !display?.modelId) continue;
-    // Prefer the newest run's row when an experiment's rows disagree.
-    if (models[experiment] === undefined || row.runId === runId) {
-      models[experiment] = display.modelId;
+/**
+ * What each agent's newest published cells ran under.
+ *
+ * Per agent rather than per snapshot: a published file merges runs, and the
+ * newest of them may carry no cells for an agent at all. Reading that agent's
+ * image and pins from it would clear a change no cell of that agent ran under.
+ */
+export async function publishedInstrument(ctx: Context): Promise<Instrument> {
+  const rows = (ctx.latest?.results ?? []) as PublishedRowLike[];
+  const agentOf = new Map(ctx.experiments.map((e) => [e.name, e.agent]));
+  const runs = newestRunPerAgent(rows, (e) => agentOf.get(e));
+  const shas = new Map<string, string>();
+  const byAgent: Record<string, AgentInstrument> = {};
+  for (const agent of [...ctx.agentsInPlan].sort()) {
+    const runId = runs[agent];
+    if (!runId) {
+      byAgent[agent] = {};
+      continue;
     }
-  }
-  if (!runId)
-    return {
-      instrument: { agentClis: {}, models },
-      source: 'no published run',
-    };
-  const view = await ghJson<{ headSha: string }>(ctx, [
-    'run',
-    'view',
-    runId,
-    '--json',
-    'headSha',
-  ]);
-  const sha = view.headSha;
-  const dockerfile = await fileAt(ctx, sha, 'packages/sandbox/Dockerfile');
-  const image = await fileAt(ctx, sha, 'packages/sandbox/src/image.ts');
-  const agentClis: Record<string, string | undefined> = {};
-  for (const agent of ctx.agentsInPlan) {
-    const src = await fileAt(
+    let sha = shas.get(runId);
+    if (!sha) {
+      sha = (
+        await ghJson<{ headSha: string }>(ctx, [
+          'run',
+          'view',
+          runId,
+          '--json',
+          'headSha',
+        ])
+      ).headSha;
+      shas.set(runId, sha);
+    }
+    const dockerfile = await fileAt(ctx, sha, 'packages/sandbox/Dockerfile');
+    const image = await fileAt(ctx, sha, 'packages/sandbox/src/image.ts');
+    const skills = await fileAt(ctx, sha, 'packages/sandbox/src/skills.ts');
+    const runner = await fileAt(
       ctx,
       sha,
       `packages/core/src/agents/${agent}/runner.ts`
     );
-    agentClis[agent] = src ? readPin(src, 'defaultCliVersion') : undefined;
-  }
-  return {
-    instrument: {
+    byAgent[agent] = {
       imageDefinition: dockerfile
         ? sandboxImageDefinition(dockerfile)
         : undefined,
       hookdeckCli: image ? readPin(image, 'HOOKDECK_CLI_VERSION') : undefined,
-      agentClis,
-      models,
-    },
-    source: `run ${runId} at ${sha.slice(0, 7)}`,
-  };
+      skillsCli: skills ? readPin(skills, 'SKILLS_CLI_VERSION') : undefined,
+      agentCli: runner ? readPin(runner, 'defaultCliVersion') : undefined,
+      source: `run ${runId} at ${sha.slice(0, 7)}`,
+    };
+  }
+  return { byAgent, models: modelsFromRows(rows) };
 }
 
-async function checkCanary(ctx: Context): Promise<CheckResult> {
-  const current: Instrument = {
-    imageDefinition: sandboxImageDefinition(),
-    hookdeckCli: HOOKDECK_CLI_VERSION,
-    agentClis: Object.fromEntries(
-      registeredAgentPins()
-        .filter((p) => ctx.agentsInPlan.has(p.id))
-        .map((p) => [p.id, p.defaultCliVersion])
+function currentInstrument(ctx: Context): Instrument {
+  const pins = new Map<string, string>(
+    registeredAgentPins().map((p) => [p.id, p.defaultCliVersion])
+  );
+  const imageDefinition = sandboxImageDefinition();
+  return {
+    byAgent: Object.fromEntries(
+      [...ctx.agentsInPlan].map((agent) => [
+        agent,
+        {
+          imageDefinition,
+          hookdeckCli: HOOKDECK_CLI_VERSION,
+          skillsCli: SKILLS_CLI_VERSION,
+          agentCli: pins.get(agent),
+        },
+      ])
     ),
     models: Object.fromEntries(
       ctx.experiments
@@ -1431,17 +1529,24 @@ async function checkCanary(ctx: Context): Promise<CheckResult> {
         .map((e) => [e.name, e.model])
     ),
   };
-  const { instrument, source } = await publishedInstrument(ctx);
-  const changes = diffInstrument(instrument, current);
+}
+
+export async function checkCanary(ctx: Context): Promise<CheckResult> {
+  const published = await publishedInstrument(ctx);
+  const changes = diffInstrument(published, currentInstrument(ctx));
+  const sources = Object.entries(published.byAgent)
+    .map(([agent, i]) => `${agent}: ${i.source ?? 'no published run'}`)
+    .join('; ');
   if (changes.length === 0) {
     return result(
       'canary',
       'pass',
-      `not required: image, CLI pins and models match ${source}`
+      'not required: image, CLI pins and models match the newest published cells of each agent',
+      [sources]
     );
   }
   const details = [
-    `against the newest published rows (${source}):`,
+    'against the newest published cells of each agent:',
     ...changes.map((c) => `  ${c.what}: ${c.published} -> ${c.current}`),
   ];
 
@@ -1516,8 +1621,9 @@ async function verifyCanary(
       steps: Array<{ name: string; conclusion: string }>;
     }>;
   }>(ctx, ['run', 'view', runId, '--json', 'conclusion,headSha,jobs']);
-  if (view.conclusion !== 'success')
+  if (view.conclusion !== 'success') {
     problems.push(`run concluded ${view.conclusion || 'unfinished'}`);
+  }
   if (ctx.dispatchSha && view.headSha !== ctx.dispatchSha) {
     problems.push(
       `ran at ${view.headSha.slice(0, 7)}, not main ${ctx.dispatchSha.slice(0, 7)}`
@@ -1525,8 +1631,9 @@ async function verifyCanary(
   }
   const cells = view.jobs.filter((j) => j.name.startsWith('run-evals'));
   for (const agent of ['claude-code', 'codex']) {
-    if (!cells.some((j) => j.name.includes(agent)))
+    if (!cells.some((j) => j.name.includes(agent))) {
       problems.push(`no ${agent} cell`);
+    }
   }
   for (const job of cells) {
     for (const step of ['Run evals', 'Check artifacts for credentials']) {
@@ -1543,8 +1650,9 @@ async function verifyCanary(
     );
   }
   const log = await ctx.deps.exec('gh', ['run', 'view', runId, '--log']);
-  if (log.stdout.includes(SANDBOX_SELF_CHECK_FAILED))
+  if (log.stdout.includes(SANDBOX_SELF_CHECK_FAILED)) {
     problems.push('a cell failed the sandbox self-check');
+  }
 
   const dir = mkdtempSync(join(tmpdir(), 'preflight-canary-'));
   try {
@@ -1607,6 +1715,7 @@ const RUNNERS: Record<CheckId, (ctx: Context) => Promise<CheckResult>> = {
   'skill-links': checkSkillLinks,
   'harness-issues': checkHarnessIssues,
   canary: checkCanary,
+  'skills-cli-pin': checkSkillsCli,
 };
 
 async function guarded(ctx: Context, id: CheckId): Promise<CheckResult> {
@@ -1636,13 +1745,13 @@ export async function runPreflight(
 
   // Spend last and alone, because it may ask a question on the terminal.
   const ids = CHECKS.map((c) => c.id).filter((id) => id !== 'spend');
-  const results = await Promise.all(ids.map((id) => guarded(ctx, id)));
-  results.push(await guarded(ctx, 'spend'));
+  const raw = await Promise.all(ids.map((id) => guarded(ctx, id)));
+  raw.push(await guarded(ctx, 'spend'));
 
   const notes: string[] = [];
   if (ctx.dispatchSha && ctx.headSha !== ctx.dispatchSha) {
     notes.push(
-      `pins, experiments and the base prompt were read from HEAD, which is not what a dispatch runs; check out main for a preflight that describes the dispatch`
+      'pins, experiments and the base prompt were read from HEAD, which is not what a dispatch runs; check out main for a preflight that describes the dispatch'
     );
   }
   if (ctx.dirty) notes.push('the working tree has uncommitted changes');
@@ -1650,19 +1759,21 @@ export async function runPreflight(
     `matrix: ${ctx.cells.length} cells (suites ${args.dispatch.suites.join(',')}; experiment suites ${args.dispatch.experimentSuites.join(',')}${args.dispatch.experiments.length ? `; experiments ${args.dispatch.experiments.join(',')}` : ''}${args.dispatch.evalIds.length ? `; evals ${args.dispatch.evalIds.join(',')}` : ''}; runs ${args.dispatch.runs})`
   );
 
-  const meta = {
+  // Redact every string before it is laid out, so a value is caught whole
+  // rather than after JSON escaping or line-wrapping has changed its shape.
+  const results = redactArtifactDeep(raw) as CheckResult[];
+  const meta = redactArtifactDeep({
     generatedAt: new Date().toISOString(),
     headSha: ctx.headSha,
     dispatchSha: ctx.dispatchSha,
     skipped: args.skip,
     notes,
-  };
+  }) as Parameters<typeof formatReport>[1];
   const code = exitCodeFor(results);
-  const secrets = collectEnvSecretValues();
-  const text = args.json
+  const output = args.json
     ? JSON.stringify({ ...meta, exitCode: code, results }, null, 2)
     : formatReport(results, meta);
-  return { output: maskSecrets(redactSecrets(text), secrets), code };
+  return { output, code };
 }
 
 async function main() {
@@ -1671,9 +1782,17 @@ async function main() {
     console.log(output);
     process.exitCode = code;
   } catch (error) {
-    console.error(`preflight: ${(error as Error).message}`);
+    console.error(
+      `preflight: ${redactSecretsForArtifact((error as Error).message)}`
+    );
     process.exitCode = 2;
   }
 }
 
-await main();
+// Only when run as a script, so the checks can be imported by tests.
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
+  await main();
+}

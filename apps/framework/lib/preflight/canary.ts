@@ -8,12 +8,27 @@
  * held, would have found it for the price of two cells.
  */
 
-export interface Instrument {
+/**
+ * What an agent's cells were measured under. Per agent, because a published
+ * snapshot is a merge of runs: the newest run may have had no cells for one of
+ * the agents, and comparing that agent against it would clear a change no cell
+ * of that agent ever ran under. That is #114 again, for the price of a partial
+ * publish.
+ */
+export interface AgentInstrument {
   /** `sandboxImageDefinition()`: a hash of the Dockerfile's bytes. */
   imageDefinition?: string;
   hookdeckCli?: string;
-  /** Agent id to pinned CLI version, for agents an experiment uses. */
-  agentClis: Record<string, string | undefined>;
+  /** Vercel's `skills` CLI, a build arg of the same image. */
+  skillsCli?: string;
+  agentCli?: string;
+  /** Where the published values were read from, for the report. */
+  source?: string;
+}
+
+export interface Instrument {
+  /** Agent id to what its cells ran under, for agents an experiment uses. */
+  byAgent: Record<string, AgentInstrument>;
   /** Experiment name to model id. */
   models: Record<string, string | undefined>;
 }
@@ -22,6 +37,8 @@ export interface InstrumentChange {
   what: string;
   published: string;
   current: string;
+  /** The agent whose cells would run under the change, when it is per agent. */
+  agent?: string;
 }
 
 const UNKNOWN = 'unknown';
@@ -36,19 +53,38 @@ export function diffInstrument(
   current: Instrument
 ): InstrumentChange[] {
   const changes: InstrumentChange[] = [];
-  const compare = (what: string, p?: string, c?: string) => {
+  const compare = (
+    what: string,
+    p: string | undefined,
+    c: string | undefined,
+    agent?: string
+  ) => {
     if (c === undefined) return;
     if (p === c) return;
-    changes.push({ what, published: p ?? UNKNOWN, current: c });
+    changes.push({
+      what,
+      published: p ?? UNKNOWN,
+      current: c,
+      ...(agent ? { agent } : {}),
+    });
   };
-  compare(
-    'sandbox image definition',
-    published.imageDefinition,
-    current.imageDefinition
-  );
-  compare('Hookdeck CLI pin', published.hookdeckCli, current.hookdeckCli);
-  for (const [agent, version] of Object.entries(current.agentClis).sort()) {
-    compare(`${agent} CLI pin`, published.agentClis[agent], version);
+  for (const [agent, now] of Object.entries(current.byAgent).sort()) {
+    const then = published.byAgent[agent] ?? {};
+    const cells = `${agent} cells, ${then.source ?? 'no published run'}`;
+    compare(
+      `sandbox image definition (${cells})`,
+      then.imageDefinition,
+      now.imageDefinition,
+      agent
+    );
+    compare(
+      `Hookdeck CLI pin (${cells})`,
+      then.hookdeckCli,
+      now.hookdeckCli,
+      agent
+    );
+    compare(`skills CLI pin (${cells})`, then.skillsCli, now.skillsCli, agent);
+    compare(`${agent} CLI pin (${cells})`, then.agentCli, now.agentCli, agent);
   }
   for (const [experiment, model] of Object.entries(current.models).sort()) {
     // An experiment with no published rows is new, and a new experiment is a
@@ -56,6 +92,53 @@ export function diffInstrument(
     compare(`${experiment} model`, published.models[experiment], model);
   }
   return changes;
+}
+
+export interface PublishedRowLike {
+  experiment?: string;
+  runId?: string;
+  ranAt?: string;
+  experimentDisplay?: { agent?: string; modelId?: string };
+}
+
+/**
+ * For each agent, the newest published run that has rows for an experiment
+ * using it, by the latest `ranAt` of that agent's rows. Not the newest run
+ * overall: a Claude-only partial publish says nothing about the image Codex
+ * cells last ran on.
+ */
+export function newestRunPerAgent(
+  rows: PublishedRowLike[],
+  agentOf: (experiment: string) => string | undefined
+): Record<string, string> {
+  const best = new Map<string, { runId: string; ranAt: string }>();
+  for (const row of rows) {
+    if (!row.experiment || !row.runId) continue;
+    const agent = agentOf(row.experiment) ?? row.experimentDisplay?.agent;
+    if (!agent) continue;
+    const ranAt = row.ranAt ?? '';
+    const held = best.get(agent);
+    if (!held || ranAt > held.ranAt)
+      best.set(agent, { runId: row.runId, ranAt });
+  }
+  return Object.fromEntries([...best].map(([agent, v]) => [agent, v.runId]));
+}
+
+/** Each experiment's model, from its newest published row. */
+export function modelsFromRows(
+  rows: PublishedRowLike[]
+): Record<string, string> {
+  const best = new Map<string, { model: string; ranAt: string }>();
+  for (const row of rows) {
+    const model = row.experimentDisplay?.modelId;
+    if (!row.experiment || !model) continue;
+    const ranAt = row.ranAt ?? '';
+    const held = best.get(row.experiment);
+    if (!held || ranAt > held.ranAt) {
+      best.set(row.experiment, { model, ranAt });
+    }
+  }
+  return Object.fromEntries([...best].map(([e, v]) => [e, v.model]));
 }
 
 /**

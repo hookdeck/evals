@@ -340,6 +340,7 @@ Run the preflight, with the same inputs the dispatch will take, from a checkout 
 ```bash
 pnpm preflight --suite benchmark --experiment-suite benchmark,no-skills --runs 3
 pnpm preflight --help     # every flag, and the check ids --skip takes
+pnpm -s preflight --json  # -s keeps pnpm's banner out of the JSON
 ```
 
 Every defect v0.5.0 found was discoverable before the run that found it (#131), and
@@ -351,13 +352,16 @@ preflight makes.
   `--confirm-balance` (or a `y` on a terminal) because no provider exposes a balance
   to a project key. Open `harness` issues need `--accept-harness <numbers>`, so each
   one is accepted for the run by name.
-- **Decisions never fail it.** A pin behind `latest`, a skills pin behind `main`, a
-  model with a newer sibling, a changed base prompt: each prints the current and the
-  latest, and the release notes record what was chosen.
+- **Decisions never fail it.** A CLI pin behind `latest` (Hookdeck, skills or an
+  agent's), a skills pin behind `main`, a model with a newer sibling, a changed base
+  prompt: each prints the current and the latest, and the release notes record what
+  was chosen.
 - **A moved instrument needs a canary.** When the image definition, a CLI pin or a
-  model differs from the newest published rows, it prints the two-cell
-  `gh workflow run` command with `EVALS_PUBLISH=false`. Verify the finished run with
-  `--canary-run <id>` before the matrix.
+  model differs from what the newest published cells of that agent ran under, it
+  prints the two-cell `gh workflow run` command with `EVALS_PUBLISH=false`. Per
+  agent, not per snapshot: a Claude-only partial publish says nothing about the image
+  Codex last ran on. Verify the finished run with `--canary-run <id>` before the
+  matrix.
 - **`--skip <id>` is an escape hatch, not a pass.** The report prints skipped checks
   as a banner. Name them in the release notes.
 
