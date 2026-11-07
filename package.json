@@ -11,6 +11,7 @@
     "score-only": "pnpm --filter @hookdeck-evals/framework score-only",
     "compare-snapshots": "pnpm --filter @hookdeck-evals/framework compare-snapshots",
     "export-results": "pnpm --filter @hookdeck-evals/framework export-results",
+    "preflight": "pnpm --silent --filter @hookdeck-evals/framework preflight",
     "typecheck": "pnpm --filter @hookdeck-evals/framework typecheck && pnpm --filter @hookdeck-evals/web typecheck",
     "web": "pnpm --filter @hookdeck-evals/web dev",
     "web:build": "pnpm --filter @hookdeck-evals/web build",
