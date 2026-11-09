@@ -781,6 +781,16 @@ with one row (#98).
 criteria, the decisions and their reasoning, cost and cadence, and what is still
 open.
 
+[`.plans/eval-reviews/`](.plans/eval-reviews/README.md) holds the eval reviews:
+whether the scenarios still separate agents, compared with how other vendor and
+research benchmarks create difficulty and report it. Its README says when to run
+one (a scripted check before every release, a full review when the suite
+saturates, the model set changes or six months pass) and keeps the index. The
+latest findings are
+[`.plans/scenario-difficulty-research.md`](.plans/scenario-difficulty-research.md).
+Read them before hardening, retiring or proposing a scenario, and before changing
+what the page publishes.
+
 The plan is the source of truth for *what we are doing and why*. This file is
 the source of truth for *how to work here*. When they disagree, the plan wins on
 direction and this file wins on mechanics.
@@ -1075,9 +1085,13 @@ was stable for both frontier models on all six of their observations and split
 route the agent happens to guess. Use it where variance is measured rather than
 suspected, and remember what it buys — the published number becomes best-of-N,
 which the row's `attempts` field states rather than hides. What cannot be
-copied is upstream's other route: Vercel and Convex avoid clarifying questions by
-writing prompts as requirement lists, and this repo has measured that adding an
-instruction to build *suppresses the very failure a scenario exists to catch*.
+copied is the other route, prompts written as requirement lists, as Convex's are
+(its evals are one-shot code generation, so there is no agent loop to ask a
+question in anyway). This repo has measured that adding an instruction to build
+*suppresses the very failure a scenario exists to catch*. This paragraph used to
+name Vercel alongside Convex as writing requirement lists. It was wrong: Vercel's current Next.js eval
+prompts are one-to-three-sentence task statements (checked on 9 November against
+`agent-031`, `agent-038` and `agent-048`).
 
 **The published score is scenarios completed, and checks are evidence rather
 than a score.** One row is one scenario — a ticket an agent was given — and its
