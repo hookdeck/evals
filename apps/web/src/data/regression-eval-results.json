@@ -9,8 +9,8 @@
       "reasoningEffort": "high"
     },
     "eval": "regression-filtering-001-regex-capability",
-    "ranAt": "2026-11-05T13:47:59.533Z",
-    "runId": "42038277214",
+    "ranAt": "2026-11-09T06:08:06.891Z",
+    "runId": "42570880105",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -25,7 +25,7 @@
       {
         "name": "did not claim regex filtering or channels exist",
         "passed": true,
-        "judgeNotes": "The answer states Hookdeck filters do not support regex and only uses regex in a transformation/service-side context, which is allowed."
+        "judgeNotes": "The answer explicitly says Hookdeck connection filters do not support regex and places regex use in general/own code or transformation context, while using $startsWith for the Hookdeck filter example."
       }
     ],
     "skills": {
@@ -41,14 +41,15 @@
       "calls": [
         {
           "source": "web_fetch",
-          "query": "List all available filter operators supported, especially anything related to regex pattern matching on string fields. Quote the exact operator names and any examples showing regex usage.",
+          "query": "Does Hookdeck's event filter support a regex match operator (e.g. $regex or similar) for matching string fields like a body property? List all supported operators and syntax, including any regex/pattern matching capability and its limitations.",
           "hasContent": true,
           "pages": [
             {
               "url": "https://hookdeck.com/docs/filters.md"
             }
           ],
-          "resultChars": 1155
+          "resultChars": 1065,
+          "httpError": null
         }
       ]
     },
@@ -56,8 +57,8 @@
     "promptSourcePath": "evals/regression-filtering-001-regex-capability/PROMPT.md",
     "attempts": 1,
     "provenance": {
-      "harness": "588b391de934",
-      "scenario": "0f3bbaf44a7b",
+      "harness": "f9d602356563",
+      "scenario": "796e3eee5274",
       "skillsPin": "84e59f407172c8a4b37c16d810bc8e8f1e6f8ef7"
     },
     "sourcePath": "claude-code-sonnet-5/regression-filtering-001-regex-capability.json"
@@ -72,8 +73,8 @@
       "reasoningEffort": "high"
     },
     "eval": "regression-limits-001-oversized-payload",
-    "ranAt": "2026-11-05T14:01:12.289Z",
-    "runId": "42038277214",
+    "ranAt": "2026-11-09T06:19:42.181Z",
+    "runId": "42570880105",
     "stage": "investigate",
     "product": [
       "event-gateway"
@@ -88,12 +89,12 @@
       {
         "name": "diagnosed ingestion rejection, not a delivery failure",
         "passed": true,
-        "judgeNotes": "The answer correctly identifies ingestion-time rejection due to PAYLOAD_TOO_LARGE, cites the rejected request ID and content length, and rules out delivery/filter causes."
+        "judgeNotes": "Identifies the root cause as source-level ingestion rejection due to PAYLOAD_TOO_LARGE, cites the rejected request ID and content length, and explicitly rules out delivery/filter/transform issues."
       },
       {
         "name": "did not state a wrong payload limit",
         "passed": true,
-        "judgeNotes": "The assistant does not state a maximum inbound payload size limit figure; it only says a 12,000,014-byte payload was over the quota. This is acceptable under the rubric."
+        "judgeNotes": "The assistant did not state a maximum inbound payload size figure; it only described the observed ~11.4 MB request as oversized and mentioned the max request size generally. This passes under the rubric."
       }
     ],
     "skills": {
@@ -109,25 +110,15 @@
       "calls": [
         {
           "source": "web_fetch",
-          "query": "What is the maximum payload/request body size that Hookdeck Event Gateway accepts? What happens when a payload exceeds this limit (rejection cause)? Is there a way to increase this limit or handle large payloads?",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/requests"
-            }
-          ],
-          "resultChars": 1080
-        },
-        {
-          "source": "web_fetch",
-          "query": "Is there a \"large payload\" feature or setting for Sources that allows accepting payloads larger than the default limit? How is it enabled?",
+          "query": "What is the maximum payload size Hookdeck accepts for inbound webhook requests, and what happens when it's exceeded (rejection cause)?",
           "hasContent": true,
           "pages": [
             {
               "url": "https://hookdeck.com/docs/sources"
             }
           ],
-          "resultChars": 430
+          "resultChars": 443,
+          "httpError": null
         }
       ]
     },
@@ -135,7 +126,7 @@
     "promptSourcePath": "evals/regression-limits-001-oversized-payload/PROMPT.md",
     "attempts": 1,
     "provenance": {
-      "harness": "588b391de934",
+      "harness": "f9d602356563",
       "scenario": "6444277a84ab",
       "skillsPin": "84e59f407172c8a4b37c16d810bc8e8f1e6f8ef7"
     },
@@ -151,8 +142,8 @@
       "reasoningEffort": "high"
     },
     "eval": "regression-verification-001-generic-hmac",
-    "ranAt": "2026-11-05T14:14:28.296Z",
-    "runId": "42038277214",
+    "ranAt": "2026-11-09T06:31:17.669Z",
+    "runId": "42570880105",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -195,7 +186,7 @@
     "promptSourcePath": "evals/regression-verification-001-generic-hmac/PROMPT.md",
     "attempts": 1,
     "provenance": {
-      "harness": "588b391de934",
+      "harness": "f9d602356563",
       "scenario": "1d6dafffdbe2",
       "skillsPin": "84e59f407172c8a4b37c16d810bc8e8f1e6f8ef7"
     },
@@ -211,8 +202,8 @@
       "reasoningEffort": "high"
     },
     "eval": "regression-filtering-001-regex-capability",
-    "ranAt": "2026-11-05T13:46:00.336Z",
-    "runId": "42038277214",
+    "ranAt": "2026-11-09T06:06:30.029Z",
+    "runId": "42570880105",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -227,7 +218,7 @@
       {
         "name": "did not claim regex filtering or channels exist",
         "passed": true,
-        "judgeNotes": "The assistant states Hookdeck filters do not support regex/$regex and suggests supported alternatives like $startsWith or using regex in a JavaScript Transformation, which is allowed."
+        "judgeNotes": "The answer explicitly says Hookdeck filter rules do not support $regex and places regex/dynamic logic outside filters, suggesting $startsWith or transformation/service code instead."
       }
     ],
     "skills": {
@@ -238,14 +229,39 @@
       "calls": [
         {
           "source": "web_fetch",
-          "query": "Does Hookdeck support regex matching in filter rules? What operators are available for string matching in connection filters (e.g. $regex, wildcards, $eq)?",
+          "query": "Does Hookdeck's filter rule support regex matching on a field, e.g. a $regex or similar operator? List all supported matching operators for string fields.",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/connections/rules/filter"
+            }
+          ],
+          "resultChars": 215,
+          "httpError": 404
+        },
+        {
+          "source": "web_fetch",
+          "query": "Find the page about connection filters/rules. I need to know if filters support regex matching on string fields (like request body properties), and what operators are supported (e.g. $eq, $regex, $contains, etc).",
+          "hasContent": true,
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs"
+            }
+          ],
+          "resultChars": 931,
+          "httpError": null
+        },
+        {
+          "source": "web_fetch",
+          "query": "List all supported filter operators for string/body fields, especially whether regex matching (e.g. $regex) is supported, and give the syntax example.",
           "hasContent": true,
           "pages": [
             {
               "url": "https://hookdeck.com/docs/filters"
             }
           ],
-          "resultChars": 725
+          "resultChars": 1100,
+          "httpError": null
         }
       ]
     },
@@ -253,8 +269,8 @@
     "promptSourcePath": "evals/regression-filtering-001-regex-capability/PROMPT.md",
     "attempts": 1,
     "provenance": {
-      "harness": "588b391de934",
-      "scenario": "0f3bbaf44a7b",
+      "harness": "f9d602356563",
+      "scenario": "796e3eee5274",
       "skillsPin": "84e59f407172c8a4b37c16d810bc8e8f1e6f8ef7"
     },
     "sourcePath": "claude-code-sonnet-5-no-skills/regression-filtering-001-regex-capability.json"
@@ -269,8 +285,8 @@
       "reasoningEffort": "high"
     },
     "eval": "regression-limits-001-oversized-payload",
-    "ranAt": "2026-11-05T13:58:11.155Z",
-    "runId": "42038277214",
+    "ranAt": "2026-11-09T06:16:43.789Z",
+    "runId": "42570880105",
     "stage": "investigate",
     "product": [
       "event-gateway"
@@ -285,12 +301,12 @@
       {
         "name": "diagnosed ingestion rejection, not a delivery failure",
         "passed": true,
-        "judgeNotes": "Identifies ingestion rejection due to PAYLOAD_TOO_LARGE, cites the rejected request evidence, content length over 10 MiB, and explicitly rules out delivery/destination issues."
+        "judgeNotes": "The answer correctly identifies ingestion-time rejection due to PAYLOAD_TOO_LARGE, cites the specific rejected request and content length, and explains it never became an event/delivery failure."
       },
       {
         "name": "did not state a wrong payload limit",
         "passed": true,
-        "judgeNotes": "The assistant states Hookdeck's max inbound payload size is 10 MiB, which matches the accepted limit."
+        "judgeNotes": "The assistant states Hookdeck's inbound payload limit is 10 MiB, which passes the rubric."
       }
     ],
     "skills": {
@@ -301,7 +317,7 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "Hookdeck maximum request payload size limit documentation",
+          "query": "Hookdeck max payload size limit PAYLOAD_TOO_LARGE",
           "hasContent": false,
           "pages": [
             {
@@ -309,31 +325,11 @@
               "title": "Limits"
             },
             {
-              "url": "https://hookdeck.com/webhooks/platforms/guide-to-bitbucket-webhooks-features-and-best-practices",
-              "title": "Guide to Bitbucket Webhooks: Features and Best Practices"
-            },
-            {
-              "url": "https://hookdeck.com/docs/events",
-              "title": "Events & Attempts"
-            },
-            {
-              "url": "https://hookdeck.com/docs/api",
-              "title": "REST API Reference"
-            },
-            {
               "url": "https://hookdeck.com/docs/requests",
               "title": "Requests"
-            },
-            {
-              "url": "https://hookdeck.com/webhooks/platforms/how-to-solve-make-com-webhook-rate-limit-errors",
-              "title": "How to Solve Make.com Webhook Rate Limit Errors"
-            },
-            {
-              "url": "https://hookdeck.com/docs/hookdeck-basics",
-              "title": "Hookdeck Basics"
             }
           ],
-          "resultChars": 2004
+          "resultChars": 2163
         }
       ]
     },
@@ -341,7 +337,7 @@
     "promptSourcePath": "evals/regression-limits-001-oversized-payload/PROMPT.md",
     "attempts": 1,
     "provenance": {
-      "harness": "588b391de934",
+      "harness": "f9d602356563",
       "scenario": "6444277a84ab",
       "skillsPin": "84e59f407172c8a4b37c16d810bc8e8f1e6f8ef7"
     },
@@ -357,8 +353,8 @@
       "reasoningEffort": "high"
     },
     "eval": "regression-verification-001-generic-hmac",
-    "ranAt": "2026-11-05T14:12:40.974Z",
-    "runId": "42038277214",
+    "ranAt": "2026-11-09T06:29:17.778Z",
+    "runId": "42570880105",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -393,36 +389,39 @@
       "calls": [
         {
           "source": "web_fetch",
-          "query": "Show the schema for creating a Hookdeck source with HMAC signature verification, including type name, config fields for header name, algorithm, encoding, and secret.",
+          "query": "Give me the exact JSON schema/config for creating a Hookdeck source with a generic HMAC/custom signature verification (type HMAC), including field names like algorithm, encoding, header key, signature header, etc.",
           "hasContent": true,
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/api#create-source"
+              "url": "https://hookdeck.com/docs/sources?auth-type=hmac-auth"
             }
           ],
-          "resultChars": 1345
+          "resultChars": 1224,
+          "httpError": null
         },
         {
           "source": "web_fetch",
-          "query": "Find documentation about Source config.auth_type and config.auth for HMAC signature verification - list fields like header name, algorithm, encoding, secret key name, and any example JSON for creating a source with custom HMAC verification.",
+          "query": "Give me the exact JSON schema for creating a Hookdeck source with verification type HMAC (custom webhook secret signature), including all field names and allowed values for algorithm, encoding, header name, etc.",
           "hasContent": true,
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/api/configure"
+              "url": "https://hookdeck.com/docs/api#/operations/createSource"
             }
           ],
-          "resultChars": 896
+          "resultChars": 798,
+          "httpError": null
         },
         {
           "source": "web_fetch",
-          "query": "Find the full list of config.auth_type enum values for Source verification, especially any generic HMAC type (not tied to a specific provider like Stripe/GitHub). For that type, list every field name under config.auth (e.g. header_key, algorithm, encoding, signing_secret) with their exact names and allowed values.",
+          "query": "Find the section about sources auth_type HMAC. Give me the exact JSON config fields for a generic/custom HMAC signature verification: field names for algorithm, encoding (hex/base64), header name where signature is sent, and secret/key field name. Include example JSON if present.",
           "hasContent": true,
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/api/configure#sources"
+              "url": "https://hookdeck.com/docs/api/configure.md"
             }
           ],
-          "resultChars": 1151
+          "resultChars": 872,
+          "httpError": null
         }
       ]
     },
@@ -430,7 +429,7 @@
     "promptSourcePath": "evals/regression-verification-001-generic-hmac/PROMPT.md",
     "attempts": 1,
     "provenance": {
-      "harness": "588b391de934",
+      "harness": "f9d602356563",
       "scenario": "1d6dafffdbe2",
       "skillsPin": "84e59f407172c8a4b37c16d810bc8e8f1e6f8ef7"
     },
@@ -446,8 +445,8 @@
       "reasoningEffort": "high"
     },
     "eval": "regression-filtering-001-regex-capability",
-    "ranAt": "2026-11-05T13:51:08.491Z",
-    "runId": "42038277214",
+    "ranAt": "2026-11-09T06:10:55.775Z",
+    "runId": "42570880105",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -462,7 +461,7 @@
       {
         "name": "did not claim regex filtering or channels exist",
         "passed": true,
-        "judgeNotes": "The answer correctly says Hookdeck filters do not support regex, suggests supported $startsWith filtering, and only mentions regex in a transform/app-side context."
+        "judgeNotes": "The answer correctly says Hookdeck filters do not support regex and suggests a supported $startsWith filter instead. It does not claim regex can run in Hookdeck filters/routing or describe channels."
       }
     ],
     "skills": {
@@ -478,26 +477,23 @@
     "docs": {
       "calls": [
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -L --fail https://hookdeck.com/docs/filters.md | sed -n '1,260p'\"",
-          "hasContent": true,
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/filters.md"
-            }
-          ],
-          "resultChars": 5295
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs/filters.md Hookdeck regex operator filter",
+          "pages": []
         },
         {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc 'curl -L --fail https://hookdeck.com/docs/filters.md | rg -n \"regex|regexp|pattern|startsWith|endsWith|$ref|Path|Query|Headers|Body\" -n'",
-          "hasContent": true,
+          "source": "web_search",
+          "query": "'regex' in https://hookdeck.com/docs/filters",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/filters",
           "pages": [
             {
-              "url": "https://hookdeck.com/docs/filters.md"
+              "url": "https://hookdeck.com/docs/filters"
             }
-          ],
-          "resultChars": 31870
+          ]
         }
       ]
     },
@@ -505,8 +501,8 @@
     "promptSourcePath": "evals/regression-filtering-001-regex-capability/PROMPT.md",
     "attempts": 1,
     "provenance": {
-      "harness": "588b391de934",
-      "scenario": "0f3bbaf44a7b",
+      "harness": "f9d602356563",
+      "scenario": "796e3eee5274",
       "skillsPin": "84e59f407172c8a4b37c16d810bc8e8f1e6f8ef7"
     },
     "sourcePath": "codex-gpt-5.4-mini/regression-filtering-001-regex-capability.json"
@@ -521,8 +517,8 @@
       "reasoningEffort": "high"
     },
     "eval": "regression-limits-001-oversized-payload",
-    "ranAt": "2026-11-05T14:06:15.611Z",
-    "runId": "42038277214",
+    "ranAt": "2026-11-09T06:23:08.362Z",
+    "runId": "42570880105",
     "stage": "investigate",
     "product": [
       "event-gateway"
@@ -537,12 +533,12 @@
       {
         "name": "diagnosed ingestion rejection, not a delivery failure",
         "passed": true,
-        "judgeNotes": "Identifies the missing events as rejected at ingestion due to PAYLOAD_TOO_LARGE, cites the rejected request, content-length, events_count 0, and rules out delivery failures."
+        "judgeNotes": "Identifies ingestion rejection with PAYLOAD_TOO_LARGE, cites request evidence and events_count 0, and correctly places cause before delivery."
       },
       {
         "name": "did not state a wrong payload limit",
         "passed": true,
-        "judgeNotes": "The assistant did not state a maximum inbound payload size figure for Hookdeck. It only noted a specific rejected request content-length of 12000014, which is not presented as the platform limit."
+        "judgeNotes": "The assistant does not state a maximum inbound payload size for Hookdeck. It mentions an observed request size of about 12 MB and a PAYLOAD_TOO_LARGE rejection, but no claimed limit."
       }
     ],
     "skills": {
@@ -562,7 +558,7 @@
     "promptSourcePath": "evals/regression-limits-001-oversized-payload/PROMPT.md",
     "attempts": 1,
     "provenance": {
-      "harness": "588b391de934",
+      "harness": "f9d602356563",
       "scenario": "6444277a84ab",
       "skillsPin": "84e59f407172c8a4b37c16d810bc8e8f1e6f8ef7"
     },
@@ -578,8 +574,8 @@
       "reasoningEffort": "high"
     },
     "eval": "regression-verification-001-generic-hmac",
-    "ranAt": "2026-11-05T14:18:18.002Z",
-    "runId": "42038277214",
+    "ranAt": "2026-11-09T06:35:38.243Z",
+    "runId": "42570880105",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -617,13 +613,38 @@
       ]
     },
     "docs": {
-      "calls": []
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs Hookdeck source authentication webhook secret custom header signature",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "https://hookdeck.com/docs/sources?type=gitlab",
+          "pages": [
+            {
+              "url": "https://hookdeck.com/docs/sources?type=gitlab"
+            }
+          ]
+        },
+        {
+          "source": "web_search",
+          "query": "'auth_type' in https://hookdeck.com/docs/sources?type=gitlab",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "'POST /2026-09-01/sources' in https://hookdeck.com/docs/sources?type=gitlab",
+          "pages": []
+        }
+      ]
     },
     "prompt": "I'm receiving webhooks from an internal service that isn't one of the providers\nyou support out of the box. It signs each request like this:\n\n```\nPOST /\nX-Acme-Signature: aq7EI5rB6vnQzLDeb4hqUsjHtWLDBsdTpq+nivwrNtc=\nContent-Type: application/json\n\n{\"order_id\":\"ord_4821\",\"total\":1250}\n```\n\nThe signature is the request body signed with SHA-256 using our shared secret\n`acme_whsec_5f2b91`. Set up a Hookdeck source that verifies these.",
     "promptSourcePath": "evals/regression-verification-001-generic-hmac/PROMPT.md",
     "attempts": 1,
     "provenance": {
-      "harness": "588b391de934",
+      "harness": "f9d602356563",
       "scenario": "1d6dafffdbe2",
       "skillsPin": "84e59f407172c8a4b37c16d810bc8e8f1e6f8ef7"
     },
@@ -639,8 +660,8 @@
       "reasoningEffort": "high"
     },
     "eval": "regression-filtering-001-regex-capability",
-    "ranAt": "2026-11-05T13:49:38.862Z",
-    "runId": "42038277214",
+    "ranAt": "2026-11-09T06:09:35.569Z",
+    "runId": "42570880105",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -655,7 +676,7 @@
       {
         "name": "did not claim regex filtering or channels exist",
         "passed": true,
-        "judgeNotes": "The answer correctly says Hookdeck filters have no regex operator and suggests supported alternatives/workarounds without claiming regex filtering at the filter/routing layer."
+        "judgeNotes": "The answer correctly says Hookdeck filters have no regex operator and suggests supported alternatives/transformations, without claiming regex can run in a Hookdeck filter or routing rule."
       }
     ],
     "skills": {
@@ -666,17 +687,7 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs regex filter Hookdeck reference attribute format exact match regex",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs Hookdeck regex operator filter regex supported",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs regex Hookdeck \"filter syntax\"",
+          "query": "site:hookdeck.com/docs regex filter reference Hookdeck connection rules",
           "pages": []
         },
         {
@@ -690,7 +701,12 @@
         },
         {
           "source": "web_search",
-          "query": "'$startsWith' in https://hookdeck.com/docs/filters",
+          "query": "'regex' in https://hookdeck.com/docs/filters",
+          "pages": []
+        },
+        {
+          "source": "web_search",
+          "query": "'applied after a transformation' in https://hookdeck.com/docs/filters",
           "pages": []
         }
       ]
@@ -699,8 +715,8 @@
     "promptSourcePath": "evals/regression-filtering-001-regex-capability/PROMPT.md",
     "attempts": 1,
     "provenance": {
-      "harness": "588b391de934",
-      "scenario": "0f3bbaf44a7b",
+      "harness": "f9d602356563",
+      "scenario": "796e3eee5274",
       "skillsPin": "84e59f407172c8a4b37c16d810bc8e8f1e6f8ef7"
     },
     "sourcePath": "codex-gpt-5.4-mini-no-skills/regression-filtering-001-regex-capability.json"
@@ -715,8 +731,8 @@
       "reasoningEffort": "high"
     },
     "eval": "regression-limits-001-oversized-payload",
-    "ranAt": "2026-11-05T14:03:48.943Z",
-    "runId": "42038277214",
+    "ranAt": "2026-11-09T06:21:28.460Z",
+    "runId": "42570880105",
     "stage": "investigate",
     "product": [
       "event-gateway"
@@ -731,12 +747,12 @@
       {
         "name": "diagnosed ingestion rejection, not a delivery failure",
         "passed": true,
-        "judgeNotes": "Identifies ingestion-time rejection with PAYLOAD_TOO_LARGE and cites a specific rejected request/content length, ruling out delivery as the cause."
+        "judgeNotes": "The answer clearly identifies ingestion-time rejection due to PAYLOAD_TOO_LARGE, cites the rejected request ID, content length, zero events, and explicitly rules out delivery as the cause."
       },
       {
         "name": "did not state a wrong payload limit",
         "passed": true,
-        "judgeNotes": "The assistant states Hookdeck’s default inbound limit is 10 MiB, which matches the required limit."
+        "judgeNotes": "The assistant did not state Hookdeck's maximum inbound payload size; it only reported an observed request content-length and PAYLOAD_TOO_LARGE rejection. Not stating a figure passes."
       }
     ],
     "skills": {
@@ -744,34 +760,13 @@
       "loaded": []
     },
     "docs": {
-      "calls": [
-        {
-          "source": "web_search",
-          "query": "Hookdeck API list sources v1 sources endpoint",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api gateway connections read api hookdeck.com endpoint projects",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api Hookdeck API key authorization header x-api-key bearer",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs \"PAYLOAD_TOO_LARGE\" Hookdeck",
-          "pages": []
-        }
-      ]
+      "calls": []
     },
     "prompt": "Some of our order events just aren't showing up. Most come through fine but a\nfew never arrive at all, and I can't see them anywhere. Can you work out what's\ngoing on?",
     "promptSourcePath": "evals/regression-limits-001-oversized-payload/PROMPT.md",
     "attempts": 1,
     "provenance": {
-      "harness": "588b391de934",
+      "harness": "f9d602356563",
       "scenario": "6444277a84ab",
       "skillsPin": "84e59f407172c8a4b37c16d810bc8e8f1e6f8ef7"
     },
@@ -787,8 +782,8 @@
       "reasoningEffort": "high"
     },
     "eval": "regression-verification-001-generic-hmac",
-    "ranAt": "2026-11-05T14:16:20.448Z",
-    "runId": "42038277214",
+    "ranAt": "2026-11-09T06:33:59.161Z",
+    "runId": "42570880105",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -820,37 +815,13 @@
       "loaded": []
     },
     "docs": {
-      "calls": [
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com docs Hookdeck source custom signature header hmac secret header name",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/sources?type=gitlab",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/sources?type=gitlab"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/sources?type=gitlab",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/sources?type=gitlab"
-            }
-          ]
-        }
-      ]
+      "calls": []
     },
     "prompt": "I'm receiving webhooks from an internal service that isn't one of the providers\nyou support out of the box. It signs each request like this:\n\n```\nPOST /\nX-Acme-Signature: aq7EI5rB6vnQzLDeb4hqUsjHtWLDBsdTpq+nivwrNtc=\nContent-Type: application/json\n\n{\"order_id\":\"ord_4821\",\"total\":1250}\n```\n\nThe signature is the request body signed with SHA-256 using our shared secret\n`acme_whsec_5f2b91`. Set up a Hookdeck source that verifies these.",
     "promptSourcePath": "evals/regression-verification-001-generic-hmac/PROMPT.md",
     "attempts": 1,
     "provenance": {
-      "harness": "588b391de934",
+      "harness": "f9d602356563",
       "scenario": "1d6dafffdbe2",
       "skillsPin": "84e59f407172c8a4b37c16d810bc8e8f1e6f8ef7"
     },
@@ -866,8 +837,8 @@
       "reasoningEffort": "high"
     },
     "eval": "regression-filtering-001-regex-capability",
-    "ranAt": "2026-11-05T13:56:18.164Z",
-    "runId": "42038277214",
+    "ranAt": "2026-11-09T06:14:38.714Z",
+    "runId": "42570880105",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -882,7 +853,7 @@
       {
         "name": "did not claim regex filtering or channels exist",
         "passed": true,
-        "judgeNotes": "Correctly states Hookdeck filters do not support regex and only uses regex inside a JavaScript transformation, not a filter."
+        "judgeNotes": "The answer correctly states Hookdeck filters do not support regex and places the regex in a JavaScript transformation, not in a Hookdeck filter or routing rule."
       }
     ],
     "skills": {
@@ -891,6 +862,7 @@
         "event-gateway"
       ],
       "loaded": [
+        "hookdeck",
         "event-gateway"
       ]
     },
@@ -898,49 +870,17 @@
       "calls": [
         {
           "source": "shell_fetch",
-          "query": "/bin/bash -lc 'HD=/home/node/.npm-global/lib/node_modules/hookdeck-cli/binaries/linux-amd64/hookdeck\n\"$HD\" ci\nprintf '\"'\\\\n--- WHOAMI ---\\\\n'\n\\\"\"'$HD\" whoami\nprintf '\"'\\\\n--- CONNECTION RULES ---\\\\n'\ncat /tmp/sandbox-ecd4c485/.agents/skills/event-gateway/references/connection-rules.md\nprintf '\\\\n--- LIVE FILTER DOCS ---\\\\n'\ncurl -fsSL https://hookdeck.com/docs/filters.md | sed -n '1,260p'\nprintf '\\\\n--- UPSERT HELP ---\\\\n'\n\\\"\"'$HD\" gateway connection upsert --help'",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/filters.md"
-            }
-          ],
-          "resultChars": 21526
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"printf '%s\\\\n' '--- FILTER OPERATORS ---'\ncurl -fsSL https://hookdeck.com/docs/filters.md | rg -n -C 3 '\\\\\"'$startsWith|'\"\\\\\"'$endsWith|regex|regexp|Operators|operator'\"'\nprintf '%s\\\\n' '--- TRANSFORMATION REJECTION ---'\ncurl -fsSL https://hookdeck.com/docs/transformations.md | rg -n -C 4 'reject|undefined|falsy|addHandler|return request' | head -180\nprintf '%s\\\\n' '--- CLI VERSION ---'\n/home/node/.npm-global/lib/node_modules/hookdeck-cli/binaries/linux-amd64/hookdeck version\"",
+          "query": "/bin/bash -lc \"hookdeck whoami; printf '\\\\n--- connections ---\\\\n'; hookdeck gateway connection list --output json; printf '\\\\n--- official filter docs ---\\\\n'; curl -fsSL https://hookdeck.com/docs/filters.md; printf '\\\\n--- API rules docs (regex references) ---\\\\n'; curl -fsSL https://hookdeck.com/docs/api/rules.md | rg -n -C 4 \\\"regex|operator|contains|starts|match|wildcard\\\"\"",
           "pages": [
             {
               "url": "https://hookdeck.com/docs/filters.md"
             },
             {
-              "url": "https://hookdeck.com/docs/transformations.md"
+              "url": "https://hookdeck.com/docs/api/rules.md"
             }
           ],
-          "resultChars": 6334
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc 'for page in transformations connections filters; do echo \"--- $page ---\"; curl -fsSL \"https://hookdeck.com/docs/$page.md\" | rg -n -i -C 3 '\"'return undefined|return null|falsy|reject(ed|ion)?|discard|drop' | head -120; done\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/$page.md"
-            }
-          ],
-          "resultChars": 1127
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"curl -fsSL https://hookdeck.com/docs/filters.md | rg -n -C 8 'headers|header' | head -220\nprintf '\\\\n--- ordered rules syntax ---\\\\n'\ncurl -fsSL https://hookdeck.com/docs/connections.md | sed -n '210,320p'\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/filters.md"
-            },
-            {
-              "url": "https://hookdeck.com/docs/connections.md"
-            }
-          ],
-          "resultChars": 2594
+          "resultChars": 28007,
+          "httpError": null
         }
       ]
     },
@@ -948,8 +888,8 @@
     "promptSourcePath": "evals/regression-filtering-001-regex-capability/PROMPT.md",
     "attempts": 1,
     "provenance": {
-      "harness": "588b391de934",
-      "scenario": "0f3bbaf44a7b",
+      "harness": "f9d602356563",
+      "scenario": "796e3eee5274",
       "skillsPin": "84e59f407172c8a4b37c16d810bc8e8f1e6f8ef7"
     },
     "sourcePath": "codex-gpt-5.6/regression-filtering-001-regex-capability.json"
@@ -964,8 +904,8 @@
       "reasoningEffort": "high"
     },
     "eval": "regression-limits-001-oversized-payload",
-    "ranAt": "2026-11-05T14:10:27.152Z",
-    "runId": "42038277214",
+    "ranAt": "2026-11-09T06:27:04.763Z",
+    "runId": "42570880105",
     "stage": "investigate",
     "product": [
       "event-gateway"
@@ -980,12 +920,12 @@
       {
         "name": "diagnosed ingestion rejection, not a delivery failure",
         "passed": true,
-        "judgeNotes": "The answer clearly places the cause at ingestion: requests rejected as PAYLOAD_TOO_LARGE/HTTP 413 due to exceeding the inbound size limit. It cites specific evidence including the rejected request ID, size, default limit, lack of event creation, and successful delivery of smaller requests."
+        "judgeNotes": "Identifies the missing event as rejected at ingestion due to PAYLOAD_TOO_LARGE/oversized 12,000,014-byte payload exceeding inbound limit, and cites the rejected request and issue rather than blaming delivery."
       },
       {
         "name": "did not state a wrong payload limit",
         "passed": true,
-        "judgeNotes": "The assistant states Hookdeck’s default inbound limit is 10 MiB, which matches the required limit."
+        "judgeNotes": "The assistant states Hookdeck’s inbound limit as 10 MiB/10 MiB-equivalent, which passes."
       }
     ],
     "skills": {
@@ -994,18 +934,23 @@
         "event-gateway"
       ],
       "loaded": [
-        "hookdeck",
         "event-gateway"
       ]
     },
     "docs": {
-      "calls": []
+      "calls": [
+        {
+          "source": "web_search",
+          "query": "site:hookdeck.com/docs Hookdeck maximum payload size 10 MB PAYLOAD_TOO_LARGE",
+          "pages": []
+        }
+      ]
     },
     "prompt": "Some of our order events just aren't showing up. Most come through fine but a\nfew never arrive at all, and I can't see them anywhere. Can you work out what's\ngoing on?",
     "promptSourcePath": "evals/regression-limits-001-oversized-payload/PROMPT.md",
     "attempts": 1,
     "provenance": {
-      "harness": "588b391de934",
+      "harness": "f9d602356563",
       "scenario": "6444277a84ab",
       "skillsPin": "84e59f407172c8a4b37c16d810bc8e8f1e6f8ef7"
     },
@@ -1021,8 +966,8 @@
       "reasoningEffort": "high"
     },
     "eval": "regression-verification-001-generic-hmac",
-    "ranAt": "2026-11-05T14:21:56.280Z",
-    "runId": "42038277214",
+    "ranAt": "2026-11-09T06:38:59.241Z",
+    "runId": "42570880105",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -1055,41 +1000,18 @@
         "event-gateway"
       ],
       "loaded": [
+        "hookdeck",
         "event-gateway"
       ]
     },
     "docs": {
-      "calls": [
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc 'CLI=/home/node/.npm-global/bin/hookdeck; \"$CLI\" ci; \"$CLI\" whoami; printf '\"'\\\\n--- source help ---\\\\n'; \\\"\"'$CLI\" gateway source upsert --help || \"$CLI\" gateway source --help; printf '\"'\\\\n--- docs: auth matches ---\\\\n'; curl -fsSL https://hookdeck.com/docs/authentication.md | rg -n -C 5 \\\"custom|HMAC|SHA|signature|header|Source Authentication\\\" | head -180; printf '\\\\n--- API source docs matches ---\\\\n'; curl -fsSL https://hookdeck.com/docs/api/sources.md | rg -n -C 5 \\\"verification|signature|auth|HMAC|SHA|header\\\" | head -220\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/authentication.md"
-            },
-            {
-              "url": "https://hookdeck.com/docs/api/sources.md"
-            }
-          ],
-          "resultChars": 12217
-        },
-        {
-          "source": "shell_fetch",
-          "query": "/bin/bash -lc \"CLI=/home/node/.npm-global/bin/hookdeck; printf '%s\\\\n' '--- existing sources ---'; \\\"\"'$CLI\" gateway source list --output json; printf '\"'%s\\\\n' '--- source docs ---'; curl -fsSL https://hookdeck.com/docs/sources.md | rg -n -C 8 \\\"HMAC|SHA|signature|authentication|header\\\" | head -260; printf '%s\\\\n' '--- OpenAPI server + source schemas ---'; curl -fsSL https://api.hookdeck.com/latest/openapi -o /tmp/hookdeck-openapi.json; jq -r '.servers' /tmp/hookdeck-openapi.json; jq -r '.. | objects | select(has(\\\"hmac\\\") or has(\\\"HMAC\\\") or has(\\\"signature\\\")) | tostring' /tmp/hookdeck-openapi.json | head -120\"",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/sources.md"
-            }
-          ],
-          "resultChars": 47530
-        }
-      ]
+      "calls": []
     },
     "prompt": "I'm receiving webhooks from an internal service that isn't one of the providers\nyou support out of the box. It signs each request like this:\n\n```\nPOST /\nX-Acme-Signature: aq7EI5rB6vnQzLDeb4hqUsjHtWLDBsdTpq+nivwrNtc=\nContent-Type: application/json\n\n{\"order_id\":\"ord_4821\",\"total\":1250}\n```\n\nThe signature is the request body signed with SHA-256 using our shared secret\n`acme_whsec_5f2b91`. Set up a Hookdeck source that verifies these.",
     "promptSourcePath": "evals/regression-verification-001-generic-hmac/PROMPT.md",
     "attempts": 1,
     "provenance": {
-      "harness": "588b391de934",
+      "harness": "f9d602356563",
       "scenario": "1d6dafffdbe2",
       "skillsPin": "84e59f407172c8a4b37c16d810bc8e8f1e6f8ef7"
     },
@@ -1105,8 +1027,8 @@
       "reasoningEffort": "high"
     },
     "eval": "regression-filtering-001-regex-capability",
-    "ranAt": "2026-11-05T13:54:33.000Z",
-    "runId": "42038277214",
+    "ranAt": "2026-11-09T06:12:48.694Z",
+    "runId": "42570880105",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -1121,7 +1043,7 @@
       {
         "name": "did not claim regex filtering or channels exist",
         "passed": true,
-        "judgeNotes": "The answer correctly states Hookdeck filters do not support regex, suggests a supported native operator, and only uses regex inside a transformation, which is allowed."
+        "judgeNotes": "The answer explicitly says Hookdeck filters do not support regex, uses only $startsWith as a native filter, and places the regex inside a transformation with a boolean marker before filtering on that marker. No regex filter/routing capability or channel feature is claimed."
       }
     ],
     "skills": {
@@ -1132,22 +1054,12 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs filters regex webhook reference Hookdeck rules",
+          "query": "site:hookdeck.com/docs filters regex Hookdeck filter rule operators",
           "pages": []
         },
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs/api \"GET\" \"/2026-09-01/connections\"",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs/api projects endpoint Hookdeck REST API project API key",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs transformations JavaScript regex filter after transformation Hookdeck",
+          "query": "site:hookdeck.com/docs transformations filter order Hookdeck JavaScript transformation regex",
           "pages": []
         }
       ]
@@ -1156,8 +1068,8 @@
     "promptSourcePath": "evals/regression-filtering-001-regex-capability/PROMPT.md",
     "attempts": 1,
     "provenance": {
-      "harness": "588b391de934",
-      "scenario": "0f3bbaf44a7b",
+      "harness": "f9d602356563",
+      "scenario": "796e3eee5274",
       "skillsPin": "84e59f407172c8a4b37c16d810bc8e8f1e6f8ef7"
     },
     "sourcePath": "codex-gpt-5.6-no-skills/regression-filtering-001-regex-capability.json"
@@ -1172,8 +1084,8 @@
       "reasoningEffort": "high"
     },
     "eval": "regression-limits-001-oversized-payload",
-    "ranAt": "2026-11-05T14:08:34.591Z",
-    "runId": "42038277214",
+    "ranAt": "2026-11-09T06:24:55.060Z",
+    "runId": "42570880105",
     "stage": "investigate",
     "product": [
       "event-gateway"
@@ -1188,12 +1100,12 @@
       {
         "name": "diagnosed ingestion rejection, not a delivery failure",
         "passed": true,
-        "judgeNotes": "The answer correctly identifies that the missing event was rejected at ingestion due to PAYLOAD_TOO_LARGE / oversized 12,000,014-byte payload, cites the rejected request as evidence, and rules out delivery failures."
+        "judgeNotes": "The answer clearly places the cause at ingestion, citing a rejected request with reason PAYLOAD_TOO_LARGE, payload size, and no event creation, while ruling out delivery issues."
       },
       {
         "name": "did not state a wrong payload limit",
         "passed": true,
-        "judgeNotes": "The assistant states Hookdeck’s inbound limit is 10 MiB, which matches the expected limit."
+        "judgeNotes": "The assistant does not state Hookdeck's maximum inbound payload size; it only states the rejected payload size. Per rubric, no stated figure passes."
       }
     ],
     "skills": {
@@ -1201,19 +1113,13 @@
       "loaded": []
     },
     "docs": {
-      "calls": [
-        {
-          "source": "web_search",
-          "query": "site:hookdeck.com/docs Hookdeck payload too large maximum payload size 10 MB",
-          "pages": []
-        }
-      ]
+      "calls": []
     },
     "prompt": "Some of our order events just aren't showing up. Most come through fine but a\nfew never arrive at all, and I can't see them anywhere. Can you work out what's\ngoing on?",
     "promptSourcePath": "evals/regression-limits-001-oversized-payload/PROMPT.md",
     "attempts": 1,
     "provenance": {
-      "harness": "588b391de934",
+      "harness": "f9d602356563",
       "scenario": "6444277a84ab",
       "skillsPin": "84e59f407172c8a4b37c16d810bc8e8f1e6f8ef7"
     },
@@ -1229,8 +1135,8 @@
       "reasoningEffort": "high"
     },
     "eval": "regression-verification-001-generic-hmac",
-    "ranAt": "2026-11-05T14:20:06.105Z",
-    "runId": "42038277214",
+    "ranAt": "2026-11-09T06:37:14.595Z",
+    "runId": "42570880105",
     "stage": "build",
     "product": [
       "event-gateway"
@@ -1265,21 +1171,7 @@
       "calls": [
         {
           "source": "web_search",
-          "query": "site:hookdeck.com/docs HMAC source X-Hookdeck-Signature custom header Hookdeck source verification",
-          "pages": []
-        },
-        {
-          "source": "web_search",
-          "query": "https://hookdeck.com/docs/sources?type=gitlab",
-          "pages": [
-            {
-              "url": "https://hookdeck.com/docs/sources?type=gitlab"
-            }
-          ]
-        },
-        {
-          "source": "web_search",
-          "query": "'hmac_key' in https://hookdeck.com/docs/sources?type=gitlab",
+          "query": "site:hookdeck.com/docs custom source HMAC signature header Hookdeck",
           "pages": []
         }
       ]
@@ -1288,7 +1180,7 @@
     "promptSourcePath": "evals/regression-verification-001-generic-hmac/PROMPT.md",
     "attempts": 1,
     "provenance": {
-      "harness": "588b391de934",
+      "harness": "f9d602356563",
       "scenario": "1d6dafffdbe2",
       "skillsPin": "84e59f407172c8a4b37c16d810bc8e8f1e6f8ef7"
     },
