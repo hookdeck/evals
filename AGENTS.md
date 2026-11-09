@@ -781,10 +781,15 @@ with one row (#98).
 criteria, the decisions and their reasoning, cost and cadence, and what is still
 open.
 
-[`.plans/scenario-difficulty-research.md`](.plans/scenario-difficulty-research.md)
-compares our scenarios and metric with other vendor and research benchmarks, and
-classifies every scenario by what makes it hard. Read it before hardening,
-retiring or proposing a scenario, and before changing what the page publishes.
+[`.plans/eval-reviews/`](.plans/eval-reviews/README.md) holds the eval reviews:
+whether the scenarios still separate agents, compared with how other vendor and
+research benchmarks create difficulty and report it. Its README says when to run
+one (a scripted check before every release, a full review when the suite
+saturates, the model set changes or six months pass) and keeps the index. The
+latest findings are
+[`.plans/scenario-difficulty-research.md`](.plans/scenario-difficulty-research.md).
+Read them before hardening, retiring or proposing a scenario, and before changing
+what the page publishes.
 
 The plan is the source of truth for *what we are doing and why*. This file is
 the source of truth for *how to work here*. When they disagree, the plan wins on

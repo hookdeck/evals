@@ -7,9 +7,11 @@ docs and skills are good? The issues it produced carry the work; this file
 carries the evidence, so the question does not have to be re-researched from
 scratch the next time a snapshot reads near the ceiling.
 
+This is the findings file of the first [eval review](eval-reviews/README.md).
 Figures marked *survey* come from other projects' published pages and files,
-read on 7 November and not re-derived here. Everything about this repository can
-be recomputed with the snippets at the end.
+read on 7 November; the full surveys sit beside it in `eval-reviews/`, and the
+saturation figures for other suites can be re-run from their live data.
+Everything about this repository can be recomputed with the scripts at the end.
 
 ## The answer
 
@@ -189,7 +191,8 @@ so the fault is the only anomaly in the project.
 - **New scenarios** target the empty categories above, and each is probed on the
   weak model and one frontier arm before admission, per CONTRIBUTING.
 
-The issues carrying these are linked from the v0.6.0 section of #24.
+The issues carrying these are #134 to #142, with the graduation rule proposed on
+#47, all referenced from the v0.6.0 section of #24.
 
 ## Unverified
 
@@ -201,31 +204,15 @@ The issues carrying these are linked from the v0.6.0 section of #24.
 - The cost of a three-attempt matrix without stop-on-pass is scaled from the
   per-pass figures in AGENTS.md, not measured.
 
-## Recomputing our figures
-
-First attempt against best of three, per scenario, from any snapshot:
+## Recomputing the figures
 
 ```bash
-python3 -c "
-import json
-from collections import defaultdict
-rows=json.load(open('results/latest.json'))['results']
-m=defaultdict(lambda:[0,0,0])
-for r in rows:
-    m[r['eval']][0]+=1
-    m[r['eval']][1]+=r['passed'] and r['attempts']==1
-    m[r['eval']][2]+=r['passed']
-for e in sorted(m): print(e, 'first', m[e][1], 'best', m[e][2], 'of', m[e][0])
-"
+python3 .plans/eval-reviews/scripts/ours.py        # ours, from results/
+python3 .plans/eval-reviews/scripts/external.py    # supabase, Next.js, Convex, Stripe, live
 ```
 
-No-skills Claude Code first-attempt passes with no docs fetched:
-
-```bash
-python3 -c "
-import json
-for r in json.load(open('results/latest.json'))['results']:
-    if r['experiment']=='claude-code-sonnet-5-no-skills' and r['passed'] and r['attempts']==1 and not r['docs'].get('calls'):
-        print(r['eval'])
-"
-```
+The full vendor and research surveys behind the tables above are
+[`eval-reviews/2026-11-vendor-survey.md`](eval-reviews/2026-11-vendor-survey.md)
+and [`eval-reviews/2026-11-research-survey.md`](eval-reviews/2026-11-research-survey.md).
+How and when to run the next review is in
+[`eval-reviews/README.md`](eval-reviews/README.md).
