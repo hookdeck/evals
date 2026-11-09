@@ -5,8 +5,9 @@ from the live leaderboards, posts and papers. Model names are as each board
 prints them. Nothing here was reproduced from data; "unverified" marks figures
 taken from secondary sources or search snippets rather than the primary page.
 
-**Bottom line.** Benchmarks that still separate models score frontier agents at
-roughly 35–65% on a single attempt, and the same models we run fail most tasks
+**Bottom line.** The benchmarks built on long or expert tasks (Terminal-Bench,
+SWE-bench Pro, MCPMark, ITBench, τ³ banking) score frontier agents at roughly
+35–65% on a single attempt, and the same models we run fail most tasks
 on them. Our 113/114 at best of three sits where Anthropic's guidance puts a
 regression suite.
 

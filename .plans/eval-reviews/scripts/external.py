@@ -56,6 +56,12 @@ def supabase():
     every_exp = sum(all(any(cells[(e, x)]) for x in exps if (e, x) in cells) for e in evals)
     print(f"scenarios passed on every run by every experiment: {every_run}/{len(evals)}")
     print(f"scenarios passed by every experiment at best of k: {every_exp}/{len(evals)}")
+    by_run = defaultdict(lambda: defaultdict(list))
+    for r in rows:
+        by_run[r.get("run")][r["eval"]].append(bool(r["passed"]))
+    for run in sorted(by_run, key=str):
+        failing = sum(1 for v in by_run[run].values() if not all(v))
+        print(f"  run {run}: scenarios with at least one failing experiment {failing}/{len(by_run[run])}")
     for x in exps:
         v = [cells[(e, x)] for e in evals if (e, x) in cells]
         print(f"  {x:40} pass@1 {100 * sum(map(sum, v)) / sum(map(len, v)):5.1f}%")
@@ -106,7 +112,6 @@ def stripe():
     rows = list(csv.DictReader(io.StringIO(get(SOURCES["stripe"]))))
     best = defaultdict(dict)
     for r in rows:
-        k = (r["eval name"], r["model"])
         best[r["eval name"]][r["model"]] = max(best[r["eval name"]].get(r["model"], 0.0), float(r["score"]))
     full = [e for e, m in best.items() if all(s == 1.0 for s in m.values())]
     print(f"{len(best)} scored rows; scored 1.0 by every model at best of three: {len(full)}/{len(best)}")

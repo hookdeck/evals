@@ -80,14 +80,17 @@ for r in bench:
         print("  " + r["eval"])
 
 hist = defaultdict(lambda: defaultdict(lambda: [0, 0]))
+tier = defaultdict(lambda: [0, 0])
 seen = set()
+print("\nPer snapshot: scenarios with a first-attempt failure in any arm (rows as published)")
 for f in sorted(glob.glob("results/runs/*.json")):
     name = f.rsplit("/", 1)[-1]
     if name.startswith(EXCLUDE):
         continue
-    for r in json.load(open(f))["results"]:
-        if r.get("suite") != "benchmark":
-            continue
+    snap = [r for r in json.load(open(f))["results"] if r.get("suite") == "benchmark"]
+    failing = {r["eval"] for r in snap if not first(r)}
+    print(f"  {name[:-5]}  {len(failing):2}/{len({r['eval'] for r in snap})}")
+    for r in snap:
         key = (r["eval"], r["experiment"], r.get("ranAt"))
         if key in seen:
             continue
@@ -95,6 +98,13 @@ for f in sorted(glob.glob("results/runs/*.json")):
         h = hist[r["eval"]][family(r["experiment"])]
         h[0] += first(r)
         h[1] += 1
+        t = tier["weak" if family(r["experiment"]) == "mini" else "frontier"]
+        t[0] += first(r)
+        t[1] += 1
+
+print("\nPooled first-attempt pass rate, each executed row counted once (by ranAt):")
+for k, (p, n) in tier.items():
+    print(f"  {k:8} {p}/{n}  {100 * p / n:.0f}%")
 
 fams = list(FAMILIES.values())
 print(f"\nFirst-attempt history, all snapshots except {', '.join(EXCLUDE)}")

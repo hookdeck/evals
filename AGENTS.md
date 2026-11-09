@@ -1085,10 +1085,11 @@ was stable for both frontier models on all six of their observations and split
 route the agent happens to guess. Use it where variance is measured rather than
 suspected, and remember what it buys — the published number becomes best-of-N,
 which the row's `attempts` field states rather than hides. What cannot be
-copied is the other route: Convex avoids clarifying questions by writing prompts
-as requirement lists, and this repo has measured that adding an instruction to
-build *suppresses the very failure a scenario exists to catch*. This paragraph
-used to name Vercel alongside Convex. It was wrong: Vercel's current Next.js eval
+copied is the other route, prompts written as requirement lists, as Convex's are
+(its evals are one-shot code generation, so there is no agent loop to ask a
+question in anyway). This repo has measured that adding an instruction to build
+*suppresses the very failure a scenario exists to catch*. This paragraph used to
+name Vercel alongside Convex as writing requirement lists. It was wrong: Vercel's current Next.js eval
 prompts are one-to-three-sentence task statements (checked on 9 November against
 `agent-031`, `agent-038` and `agent-048`).
 

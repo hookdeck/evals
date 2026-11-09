@@ -34,7 +34,8 @@ scenario graduated.
    and scenarios calibrated against the old one may now be floors.
 3. **The last full review is more than six months old.** This is the one
    calendar trigger, and it is here because the outside world does not wait for
-   our releases: Terminal-Bench shipped four major versions in a year, and
+   our releases: Terminal-Bench went through versions 2.0, 2.1, 3.0 and 4.0, the last in
+   August 2026, retiring saturated tasks each time, and
    leaderboards re-rank monthly.
 
 Nothing schedules these. The light check belongs to the release checklist, and

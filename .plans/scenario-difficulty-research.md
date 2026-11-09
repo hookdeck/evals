@@ -17,7 +17,7 @@ Everything about this repository can be recomputed with the scripts at the end.
 
 **Mostly easy scenarios, then a metric that hides what failure is left.**
 
-1. **Docs do not carry most frontier passes.** In v0.5.0,
+1. **Docs do not carry many frontier passes.** In v0.5.0,
    `claude-code-sonnet-5-no-skills` passed eight of nineteen scenarios on the
    first attempt with zero docs fetches: `delivery-001`, `delivery-002`,
    `investigate-001`, `investigate-002`, `localdev-001`, `resolve-001`,
@@ -37,7 +37,7 @@ Everything about this repository can be recomputed with the scripts at the end.
    ([board](https://labs.scale.com/leaderboard/mcp_atlas)).
 5. **Where docs and skills do show, it is Outpost, long-tail providers and
    capability questions.** Every no-skills Claude Code pass on an Outpost
-   scenario read two to nine docs pages, and the `ELEVENLABS` source type is
+   scenario in v0.5.0 made two to nine docs fetches, and the `ELEVENLABS` source type is
    what the skill supplies in `verification-002`.
 
 So AGENTS.md's own conclusion survives contact with the wider field: signal
@@ -72,7 +72,7 @@ suite near 100%
 |---|---|---|---|---|
 | [supabase/evals](https://github.com/supabase/evals) | 23 benchmark | Passed runs over all runs, three per cell | 14/23 passed by all twelve experiments at best of three | Skills −2.9 to +8.7 by model, mixed sign |
 | [Next.js evals](https://nextjs.org/evals) | 28 | pass@4 | 16/28 passed by every current model, 23/28 with AGENTS.md | AGENTS.md +0 for frontier, up to +32 for older models |
-| [Convex](https://www.convex.dev/llm-leaderboard) | 112 | Mean over N runs with error bars | 93/112 passed by the top ten with guidelines, 74/112 without | Guidelines, median +16.7 points |
+| [Convex](https://www.convex.dev/llm-leaderboard) | 112 | Mean over N runs with error bars | 92/112 passed by the top ten with guidelines, 73/112 without (9 November; one run per model, so it drifts) | Guidelines, median +16.7 points |
 | [Clerk](https://clerk.com/llm-leaderboard) | 37, mostly one-shot codegen | Partial credit | Fifteen models within 86–92% | MCP and skills barely move frontier models |
 | [Stripe](https://github.com/stripe/ai/tree/main/benchmarks) | 17 | Best of three, partial credit | 6/17 at 1.0 for every model | None |
 | [Upstash](https://github.com/upstash/upstash-mcp-evals) | 11 | Passes out of three runs | 9/11 at 3/3 for every frontier agent | Before and after MCP fixes |
@@ -102,7 +102,7 @@ requirement lists (checked: `agent-031`, `agent-038`, `agent-048` on `canary`).
 
 | Benchmark | Difficulty comes from | Metric | Frontier range |
 |---|---|---|---|
-| [Terminal-Bench 4.0](https://www.tbench.ai/news/terminal-bench-4-0) | Expert tasks, eight-hour timeout; tasks every model class solves 5/5 are dropped | Pass rate over five trials | Opus 5.5 64.8% to Gemini 3.7 Flash 11.2% |
+| [Terminal-Bench 4.0](https://www.tbench.ai/news/terminal-bench-4-0) | Expert tasks, eight-hour timeout; tasks every model class solves 5/5 are dropped | Pass rate over five trials (inferred) | Opus 5.5 64.8% to Gemini 3.7 Flash 11.2% |
 | [τ³-bench](https://taubench.com/) | Policy documents, a simulated user who also acts | pass^k introduced; boards show pass^1 | Banking: 55.2% top |
 | [MCPMark](https://arxiv.org/html/2509.24002v1) | Curated start states, three to five expert hours a task | pass@1, pass@4, pass^4 | gpt-5-medium 52.6 / 68.5 / 33.9 |
 | [MCP-Atlas](https://labs.scale.com/leaderboard/mcp_atlas) | Distractor tools, no tool names in the prompt | Claim coverage ≥ 0.75 | 90.7 to 40.2 |
@@ -156,11 +156,12 @@ over observations since 14 August, as Claude Code / GPT-5.6 / GPT-5.4-mini.
 | `resolve-001-paused-connection` | resolve | L | 10/10 · 11/12 · 15/16 | Graduate |
 | `resolve-002-scoped-redelivery` | resolve | A in tiny state | 9/10 · 12/12 · 16/16 | Harden with noise |
 
-Totals: seven lookup-shaped as scored, six multi-step builds, four with a scored
+Totals, where a scenario can have more than one mechanism: seven lookup-shaped
+as scored, seven multi-step builds, four with a scored
 silent failure, two with a wrong answer from memory, one needing correlation.
 **None** needs investigation of noisy state, a long horizon, resistance to a
 wrong approach named in the prompt, or care around a destructive action. The
-investigate scenarios seed three to five resources and seven to twelve events,
+investigate scenarios seed three to five resources and seven to twelve requests,
 so the fault is the only anomaly in the project.
 
 ## What the field covers that we do not
